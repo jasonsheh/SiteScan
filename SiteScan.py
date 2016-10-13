@@ -7,6 +7,7 @@ import getopt
 import socket
 import requests
 import re
+from urllib.parse import urlparse
 
 
 class SiteScan:
@@ -52,7 +53,7 @@ class SiteScan:
             if self.target[-1:] == '/':    # ends with slash
                 self.target = self.target[:-1]
             self.ip = socket.gethostbyname(self.target)  # get ip
-            print('ip address: ' + self.ip)
+            print(' Ip address: ' + self.ip)
         except Exception as e:
             print(e)
 
@@ -62,38 +63,73 @@ class SiteScan:
                 self.target = 'http://' + self.target
             r = requests.get(self.target)
             self.server = r.headers['Server']
-            print(self.server)
+            print(' HostName:' + self.server)
             if 'X-Powered-By' in r.headers:
                 self.language = r.headers['X-Powered-By']  # get language
-                print(self.language)
+                print(' ' + self.language)
         except Exception as e:
             print(e)
 
     def conn(self, target):  # get url in one page
-        r = requests.get(target)
-        pattern = re.compile(r'<a href="(.*?)"')
-        res = re.findall(pattern, r.text)
-        return res
+        try:
+            r = requests.get(target, timeout=3)
+            pattern_1 = re.compile(r'<a href="(.*?)"')
+            res = re.findall(pattern_1, r.text)
+            pattern_2 = re.compile(r'<a href="(.*?)"')
+            return res
+        except:
+            return []
+
+    def get_category(self, res):  # this should be used later
+        res_path = []
+        for url in res:
+            res_path.append(urlparse(url).path)
+        res_path = list(set(res_path))
+        return res_path
+
+    def get_url(self, res):
+        res = list(set(res))
+        new_url = []
+        for url in res:
+            if '.' not in url:
+                res.remove(url)
+                continue
+            if 'javascript:' in url:
+                res.remove(url)
+                continue
+            if '/' in url:
+                url = self.target[:-1] + url
+            if not url.startswith(self.target):
+                res.remove(url)
+                continue
+            new_url.append(url)
+        new_url = list(set(new_url))
+        return new_url
 
     def site_crawl(self):
         try:
             if not self.target.startswith('http://'):
                 self.target = 'http://' + self.target
+            if not self.target.endswith('/'):
+                self.target += '/'
 
             res = self.conn(self.target)
-            print(res)
-            with open('res.txt', 'w') as file:  # get site url from main page
-                for i in res:
-                    if i.startswith(self.target):  # with no useless pages
-                        file.write(i+'\n')  # write into file
+            res = self.get_url(res)
+            for url in res:
+                try:
+                    new_res = self.conn(url)
+                    new_res = self.get_url(new_res)
+                    res += new_res
+                except:
+                    continue
+                res = list(set(res))
 
-            with open('res.txt', 'a+') as file:
-                for each_line in file:
-                    res = self.conn(each_line)
-                    for each_url in res:
-                        if each_url.startswith(self.target) and each_url not in file:  # with no useless pages
-                            file.write(each_url+'\n')  # write into file
-            print('finish!')
+            res = self.get_category(res)
+            '''for i in res:
+                i = self.target + i
+                try:
+                    i = requests.get(i)'''
+            print(res)
         except Exception as e:
             print(e)
 
