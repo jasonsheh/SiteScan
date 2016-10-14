@@ -70,12 +70,15 @@ class SiteScan:
         except Exception as e:
             print(e)
 
+    # return all url in the page
     def conn(self, target):  # get url in one page
         try:
-            r = requests.get(target, timeout=3)
+            r = requests.get(target, timeout=1)
             pattern_1 = re.compile(r'<a href="(.*?)"')
             res = re.findall(pattern_1, r.text)
-            pattern_2 = re.compile(r'<a href="(.*?)"')
+            pattern_2 = re.compile(r'src="(.*?)"')
+            res2 = re.findall(pattern_2, r.text)
+            res += res2
             return res
         except:
             return []
@@ -83,6 +86,8 @@ class SiteScan:
     def get_category(self, res):  # this should be used later
         res_path = []
         for url in res:
+            if url.startswith('/../..'):
+                url = url[6:]
             res_path.append(urlparse(url).path)
         res_path = list(set(res_path))
         return res_path
@@ -91,19 +96,19 @@ class SiteScan:
         res = list(set(res))
         new_url = []
         for url in res:
+            if url.startswith('http:') and not url.startswith(self.target):
+                continue
             if '.' not in url:
-                res.remove(url)
                 continue
-            if 'javascript:' in url:
-                res.remove(url)
+            if 'javascript:'or '(' in url:
                 continue
+            if not url.startswith('/'):
+                url = '/' + url
             if '/' in url:
                 url = self.target[:-1] + url
             if not url.startswith(self.target):
-                res.remove(url)
                 continue
             new_url.append(url)
-        new_url = list(set(new_url))
         return new_url
 
     def site_crawl(self):
@@ -125,11 +130,17 @@ class SiteScan:
                 res = list(set(res))
 
             res = self.get_category(res)
-            '''for i in res:
-                i = self.target + i
-                try:
-                    i = requests.get(i)'''
             print(res)
+
+            '''folder = []
+            for url in res:
+                url = url.split('/')
+                for i in url:
+                    j = 0
+                    print('-'*j + i + '\n')
+                    j += 1'''
+
+
         except Exception as e:
             print(e)
 
@@ -139,7 +150,7 @@ class SiteScan:
 
 def main():
     if len(sys.argv) == 1:
-        print("Usage:%s [-h|-u|-c] [--help|--version] -u||-c target...." % sys.argv[0])
+        print("Usage: python %s [-h|-u|-c] [--help|--version] -u||-c target...." % sys.argv[0])
         sys.exit()
     s = SiteScan()
     s.run()
