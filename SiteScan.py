@@ -80,19 +80,23 @@ class SiteScan:
             res2 = re.findall(pattern_2, r.text)
             res += res2
             return res
-        except:
+        except Exception as e:
+            print(e)
             return []
 
     def get_category(self, res):  # this should be used later
         res_path = []
         for url in res:
-            if url.startswith('/../..'):
-                url = url[6:]
             res_path.append(urlparse(url).path)
         res_path = list(set(res_path))
         return res_path
 
     def get_url(self, res):
+        for url in res:
+            if '?' in url:
+                url2 = url.split('?')[0]
+                res.remove(url)
+                res.append(url2)
         res = list(set(res))
         new_url = []
         for url in res:
@@ -100,15 +104,14 @@ class SiteScan:
                 continue
             if '.' not in url:
                 continue
-            if 'javascript:'or '(' in url:
+            if 'javascript:' in url:
                 continue
-            if not url.startswith('/'):
+            if not url.startswith('/') and not url.startswith('http'):
                 url = '/' + url
-            if '/' in url:
+            if '/' in url and not url.startswith('http:'):
                 url = self.target[:-1] + url
-            if not url.startswith(self.target):
-                continue
-            new_url.append(url)
+            if url.startswith(self.target):
+                new_url.append(url)
         return new_url
 
     def site_crawl(self):
@@ -123,22 +126,22 @@ class SiteScan:
             for url in res:
                 try:
                     new_res = self.conn(url)
-                    new_res = self.get_url(new_res)
-                    res += new_res
                 except:
+                    res.remove(url)
                     continue
+                new_res = self.get_url(new_res)
+                res += new_res
                 res = list(set(res))
-
             res = self.get_category(res)
             print(res)
 
-            '''folder = []
+            folder = []
             for url in res:
                 url = url.split('/')
                 for i in url:
                     j = 0
                     print('-'*j + i + '\n')
-                    j += 1'''
+                    j += 1
 
 
         except Exception as e:
