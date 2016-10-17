@@ -16,7 +16,7 @@ class SiteScan:
         self.ip = ''
         self.language = ''
         self.server = ''
-        self.version = '0.10'
+        self.version = '0.50'
 
     def usage(self):
         print("Usage:%s [-h|-u|-c] [--help|--version] -u || -c target...." % sys.argv[0])
@@ -25,11 +25,11 @@ class SiteScan:
         try:
             opts, args = getopt.getopt(sys.argv[1:], "hu=:c=:", ["help", "version"])
             for op, value in opts:
-                self.target = args[0]
                 if op in ('--help', '-h'):
                     print('#' + '-'*60 + '#')
                     print('  This tool help get the basic information of one site')
                     print('\t Such as ip, build_language, server_info')
+                    print('\t\t written by Jason_Sheh')
                     print('#' + '-'*60 + '#')
                     print('  -h or --help : help you know how to use this tool')
                     print('  -u : detect basic information')
@@ -37,9 +37,11 @@ class SiteScan:
                 elif op == '--version':
                     print('Current version is ' + self.version)
                 elif op == '-u':
+                    self.target = args[0]
                     self.get_ip()
                     self.get_server()
                 elif op == '-c':
+                    self.target = args[0]
                     self.site_crawl()
         except getopt.GetoptError as e:
             print(e)
@@ -74,7 +76,7 @@ class SiteScan:
     def conn(self, target):  # get url in one page
         try:
             r = requests.get(target, timeout=1)
-            pattern_1 = re.compile(r'<a href="(.*?)"')
+            pattern_1 = re.compile(r'href="(.*?)"')
             res = re.findall(pattern_1, r.text)
             pattern_2 = re.compile(r'src="(.*?)"')
             res2 = re.findall(pattern_2, r.text)
@@ -87,16 +89,11 @@ class SiteScan:
     def get_category(self, res):  # this should be used later
         res_path = []
         for url in res:
-            res_path.append(urlparse(url).path)
+            res_path.append(urlparse(url).path.rsplit('/', 1)[0])
         res_path = list(set(res_path))
         return res_path
 
     def get_url(self, res):
-        for url in res:
-            if '?' in url:
-                url2 = url.split('?')[0]
-                res.remove(url)
-                res.append(url2)
         res = list(set(res))
         new_url = []
         for url in res:
@@ -106,6 +103,10 @@ class SiteScan:
                 continue
             if 'javascript:' in url:
                 continue
+            if '(' in url:
+                continue
+            if '+' in url:
+                continue
             if not url.startswith('/') and not url.startswith('http'):
                 url = '/' + url
             if '/' in url and not url.startswith('http:'):
@@ -114,6 +115,7 @@ class SiteScan:
                 new_url.append(url)
         return new_url
 
+    # almost done need improved
     def site_crawl(self):
         try:
             if not self.target.startswith('http://'):
@@ -132,17 +134,13 @@ class SiteScan:
                 new_res = self.get_url(new_res)
                 res += new_res
                 res = list(set(res))
+
             res = self.get_category(res)
             print(res)
 
-            folder = []
-            for url in res:
-                url = url.split('/')
-                for i in url:
-                    j = 0
-                    print('-'*j + i + '\n')
-                    j += 1
-
+            with open('res.txt', 'w') as file:
+                for url in res:
+                    file.write(url+'\n')
 
         except Exception as e:
             print(e)
