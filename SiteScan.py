@@ -16,7 +16,8 @@ class SiteScan:
         self.ip = ''
         self.language = ''
         self.server = ''
-        self.version = '0.50'
+        self.version = '1.0'
+        self.sitemap = []
 
     def usage(self):
         print("Usage:%s [-h|-u|-c] [--help|--version] -u || -c target...." % sys.argv[0])
@@ -42,7 +43,9 @@ class SiteScan:
                     self.get_server()
                 elif op == '-c':
                     self.target = args[0]
+                    print('crawl may take a while please wait...')
                     self.site_crawl()
+                    
         except getopt.GetoptError as e:
             print(e)
             self.usage()
@@ -86,7 +89,7 @@ class SiteScan:
             print(e)
             return []
 
-    def get_category(self, res):  # this should be used later
+    def get_dir(self, res):  # this should be used later
         res_path = []
         for url in res:
             res_path.append(urlparse(url).path.rsplit('/', 1)[0])
@@ -107,6 +110,8 @@ class SiteScan:
                 continue
             if '+' in url:
                 continue
+            if ' ' in url:
+                continue
             if not url.startswith('/') and not url.startswith('http'):
                 url = '/' + url
             if '/' in url and not url.startswith('http:'):
@@ -114,6 +119,14 @@ class SiteScan:
             if url.startswith(self.target):
                 new_url.append(url)
         return new_url
+
+    def site_sort(self):
+        for i in range(0, len(self.sitemap)):
+            for j in range(i+1, len(self.sitemap)):
+                if self.sitemap[i] > self.sitemap[j]:
+                    temp = self.sitemap[i]
+                    self.sitemap[i] = self.sitemap[j]
+                    self.sitemap[j] = temp
 
     # almost done need improved
     def site_crawl(self):
@@ -135,18 +148,30 @@ class SiteScan:
                 res += new_res
                 res = list(set(res))
 
-            res = self.get_category(res)
-            print(res)
+            self.sitemap = self.get_dir(res)
+            self.site_sort()
 
             with open('res.txt', 'w') as file:
-                for url in res:
+                for url in self.sitemap:
+                    print(url)
                     file.write(url+'\n')
+                file.write('\nSensitive Dict:\n')
 
+            self.sensitive_dir()
         except Exception as e:
             print(e)
 
-    '''def site_analyse(self):
-        with open('')'''
+    def sensitive_dir(self):
+        print('\ndetecting common sensitive dictionaries...')
+        # headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+        with open('dir.txt', 'r') as dirt:
+            with open('res.txt', 'a+') as file:
+                for url in dirt:
+                    url = self.target + url.strip()
+                    r = requests.get(url)
+                    if r.status_code == 200:
+                        print(url)
+                        file.write(url + '\n')
 
 
 def main():
