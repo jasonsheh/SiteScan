@@ -10,7 +10,12 @@ and it can crawl the site to get a sitemap, also can test common sensitive dicti
 
 `-u : detect basic information`
 
-`-c : crawl the site get the sitemap`
+`-c : crawl the site to get the sitemap`
+
+`-w : get whois information`
 
 Notice: SiteScan works with python 3.x
 
+## Details
+
+please visit octfive.cn to get the analysis about SiteScan
