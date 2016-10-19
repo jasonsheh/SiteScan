@@ -16,7 +16,7 @@ class SiteScan:
         self.ip = ''
         self.language = ''
         self.server = ''
-        self.version = '1.0'
+        self.version = '1.1'
         self.sitemap = []
 
     def usage(self):
@@ -24,7 +24,7 @@ class SiteScan:
 
     def run(self):
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "hu=:c=:", ["help", "version"])
+            opts, args = getopt.getopt(sys.argv[1:], "hu=:c=:w=:", ["help", "version"])
             for op, value in opts:
                 if op in ('--help', '-h'):
                     print('#' + '-'*60 + '#')
@@ -34,7 +34,8 @@ class SiteScan:
                     print('#' + '-'*60 + '#')
                     print('  -h or --help : help you know how to use this tool')
                     print('  -u : detect basic information')
-                    print('  -c : crawl the site get the sitemap')
+                    print('  -c : crawl the site to get the sitemap')
+                    print('  -u : get whois information')
                 elif op == '--version':
                     print('Current version is ' + self.version)
                 elif op == '-u':
@@ -45,11 +46,20 @@ class SiteScan:
                     self.target = args[0]
                     print('crawl may take a while please wait...')
                     self.site_crawl()
+                elif op == '-w':
+                    self.target = args[0]
+                    self.whois()
                     
         except getopt.GetoptError as e:
             print(e)
             self.usage()
             sys.exit(1)
+
+    def init(self):
+        if not self.target.startswith('http://'):
+            self.target = 'http://' + self.target
+        if not self.target.endswith('/'):
+            self.target += '/'
 
     def get_ip(self):
         try:
@@ -131,10 +141,7 @@ class SiteScan:
     # almost done need improved
     def site_crawl(self):
         try:
-            if not self.target.startswith('http://'):
-                self.target = 'http://' + self.target
-            if not self.target.endswith('/'):
-                self.target += '/'
+            self.init()
 
             res = self.conn(self.target)
             res = self.get_url(res)
@@ -172,6 +179,21 @@ class SiteScan:
                     if r.status_code == 200:
                         print(url)
                         file.write(url + '\n')
+
+    # get whois info
+    def whois(self):
+        if self.target.startswith('www.') or self.target.startswith('http'):
+            self.init()
+            url = self.target[11:]
+        else:
+            url = self.target
+        url = 'http://whois.alexa.cn/whois.php?u=' + url
+        r = requests.get(url)
+        if 'No matching record' in r.text:
+            print('该域名未被注册或被隐藏')
+        else:
+            # pattern = re.compile(r'<div class="fr WhLeList-right"><div class="block ball"><span>(.*?)</span>')
+            print(r.text.replace('<br />', ''))
 
 
 def main():
