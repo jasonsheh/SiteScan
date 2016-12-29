@@ -10,6 +10,8 @@ import re
 from urllib.parse import urlparse
 import threading
 import queue
+from sqltest import Sql
+from sendir import Sendir
 
 
 class SiteScan:
@@ -18,17 +20,18 @@ class SiteScan:
         self.ip = ''
         self.language = ''
         self.server = ''
-        self.version = '1.1'
+        self.version = '0.2'
         self.url_set = []
         self.sitemap = []
+        self.sql_in = []
         self.q = queue.Queue(0)
 
     def usage(self):
-        print("Usage:%s [-h|-u|-c|-w|-d] [--help|--version] -h || --help target...." % sys.argv[0])
+        print("Usage:%s [-h|-u|-c] [--help|--version] -h || --help target...." % sys.argv[0])
 
     def run(self):
         try:
-            opts, args = getopt.getopt(sys.argv[1:], "hu:c:w:", ["help", "version"])
+            opts, args = getopt.getopt(sys.argv[1:], "hu:c:", ["help", "version"])
             for op, value in opts:
                 if op in ('--help', '-h'):
                     print('#' + '-'*60 + '#')
@@ -39,8 +42,6 @@ class SiteScan:
                     print('  -h or --help : help you know how to use this tool')
                     print('  -u : detect basic information')
                     print('  -c : crawl the site to get the sitemap')
-                    print('  -w : get whois information')
-                    print('  -d : test sensitive dictionary')
                 elif op == '--version':
                     print('Current version is ' + self.version)
                 elif op == '-u':
@@ -50,12 +51,6 @@ class SiteScan:
                 elif op == '-c':
                     self.target = value
                     self.site_crawl()
-                elif op == '-w':
-                    self.target = value
-                    self.whois()
-                elif op == '-s':
-                    self.target = value
-                    self.sensitive_dir()
                     
         except getopt.GetoptError as e:
             print(e)
@@ -181,54 +176,73 @@ class SiteScan:
                 item.start()
 
             # 以下不需要多线程
+            print("检测SQL注入:")
+            self.sql_in = self.sqltest()  # here test the sql injection
+            if self.sql_in == []:
+                print("可能不存在注入")
+            else:
+                for url in self.sql_in:
+                    print(url)
             self.sitemap = self.get_dir(self.url_set)
             self.site_sort()
 
-            with open('res.txt', 'w') as file:
+            with open('res.txt', 'w+') as file:
+                file.write('Directory\n')
                 for url in self.sitemap:
-                    print(url)
                     file.write(url+'\n')
 
-            # self.sensitive_dir()
+            self.sensitive_dir()
         except Exception as e:
             print(e)
 
     # get whois info
-    def whois(self):
+    # not work now
+    '''def whois(self):
         if self.target.startswith('www.') or self.target.startswith('http'):
             self.init()
             url = self.target[11:]
         else:
             url = self.target
-        url = 'http://whois.alexa.cn/whois.php?u=' + url
+        url = 'http://whois.alexa.cn/' + url[0:-1]
         r = requests.get(url)
-        # print(r.text)
-        # pattern = re.compile('(注册商.*?)')
-        # res = re.findall(pattern, r.text)
         try:
-            res = r.text.split('域名:', 1)[1]
-            if 'No matching record' in r.text:
-                print('该域名未被注册或被隐藏')
-            else:
-                # pattern = re.compile(r'<div class="fr WhLeList-right"><div class="block ball"><span>(.*?)</span>')
-                print('' + res.replace('<br />', ''))
+            pattern = re.compile(r'for detailed information(.*?)Last update of whois database')
+            res = re.findall(pattern, r.text)
+            # pattern = re.compile(r'<div class="fr WhLeList-right"><div class="block ball"><span>(.*?)</span>')
+            print(res)
         except:
-            print('查询失败')
+            print('查询失败')'''
 
     def sensitive_dir(self):
-        print('\ndetecting common sensitive dictionaries...')
-        # headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
-        with open('dir.txt', 'r') as dirt:
-            with open('res.txt', 'a+') as file:
-                for url in dirt:
-                    url = self.target + url.strip()
-                    r = requests.get(url)
-                    if r.status_code == 200:
-                        print(url)
-                        file.write(url + '\n')
+        s = Sendir(self.target)
+        s.run()
 
-    '''def cms_verify(self):
-        self.target'''
+    def get_sql_in(self):
+        pattern = re.compile(self.target+'.*\?.*=.*')
+        for url in self.url_set:
+            res = re.findall(pattern, url)  # 获取所有可能的注入点
+            if res != []:
+                flag = 0
+                if self.sql_in == []:
+                    self.sql_in += res
+                for _url in self.sql_in:
+                    if urlparse(_url).path == urlparse(res[0]).path:
+                        flag = 1
+                        break
+                if flag == 0:
+                    self.sql_in += res
+
+    def sqltest(self):
+        self.get_sql_in()
+        true_sql_in = []
+        if self.sql_in != []:
+            for sqli in self.sql_in:  # 进行注入测试
+                s = Sql(sqli)
+                url = s.waf_scan()
+                if url:
+                    true_sql_in.append(url)
+        return true_sql_in
+
 
 def main():
     if len(sys.argv) == 1:
