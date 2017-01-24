@@ -66,7 +66,6 @@
 /user.txt
 /phpinfo.php
 /info.php
-/index.php
 /mysql.php
 /sql.php
 /mysql/add_user.php
@@ -364,7 +363,7 @@
 /install.txt
 /INSTALL.TXT
 /config.php
-/config.inc	
+/config.inc
 /config.ini
 /configuration.ini
 /settings.php	
@@ -383,6 +382,5 @@
 /password.txt
 /php.ini
 /robots.txt
-/sftp-config.json	
-/memadmin/index.php	
-/login			
+/sftp-config.json
+/memadmin/index.php

@@ -10,8 +10,10 @@ import re
 from urllib.parse import urlparse
 import threading
 import queue
+import time
 from sqltest import Sql
 from sendir import Sendir
+from subdomain import Domain
 
 
 class SiteScan:
@@ -20,14 +22,15 @@ class SiteScan:
         self.ip = ''
         self.language = ''
         self.server = ''
-        self.version = '0.2'
+        self.version = '0.6'
         self.url_set = []
         self.sitemap = []
         self.sql_in = []
         self.q = queue.Queue(0)
 
-    def usage(self):
-        print("Usage:%s [-h|-u|-c] [--help|--version] -h || --help target...." % sys.argv[0])
+    @staticmethod
+    def usage():
+        print("Usage:%s [-h|-c] [--help|--version] -h || --help target...." % sys.argv[0])
 
     def run(self):
         try:
@@ -40,16 +43,14 @@ class SiteScan:
                     print('\t\t written by Jason_Sheh')
                     print('#' + '-'*60 + '#')
                     print('  -h or --help : help you know how to use this tool')
-                    print('  -u : detect basic information')
                     print('  -c : crawl the site to get the sitemap')
                 elif op == '--version':
                     print('Current version is ' + self.version)
-                elif op == '-u':
-                    self.target = value
-                    self.get_ip()
-                    self.get_server()
                 elif op == '-c':
                     self.target = value
+                    self.init()
+                    self.get_ip()
+                    self.get_server()
                     self.site_crawl()
                     
         except getopt.GetoptError as e:
@@ -58,78 +59,71 @@ class SiteScan:
             sys.exit(1)
 
     def init(self):
-        if not self.target.startswith('http://'):
+        if not self.target.startswith('http://') or self.target.startswith('https://'):
             self.target = 'http://' + self.target
-        if not self.target.endswith('/'):
-            self.target += '/'
+        if self.target.endswith('/'):
+            self.target = self.target[:-1]
 
     def get_ip(self):
         try:
-            if self.target.startswith('http://'):
-                self.target = self.target[7:]
-            if self.target[-1:] == '/':    # ends with slash
-                self.target = self.target[:-1]
-            self.ip = socket.gethostbyname(self.target)  # get ip
+            target = self.target[7:]
+            self.ip = socket.gethostbyname(target)  # get ip
             print('\n Ip address: ' + self.ip)
         except Exception as e:
             print(e)
 
     def get_server(self):
         try:
-            if not self.target.startswith('http://'):
-                self.target = 'http://' + self.target
             r = requests.get(self.target)
             self.server = r.headers['Server']
             print(' HostName:' + self.server)
             if 'X-Powered-By' in r.headers:
                 self.language = r.headers['X-Powered-By']  # get language
-                print(' ' + self.language)
+                print(' ' + self.language + '\n')
+            else:
+                print('\n')
         except Exception as e:
             print(e)
 
     # return all url in the page
-    def conn(self, target):  # get url in one page
+    @staticmethod
+    def conn(target):  # get url in one page
         try:
-            r = requests.get(target, timeout=1)
+            r = requests.get(target)
             pattern_1 = re.compile(r'href="(.*?)"')
             res = re.findall(pattern_1, r.text)
-            pattern_2 = re.compile(r'src="(.*?)"')
-            res2 = re.findall(pattern_2, r.text)
-            res += res2
             return res
-        except Exception as e:
-            print(e)
+        except:
             return []
 
-    def get_dir(self, res):  # this should be used later
+    '''def get_dir(self, res):  # this should be used later
         res_path = []
         for url in res:
             res_path.append(urlparse(url).path.rsplit('/', 1)[0])
-        res_path = list(set(res_path))
-        return res_path
+        res_path = list(set(res_path))'''
 
     def get_url(self, res):
         res = list(set(res))
         new_url = []
         for url in res:
-            if url.startswith('http:') and not url.startswith(self.target):
+            _quit = 0
+            # print(url)
+            if url.startswith('http') and not url.startswith(self.target):
                 continue
-            if '.' not in url:
+            for i in ['javascript:', '(', '.css', '.jpg', '.png', '.pdf', '.xls', '.doc']:
+                if i in url:
+                    _quit = 1
+                    break
+            if _quit:
                 continue
-            if 'javascript:' in url:
-                continue
-            if '(' in url:
-                continue
-            if '+' in url:
-                continue
-            if ' ' in url:
-                continue
-            if not url.startswith('/') and not url.startswith('http'):
+            if not url.startswith('/') and not url.startswith('http:') and not url.startswith('www'):
                 url = '/' + url
             if '/' in url and not url.startswith('http:'):
-                url = self.target[:-1] + url
+                url = self.target + url
             if url.startswith(self.target):
                 new_url.append(url)
+            # print(url)
+        new_url = list(set(new_url))
         return new_url
 
     def site_sort(self):
@@ -142,58 +136,81 @@ class SiteScan:
 
     def crawler(self):
         while not self.q.empty():
+            if self.q.qsize() != 0:
+                sys.stdout.write('# 剩余爬取链接个数' + str(self.q.qsize()) + '\r')
+                sys.stdout.flush()
             url = self.q.get()
             try:
                 new_res = self.conn(url)
-            except:
-                self.q.get()
+            except Exception as e:
+                print(e)
                 continue
-            res = list(set(self.get_url(new_res)))
+            res = self.get_url(new_res)
             for i in res:
+                # print(i)
                 if i not in self.url_set:
                     self.url_set.append(i)
+                    # self.q.put(i)
+                if ('?' in i) and (i.split('?')[0] not in self.sitemap):
+                    self.sitemap.append(i.split('?')[0])
                     self.q.put(i)
+                    # print(i)
+                elif i.rsplit('/', 1)[0] not in self.sitemap:
+                    self.sitemap.append(i.rsplit('/', 1)[0])
+                    self.q.put(i)
+            self.url_set = list(set(self.url_set))
+            self.sitemap = list(set(self.sitemap))
+            time.sleep(0.1)
 
     # almost done need improved
     def site_crawl(self):
-        print('crawl may take a while please wait...')
-        thread_num = input('set the thread number:')
-        self.init()
-        try:
-            res = self.conn(self.target)
-            res = self.get_url(res)
-            for i in res:
-                self.url_set.append(i)
+        res = self.conn(self.target)
+        res = self.get_url(res)
+        if res == []:
+            res.append(self.target + '/index.php')
+        for i in res:
+            self.url_set.append(i)
+            if ('?' in i) and (i.split('?')[0] not in self.sitemap):
+                self.sitemap.append(i.split('?')[0])
                 self.q.put(i)
-            list(set(self.url_set))
+                # print(i)
+            elif i.rsplit('/', 1)[0] not in self.sitemap:
+                self.sitemap.append(i.rsplit('/', 1)[0])
+                self.q.put(i)
+            self.q.put(i)
 
-            threads = []
-            for i in range(int(thread_num)):
-                t = threading.Thread(target=self.crawler)
-                threads.append(t)
-            for item in threads:
-                item.setDaemon(True)
-                item.start()
+        # print(self.sitemap)
 
-            # 以下不需要多线程
-            print("检测SQL注入:")
-            self.sql_in = self.sqltest()  # here test the sql injection
-            if self.sql_in == []:
-                print("可能不存在注入")
-            else:
-                for url in self.sql_in:
-                    print(url)
-            self.sitemap = self.get_dir(self.url_set)
-            self.site_sort()
+        t1 = time.time()
 
-            with open('res.txt', 'w+') as file:
-                file.write('Directory\n')
-                for url in self.sitemap:
-                    file.write(url+'\n')
+        thread_num = 5
+        threads = []
+        for i in range(int(thread_num)):
+            t = threading.Thread(target=self.crawler)
+            threads.append(t)
+        for item in threads:
+            item.start()
 
-            self.sensitive_dir()
-        except Exception as e:
-            print(e)
+        for item in threads:
+            item.join()
+
+        t2 = time.time()
+
+        print('\n\nTotal time: \n' + str(t2-t1))
+
+        self.site_sort()
+
+        print("\n目录结构")
+        with open('res.txt', 'w+') as file:
+            file.write('direction:\n\n')
+            for url in self.sitemap:
+                print(url)
+                file.write(url + '\n')
+
+        # 以下不需要多线程
+        self.sqltest()  # here test the sql injection
+        # self.sensitive_dir()
+        self.subdomain()
 
     # get whois info
     # not work now
@@ -217,31 +234,14 @@ class SiteScan:
         s = Sendir(self.target)
         s.run()
 
-    def get_sql_in(self):
-        pattern = re.compile(self.target+'.*\?.*=.*')
-        for url in self.url_set:
-            res = re.findall(pattern, url)  # 获取所有可能的注入点
-            if res != []:
-                flag = 0
-                if self.sql_in == []:
-                    self.sql_in += res
-                for _url in self.sql_in:
-                    if urlparse(_url).path == urlparse(res[0]).path:
-                        flag = 1
-                        break
-                if flag == 0:
-                    self.sql_in += res
+    def subdomain(self):
+        s = Domain(self.target)
+        s.run()
 
     def sqltest(self):
-        self.get_sql_in()
-        true_sql_in = []
-        if self.sql_in != []:
-            for sqli in self.sql_in:  # 进行注入测试
-                s = Sql(sqli)
-                url = s.waf_scan()
-                if url:
-                    true_sql_in.append(url)
-        return true_sql_in
+        s = Sql(self.url_set)
+        s.run()
+
 
 
 def main():
