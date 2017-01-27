@@ -2,6 +2,12 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
+
+from lib.sqltest import Sql
+from lib.sendir import Sendir
+from lib.subdomain import Domain
+from lib.xss import Xss
+from lib.port import Port
 import sys
 import getopt
 import socket
@@ -11,9 +17,6 @@ from urllib.parse import urlparse
 import threading
 import queue
 import time
-from sqltest import Sql
-from sendir import Sendir
-from subdomain import Domain
 
 
 class SiteScan:
@@ -25,7 +28,6 @@ class SiteScan:
         self.version = '0.6'
         self.url_set = []
         self.sitemap = []
-        self.sql_in = []
         self.q = queue.Queue(0)
 
     @staticmethod
@@ -34,16 +36,23 @@ class SiteScan:
 
     def run(self):
         try:
+            print(''' ____  _ _       ____''')
+            print('''/ ___|(_) |_ ___/ ___|  ___ __ _ _ __''')
+            print('''\___ \| | __/ _ \___ \ / __/ _` | '_  \\''')
+            print(''' ___) | | ||  __/___) | (_| (_| | | | |''')
+            print('''|____/|_|\__\___|____/ \___\__,_|_| |_|''')
+
             opts, args = getopt.getopt(sys.argv[1:], "hu:c:", ["help", "version"])
             for op, value in opts:
                 if op in ('--help', '-h'):
-                    print('#' + '-'*60 + '#')
+                    print('\n#' + '-'*60 + '#')
                     print('  This tool help get the basic information of one site')
-                    print('\t Such as ip, build_language, server_info')
+                    print('\t Such as ip, build_language, server_info and can find')
+                    print('\t some simple vulnerabilities')
                     print('\t\t written by Jason_Sheh')
                     print('#' + '-'*60 + '#')
                     print('  -h or --help : help you know how to use this tool')
-                    print('  -c : crawl the site to get the sitemap')
+                    print('  -c : crawl the site and try to find vulnerabilities')
                 elif op == '--version':
                     print('Current version is ' + self.version)
                 elif op == '-c':
@@ -51,7 +60,7 @@ class SiteScan:
                     self.init()
                     self.get_ip()
                     self.get_server()
-                    self.site_crawl()
+                    self.site_scan()
                     
         except getopt.GetoptError as e:
             print(e)
@@ -59,15 +68,16 @@ class SiteScan:
             sys.exit(1)
 
     def init(self):
-        if not self.target.startswith('http://') or self.target.startswith('https://'):
+        if not self.target.startswith('http://') or not self.target.startswith('https://'):
             self.target = 'http://' + self.target
         if self.target.endswith('/'):
             self.target = self.target[:-1]
+            # format http://example.com
 
     def get_ip(self):
         try:
             target = self.target[7:]
-            self.ip = socket.gethostbyname(target)  # get ip
+            self.ip = socket.gethostbyname(target)  # get ip address
             print('\n Ip address: ' + self.ip)
         except Exception as e:
             print(e)
@@ -85,22 +95,18 @@ class SiteScan:
         except Exception as e:
             print(e)
 
-    # return all url in the page
+    # return all url in one page
     @staticmethod
     def conn(target):  # get url in one page
         try:
-            r = requests.get(target)
+            r = requests.get(target, timeout=1)
             pattern_1 = re.compile(r'href="(.*?)"')
+            pattern_2 = re.compile(r'src="(.*?)"')
             res = re.findall(pattern_1, r.text)
+            res += re.findall(pattern_2, r.text)
             return res
         except:
             return []
-
-    '''def get_dir(self, res):  # this should be used later
-        res_path = []
-        for url in res:
-            res_path.append(urlparse(url).path.rsplit('/', 1)[0])
-        res_path = list(set(res_path))'''
 
     def get_url(self, res):
         res = list(set(res))
@@ -110,12 +116,15 @@ class SiteScan:
             # print(url)
             if url.startswith('http') and not url.startswith(self.target):
                 continue
-            for i in ['javascript:', '(', '.css', '.jpg', '.png', '.pdf', '.xls', '.doc']:
+            for i in ['javascript:', '(', '.css', '.jpg', '.png', '.pdf',
+                      '.xls', '.doc', '.rar', '.ico', '.ppt', '.pptx', ':']:
                 if i in url:
                     _quit = 1
                     break
             if _quit:
                 continue
+            if url.startswith('..'):
+                url = url[2:]
             if not url.startswith('/') and not url.startswith('http:') and not url.startswith('www'):
                 url = '/' + url
             if '/' in url and not url.startswith('http:'):
@@ -126,14 +135,6 @@ class SiteScan:
         new_url = list(set(new_url))
         return new_url
 
-    def site_sort(self):
-        for i in range(0, len(self.sitemap)):
-            for j in range(i+1, len(self.sitemap)):
-                if self.sitemap[i] > self.sitemap[j]:
-                    temp = self.sitemap[i]
-                    self.sitemap[i] = self.sitemap[j]
-                    self.sitemap[j] = temp
-
     def crawler(self):
         while not self.q.empty():
             if self.q.qsize() != 0:
@@ -142,44 +143,51 @@ class SiteScan:
             url = self.q.get()
             try:
                 new_res = self.conn(url)
+                res = self.get_url(new_res)
             except Exception as e:
                 print(e)
                 continue
-            res = self.get_url(new_res)
             for i in res:
-                # print(i)
                 if i not in self.url_set:
                     self.url_set.append(i)
                     # self.q.put(i)
-                if ('?' in i) and (i.split('?')[0] not in self.sitemap):
-                    self.sitemap.append(i.split('?')[0])
+
+                if ('?' in i) and (urlparse(i).path.split('?')[0] not in self.sitemap):
+                    self.sitemap.append(urlparse(i).path.split('?')[0])
                     self.q.put(i)
                     # print(i)
-                elif i.rsplit('/', 1)[0] not in self.sitemap:
-                    self.sitemap.append(i.rsplit('/', 1)[0])
+                elif urlparse(i).path.rsplit('/', 1)[0] == '' and urlparse(i).path not in self.sitemap:
+                    self.sitemap.append(urlparse(i).path)
                     self.q.put(i)
-            self.url_set = list(set(self.url_set))
-            self.sitemap = list(set(self.sitemap))
+                    # print(i)
+                elif urlparse(i).path.rsplit('/', 1)[0] not in self.sitemap:  # 伪静态
+                    self.sitemap.append(urlparse(i).path.rsplit('/', 1)[0])
+                    self.q.put(i)
+                    # print(i)
+                '''elif i.rsplit('/', 1)[0] not in self.sitemap:
+                    self.sitemap.append(i.rsplit('/', 1)[0])
+                    self.q.put(i)'''
+
             time.sleep(0.1)
 
     # almost done need improved
-    def site_crawl(self):
+    def crawl(self):
         res = self.conn(self.target)
         res = self.get_url(res)
         if res == []:
-            res.append(self.target + '/index.php')
+            res = self.conn(self.target + '/index.php')
+            res = self.get_url(res)
         for i in res:
             self.url_set.append(i)
-            if ('?' in i) and (i.split('?')[0] not in self.sitemap):
-                self.sitemap.append(i.split('?')[0])
-                self.q.put(i)
+            if ('?' in i) and (urlparse(i).path.split('?')[0] not in self.sitemap):
+                self.sitemap.append(urlparse(i).path.split('?')[0])
                 # print(i)
-            elif i.rsplit('/', 1)[0] not in self.sitemap:
-                self.sitemap.append(i.rsplit('/', 1)[0])
-                self.q.put(i)
+            elif urlparse(i).path.rsplit('/', 1)[0] == [] and urlparse(i).path not in self.sitemap:
+                self.sitemap.append(urlparse(i).path)
+                # print(i)
+            elif urlparse(i).path.rsplit('/', 1)[0] not in self.sitemap:  # 伪静态
+                self.sitemap.append(urlparse(i).path.rsplit('/', 1)[0])
             self.q.put(i)
-
-        # print(self.sitemap)
 
         t1 = time.time()
 
@@ -196,21 +204,31 @@ class SiteScan:
 
         t2 = time.time()
 
-        print('\n\nTotal time: \n' + str(t2-t1))
+        print('\n\n扫描链接总数:' + str(len(self.url_set)))
+        print('Total time: \n' + str(t2-t1))
 
-        self.site_sort()
+        self.sitemap.sort()
 
         print("\n目录结构")
-        with open('res.txt', 'w+') as file:
+        for url in self.sitemap:
+            print(url)
+
+        '''with open('res.txt', 'w+') as file:
             file.write('direction:\n\n')
             for url in self.sitemap:
                 print(url)
-                file.write(url + '\n')
+                file.write(url + '\n')'''
 
-        # 以下不需要多线程
-        self.sqltest()  # here test the sql injection
-        # self.sensitive_dir()
-        self.subdomain()
+    def site_scan(self):
+        self.crawl()
+
+        # 漏洞测试
+        self.sql_test()  # here test the sql injection
+        self.xss_test()
+        self.sensitive_dir()
+        self.port_test()
+        self.sub_domain()
+
 
     # get whois info
     # not work now
@@ -234,14 +252,21 @@ class SiteScan:
         s = Sendir(self.target)
         s.run()
 
-    def subdomain(self):
+    def sub_domain(self):
         s = Domain(self.target)
         s.run()
 
-    def sqltest(self):
+    def sql_test(self):
         s = Sql(self.url_set)
         s.run()
 
+    def xss_test(self):
+        s = Xss(self.url_set)
+        s.run()
+
+    def port_test(self):
+        s = Port(self.ip)
+        s.run()
 
 
 def main():
