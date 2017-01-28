@@ -77,11 +77,13 @@
 /test2.html
 /test.txt
 /test2.txt
+/_
 /1.txt
 /debug.php
 /t.php
 /i.php
 /upload
+/ipload.rar
 /upload.php
 /upload.do
 /upload.jsp
@@ -92,6 +94,7 @@
 /uploadify
 /jmx-console/
 /jmx-console/HtmlAdaptor
+/axis2/
 /cacti/
 /cacti/cacti.sql
 /zabbix/

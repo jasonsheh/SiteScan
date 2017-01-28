@@ -10,12 +10,12 @@ class Port:
         self.ip = ip
 
     def run(self):
-        print('端口扫描...\n')
+        print('端口扫描...')
         nm = nmap.PortScanner()
         nm.scan(self.ip, arguments='-Pn')
 
         for host in nm.all_hosts():
-            print('----------------------------------------------------')
+            print('--------------------------------------------------')
             print('Host : %s (%s)' % (host, nm[host].hostname()))
             print('State : %s' % nm[host].state())
             for proto in nm[host].all_protocols():
