@@ -77,7 +77,6 @@
 /test2.html
 /test.txt
 /test2.txt
-/_
 /1.txt
 /debug.php
 /t.php

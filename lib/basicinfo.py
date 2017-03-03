@@ -4,6 +4,7 @@
 
 import socket
 import requests
+from urllib.parse import urlparse
 
 
 class Info:
@@ -11,29 +12,34 @@ class Info:
         self.target = target
         self.ip = ''
         self.server = ''
-        self.language = ''
 
     def get_ip(self):
         try:
-            target = self.target[7:]
-            self.ip = socket.gethostbyname(target)  # get ip address
-            print('\n Ip address: ' + self.ip)
+            ip = socket.gethostbyname(urlparse(self.target).netloc)  # get ip address
+            self.ip = ip
+            print('获取ip: ' + self.ip)
         except Exception as e:
             print(e)
+            # print(target)
 
     def get_server(self):
         try:
             r = requests.get(self.target)
-            self.server = r.headers['Server']
-            print(' HostName:' + self.server)
-            if 'X-Powered-By' in r.headers:
-                self.language = r.headers['X-Powered-By']  # get language
-                print(' ' + self.language)
+
+            if 'Server' in r.headers:
+                self.server = (r.headers['Server'])
+            else:
+                self.server = 'unknown'
+
+            print('获取服务器信息 ' + self.server)
+
+        except requests.exceptions.ConnectionError:
+            print('连接错误')
         except Exception as e:
             print(e)
+            # print(target)
 
     def run(self):
         self.get_ip()
         self.get_server()
-        return self.ip, self.language, self.server
-
+        return self.ip, self.server

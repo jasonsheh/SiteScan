@@ -2,6 +2,7 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
+import json
 import sys
 import requests
 import threading
@@ -15,9 +16,10 @@ class Domain:
     def __init__(self, target):
         self.target = target
         self.q = queue.Queue(0)
-        self.thread_num = 15
+        self.thread_num = 10
         self.ip = []
         self.domain = []
+        self.domains = {}
 
     def init(self):
         if self.target.startswith('http://www.'):
@@ -31,26 +33,50 @@ class Domain:
 
     def run(self):
         self.init()
-        print('\ni.links.cn子域名查询')
-        self.search()
+        self.ilink()
         if not self.domain:
+            self.chaxunla()
+        elif not self.domain or len(self.domain) < 3:
             self.brute()
-        return self.domain
+        self.get_ip()
+        return self.domains
 
-    def search(self):
+    def ilink(self):
+        print('\nilink子域名查询')
         url = 'http://i.links.cn/subdomain/'
         data = {'domain': self.target, 'b2': '1', 'b3': '1', 'b4': '1'}
-        r = requests.post(url, data=data)
-        pattern = re.compile('<div class=domain><input.*?value="(.*?)">')
-        self.domain = re.findall(pattern, r.text)
-        for domain in self.domain:
-            print(domain)
+        try:
+            r = requests.post(url, data=data)
+            pattern = re.compile('<div class=domain><input.*?value="(.*?)">')
+            self.domain = re.findall(pattern, r.text)
+            '''for domain in self.domain:
+                print(domain)'''
+        except requests.exceptions.ConnectionError:
+            self.domain = []
+
+    def chaxunla(self):
+        print('\nchaxunla子域名查询')
+        url = 'http://api.chaxun.la/toolsAPI/getdomain/'
+        data = {'k': 'www.' + self.target, 'action': 'moreson'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+        r = requests.post(url, data=data, headers=headers)
+        url = json.loads(r.text)
+        if url['status'] == 0:
+            print('域名流量太小或者域名错误')
+            self.domain = []
+        elif url['status'] == 3:
+            print('请求次数过多')
+            self.domain = []
+        else:
+            list = url['data']
+            for domain in list:
+                self.domain.append('http://'+domain['domain'])
 
     def brute(self):
         t1 = time.time()
         try:
             print('\n子域名爆破...')
-            with open('dict/domain.txt', 'r') as dirt:
+            with open('./dict/domain.txt', 'r') as dirt:
                 for i in dirt:
                     self.q.put(i.strip())
 
@@ -63,7 +89,6 @@ class Domain:
 
             for item in threads:
                 item.join()
-            print('\n')
 
         except KeyboardInterrupt as e:
             print('\n')
@@ -71,7 +96,7 @@ class Domain:
 
         t2 = time.time()
 
-        print('\nTotal time: \n' + str(t2 - t1))
+        print('\nTotal time: ' + str(t2 - t1) + '\n')
 
     def _brute(self):
         while not self.q.empty():
@@ -92,11 +117,25 @@ class Domain:
             except:
                 continue
 
+    def get_ip(self):
+        for domain in self.domain:
+            try:
+                if domain.startswith('http://'):
+                    ip = socket.gethostbyname(domain[7:])
+                else:
+                    ip = socket.gethostbyname(domain)
+                self.domains[domain] = ip
+            except:
+                continue
+
+        for domain, ip in self.domains.items():
+            print(domain+': '+ip)
+
 
 def main():
-    target = input('请输入域名:')
-    s = Domain(target)
-    s.run()
+    s = Domain(target="www.xyhcms.com")
+    domain = s.run()
+    return domain
 
 if __name__ == '__main__':
     main()
