@@ -3,6 +3,7 @@
 # -*- coding:utf-8 -*-
 
 import json
+import dns.resolver
 import sys
 import requests
 import threading
@@ -16,7 +17,7 @@ class Domain:
     def __init__(self, target):
         self.target = target
         self.q = queue.Queue(0)
-        self.thread_num = 10
+        self.thread_num = 15
         self.ip = []
         self.domain = []
         self.domains = {}
@@ -30,15 +31,17 @@ class Domain:
             self.target = self.target[7:]
         elif self.target.startswith('https://'):
             self.target = self.target[8:]
+        elif self.target.startswith('www.'):
+            self.target = self.target[4:]
 
     def run(self):
         self.init()
-        self.ilink()
-        if not self.domain:
-            self.chaxunla()
-        elif not self.domain or len(self.domain) < 3:
-            self.brute()
-        self.get_ip()
+        # self.ilink()
+        # if not self.domain:
+        # self.chaxunla()
+        # elif not self.domain or len(self.domain) < 3:
+        self.brute()
+        self.output()
         return self.domains
 
     def ilink(self):
@@ -47,7 +50,7 @@ class Domain:
         data = {'domain': self.target, 'b2': '1', 'b3': '1', 'b4': '1'}
         try:
             r = requests.post(url, data=data)
-            pattern = re.compile('<div class=domain><input.*?value="(.*?)">')
+            pattern = re.compile('<div class=domain><input.*?value="http://(.*?)">')
             self.domain = re.findall(pattern, r.text)
             '''for domain in self.domain:
                 print(domain)'''
@@ -63,30 +66,46 @@ class Domain:
         url = json.loads(r.text)
         if url['status'] == 0:
             print('域名流量太小或者域名错误')
-            self.domain = []
         elif url['status'] == 3:
             print('请求次数过多')
-            self.domain = []
         else:
             list = url['data']
             for domain in list:
-                self.domain.append('http://'+domain['domain'])
+                self.domain.append(domain['domain'])
+
+    def domain_dict(self):
+        with open('../dict/domain.txt', 'r') as dirt:
+            for i in dirt:
+                self.q.put(i.strip())
+
+    def sub_domain_dict(self):
+        with open('../dict/sub_domain.txt', 'r') as dirt:
+            for i in dirt:
+                self.q.put(i.strip())
 
     def brute(self):
         t1 = time.time()
         try:
             print('\n子域名爆破...')
-            with open('./dict/domain.txt', 'r') as dirt:
-                for i in dirt:
-                    self.q.put(i.strip())
-
+            self.domain_dict()
             threads = []
             for i in range(int(self.thread_num)):
                 t = threading.Thread(target=self._brute)
                 threads.append(t)
             for item in threads:
                 item.start()
+            for item in threads:
+                item.join()
 
+            print('\n二级子域名爆破...')
+            self.domain = list(self.domains.values())
+            self.sub_domain_dict()
+            threads = []
+            for i in range(int(self.thread_num)):
+                t = threading.Thread(target=self.sub_brute)
+                threads.append(t)
+            for item in threads:
+                item.start()
             for item in threads:
                 item.join()
 
@@ -102,38 +121,53 @@ class Domain:
         while not self.q.empty():
             dom = self.q.get()
             url = dom + '.' + self.target
-            sys.stdout.write('# 剩余子域名个数' + str(self.q.qsize()) + '\r')
-            sys.stdout.flush()
+
             try:
-                ip = socket.gethostbyname(url)
-                # A = dns.resolver.query(url)
+                # ip = socket.gethostbyname(url)
+                answers = dns.resolver.query(url)
+                if answers:
+                    ips = [answer.address for answer in answers]
+
                 # r = requests.get(url, timeout=0.1, allow_redirects=False)
                 # if r.status_code == 200:
-                if ip not in self.ip:
-                    self.ip.append(ip)
-                    self.domain.append('http://'+url)
-                    print(url + '\t\t'+ip)
-                    time.sleep(0.1)
+                    for ip in ips:
+                        if ip in ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204']:
+                            continue
+                        if ip not in self.domains.keys():
+                            self.domains[ip] = url
+                            print(url + '\t\t' + ip)
+                            time.sleep(0.1)
             except:
                 continue
 
-    def get_ip(self):
-        for domain in self.domain:
-            try:
-                if domain.startswith('http://'):
-                    ip = socket.gethostbyname(domain[7:])
-                else:
-                    ip = socket.gethostbyname(domain)
-                self.domains[domain] = ip
-            except:
-                continue
+    def sub_brute(self):
+        while not self.q.empty():
+            dom = self.q.get()
+            for target in self.domain:
+                url = dom + '.' + target
+                print(url)
+                try:
+                    answers = dns.resolver.query(url)
+                    if answers:
+                        ips = [answer.address for answer in answers]
 
-        for domain, ip in self.domains.items():
-            print(domain+': '+ip)
+                        for ip in ips:
+                            if ip in ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204']:
+                                continue
+                            if ip not in self.domains.keys():
+                                self.domains[ip] = url
+                                print(url + '\t\t' + ip)
+                                time.sleep(0.1)
+                except:
+                    continue
+
+    def output(self):
+        for ip, url in sorted(self.domains.items()):
+            print('%s:\t%s' % (url, ip))
 
 
 def main():
-    s = Domain(target="www.xyhcms.com")
+    s = Domain(target="www.baidu.com")
     domain = s.run()
     return domain
 

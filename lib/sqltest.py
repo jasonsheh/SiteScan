@@ -82,7 +82,7 @@ class Sql:
                         self._waf(conn)
                     else:
                         return False
-                    if not (50 > len(conn1.content)-len(conn.content) > -50) and self.waf == '':
+                    if not (90 > len(conn1.content)-len(conn.content) > -90) and self.waf == '':
                         #print(len(conn1.content)-len(conn.content))
                         print('\n'+value)
                         return self.target

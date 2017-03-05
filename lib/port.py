@@ -12,8 +12,8 @@ class Port:
         self.nm = nmap.PortScanner()
 
     def scan(self):
-        print('端口扫描...')
-        self.nm.scan(self.ip, arguments='-sT -sV -p 1-65535 -P0 -A')
+        print('\n端口扫描...')
+        self.nm.scan(self.ip, arguments='-sV -p 21,80,443,3306,3389,6379,7001,8080,9080,27017')
 
         for host in self.nm.all_hosts():
             '''print('--------------------------------------------------')
@@ -34,6 +34,10 @@ class Port:
 
     def analysis(self, host, proto, ports):
         for port in ports:
+            if port == 21 and self.nm[host][proto][port]['state'] == 'open':
+                print('ftp open')
+            if port == 80 and self.nm[host][proto][port]['state'] == 'open':
+                print('http open')
             if port == 3306 and self.nm[host][proto][port]['state'] == 'open':
                 print('mysql open')
             if port == 6379 and self.nm[host][proto][port]['state'] == 'open':
@@ -52,5 +56,5 @@ class Port:
         # return self.nm
 
 if __name__ == '__main__':
-    s = Port(ip='120.55.238.246')
+    s = Port(ip='180.97.161.177')
     s.run()

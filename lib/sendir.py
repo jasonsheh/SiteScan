@@ -19,8 +19,8 @@ class Sendir:
     def dirt(self):
         while not self.q.empty():
             try:
-                sys.stdout.write('# 剩余目录个数' + str(self.q.qsize()) + '\r')
-                sys.stdout.flush()
+                '''sys.stdout.write('# 剩余目录个数' + str(self.q.qsize()) + '\r')
+                sys.stdout.flush()'''
                 _dir = self.q.get()
                 url = self.target + _dir
                 r = requests.get(url, timeout=1, allow_redirects=False)
