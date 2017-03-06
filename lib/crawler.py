@@ -72,21 +72,6 @@ class Crawler:
         driver.quit()
         return res
 
-    '''def static_conn(self, target):  # get url in one page
-        """
-        静态
-        连接,返回所有链接
-        :param target:
-        :return:
-        """
-        _res = []
-        r = self.dynamic(target)
-        pattern = re.compile(r'href="(.*?)"')
-        res = re.findall(pattern, r)
-        for m in res:
-            _res.append(m)
-        return _res'''
-
     def get_url(self, res):
         """
         提取页面中可爬取的链接
@@ -157,30 +142,11 @@ class Crawler:
                 self.url_rule.append(rule)
                 self.sitemap.append(urlparse(i).path)
 
-            '''if ('?' in i) and (urlparse(i).path.split('?')[0] not in self.sitemap):
-                self.sitemap.append(urlparse(i).path.split('?')[0])
-                self.urls.append(i)
-                self.q.put(i)
-                # print(i)
-            elif urlparse(i).path.rsplit('/', 1)[0] == '' and urlparse(i).path not in self.sitemap:
-                self.sitemap.append(urlparse(i).path)
-                self.urls.append(i)
-                self.q.put(i)
-                # print(i)
-            elif urlparse(i).path.rsplit('/', 1)[0] not in self.sitemap:  # 伪静态
-                self.sitemap.append(urlparse(i).path.rsplit('/', 1)[0])
-                self.urls.append(i)
-                self.q.put(i)
-                # print(i)'''
-
         list(set(self.sitemap))
         list(set(self.urls))
 
     def crawler(self):
         while not self.q.empty():
-            sys.stdout.write('# 剩余链接个数' + str(self.q.qsize()) + ' 爬取总数' + str(len(self.url_set)) + '\r')
-            sys.stdout.flush()
-
             url = self.q.get()
             #try:
             new_res = self.dynamic_conn(url)
@@ -194,12 +160,7 @@ class Crawler:
 
     # almost done need improved
     def run(self):
-        print('扫描开始')
         res = self.dynamic_conn(self.target)
-        '''for url in res:
-            if 'https://' in url:
-                self.target = 'https://' + self.target[7:]
-                break'''
 
         res = self.get_url(res)
         if not res:
@@ -207,16 +168,6 @@ class Crawler:
             res = self.get_url(res)
 
         self.filter(res)
-
-        '''if ('?' in i) and (urlparse(i).path.split('?')[0] not in self.sitemap):
-            self.sitemap.append(urlparse(i).path.split('?')[0])
-            # print(i)
-        elif urlparse(i).path.rsplit('/', 1)[0] == [] and urlparse(i).path not in self.sitemap:
-            self.sitemap.append(urlparse(i).path)
-            # print(i)
-        elif urlparse(i).path.rsplit('/', 1)[0] not in self.sitemap:  # 伪静态
-            self.sitemap.append(urlparse(i).path.rsplit('/', 1)[0])
-        self.q.put(i)'''
 
         threads = []
         for i in range(int(self.thread_num)):
@@ -235,11 +186,6 @@ class Crawler:
             print(url)
 
         # print(len(self.urls))
-
-        '''self.sitemap.sort()
-        print("\n目录结构")
-        for url in self.sitemap:
-            print(url)'''
 
         return self.url_set, self.urls
 

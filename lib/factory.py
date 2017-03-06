@@ -14,8 +14,8 @@ import time
 
 
 class SiteScan:
-    def __init__(self, args):
-        self.target = args.domain
+    def __init__(self, target):
+        self.target = target
         self.ip = ''
         self.domains = {}
         self.server = ''
@@ -43,9 +43,10 @@ class SiteScan:
         self.basic_info()
         # 漏洞测试
         self.site_crawl()
-        self.sql_test()  # here test the sql injection
-        self.xss_test()
-        self.struts2()
+        if self.url_set:
+            self.sql_test()  # here test the sql injection
+            self.xss_test()
+            self.struts2()
         self.sensitive_dir()
         self.port_test()
         # self.sub_domain()
@@ -69,18 +70,14 @@ class SiteScan:
         s = Xss(self.urls)
         self.xss = s.run()
 
-    def sensitive_dir(self):
-        s = Sendir(self.target)
-        self.sensitive = s.run()
-
     def struts2(self):
         s = Struts2(self.urls)
         s.run()
 
     def port_test(self):
-        s = Port(self.target)
+        s = Port(self.ip)
         s.run()
 
-    def sub_domain(self):
-        s = Domain(self.target)
-        self.domains = s.run()
+    def sensitive_dir(self):
+        s = Sendir(self.target)
+        self.sensitive = s.run()

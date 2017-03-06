@@ -3,8 +3,14 @@
 # -*- coding:utf-8 -*-
 
 from lib.factory import SiteScan
+from lib.subdomain import Domain
 
 import argparse
+
+
+def sub_domain(url):
+    s = Domain(url)
+    return s.run()
 
 
 def main():
@@ -22,8 +28,11 @@ def main():
     print('''|____/|_|\__\___|____/ \___\__,_|_| |_|''')
     print('\t\t written by Jason_Sheh')
 
-    s = SiteScan(args)
-    s.site_scan()
+    urls = sub_domain(args.domain)
+
+    for url in urls:
+        s = SiteScan(url)
+        s.site_scan()
 
 if __name__ == '__main__':
     main()

@@ -41,8 +41,8 @@ class Domain:
         # self.chaxunla()
         # elif not self.domain or len(self.domain) < 3:
         self.brute()
-        self.output()
-        return self.domains
+        # self.output()
+        return list(set(self.domains.values()))
 
     def ilink(self):
         print('\nilink子域名查询')
@@ -74,19 +74,19 @@ class Domain:
                 self.domain.append(domain['domain'])
 
     def domain_dict(self):
-        with open('../dict/domain.txt', 'r') as dirt:
+        with open('D://tools/python/SiteScan/dict/domain.txt', 'r') as dirt:
             for i in dirt:
                 self.q.put(i.strip())
 
     def sub_domain_dict(self):
-        with open('../dict/sub_domain.txt', 'r') as dirt:
+        with open('D://tools/python/SiteScan/dict/sub_domain.txt', 'r') as dirt:
             for i in dirt:
                 self.q.put(i.strip())
 
     def brute(self):
         t1 = time.time()
         try:
-            print('\n子域名爆破...')
+            print('子域名爆破...')
             self.domain_dict()
             threads = []
             for i in range(int(self.thread_num)):
@@ -97,8 +97,8 @@ class Domain:
             for item in threads:
                 item.join()
 
-            print('\n二级子域名爆破...')
-            self.domain = list(self.domains.values())
+            print('二级子域名爆破...')
+            self.domain = list(set(self.domains.values()))
             self.sub_domain_dict()
             threads = []
             for i in range(int(self.thread_num)):
@@ -123,7 +123,6 @@ class Domain:
             url = dom + '.' + self.target
 
             try:
-                # ip = socket.gethostbyname(url)
                 answers = dns.resolver.query(url)
                 if answers:
                     ips = [answer.address for answer in answers]
@@ -135,7 +134,7 @@ class Domain:
                             continue
                         if ip not in self.domains.keys():
                             self.domains[ip] = url
-                            print(url + '\t\t' + ip)
+                            print(url + '\t' + ip)
                             time.sleep(0.1)
             except:
                 continue
@@ -145,7 +144,6 @@ class Domain:
             dom = self.q.get()
             for target in self.domain:
                 url = dom + '.' + target
-                print(url)
                 try:
                     answers = dns.resolver.query(url)
                     if answers:
@@ -156,7 +154,7 @@ class Domain:
                                 continue
                             if ip not in self.domains.keys():
                                 self.domains[ip] = url
-                                print(url + '\t\t' + ip)
+                                print(url + '\t' + ip)
                                 time.sleep(0.1)
                 except:
                     continue
@@ -167,7 +165,7 @@ class Domain:
 
 
 def main():
-    s = Domain(target="www.baidu.com")
+    s = Domain(target="smartisan.com")
     domain = s.run()
     return domain
 
