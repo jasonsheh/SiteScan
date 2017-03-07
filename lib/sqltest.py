@@ -100,7 +100,7 @@ class Sql:
         self.targets = sql_in
 
     def run(self):
-        print("\n检测SQL注入:")
+        print("\n# 检测SQL注入:")
         results = []
         self.get_sql_in()
         for target in self.targets:

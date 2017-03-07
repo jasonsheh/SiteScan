@@ -179,7 +179,7 @@ class Crawler:
         for item in threads:
             item.join()
 
-        print('\n\n扫描链接总数:' + str(len(self.url_set)))
+        print('\n# 扫描链接总数:' + str(len(self.url_set)))
 
         self.urls.sort()
         for url in self.urls:

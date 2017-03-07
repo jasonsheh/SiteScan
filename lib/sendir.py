@@ -33,7 +33,7 @@ class Sendir:
     def run(self):
         try:
             r = requests.get(self.target, timeout=1, allow_redirects=False)
-            print('\n检测敏感目录...')
+            print('\n# 检测敏感目录...')
             # headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
             # with open('res.txt', 'w+') as file:
                 # file.write('sensitive direction:\n\n')

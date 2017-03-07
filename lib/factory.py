@@ -9,8 +9,6 @@ from lib.sendir import Sendir
 from lib.xss import Xss
 from lib.struts2 import Struts2
 from lib.port import Port
-from lib.subdomain import Domain
-import time
 
 
 class SiteScan:
@@ -38,8 +36,8 @@ class SiteScan:
         # r = requests.get(self.target)
 
     def site_scan(self):
-        t1 = time.time()
         self.init()
+        print('--------------------------------------------------')
         self.basic_info()
         # 漏洞测试
         self.site_crawl()
@@ -49,10 +47,6 @@ class SiteScan:
             self.struts2()
         self.sensitive_dir()
         self.port_test()
-        # self.sub_domain()
-
-        t2 = time.time()
-        print('\nTotal time: ' + str(t2 - t1))
 
     def basic_info(self):
         s = Info(self.target)

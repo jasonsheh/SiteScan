@@ -41,7 +41,7 @@ class Xss:
                 return False
 
     def run(self):
-        print("\n检测XSS:")
+        print("\n# 检测XSS:")
         results = []
         # self.get_xss()
         for target in self.targets:
