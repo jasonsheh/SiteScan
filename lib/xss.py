@@ -4,36 +4,34 @@
 
 import requests
 import re
-from urllib.parse import urlparse
 
 
 class Xss:
     def __init__(self, targets):
         self.targets = targets
         self.target = ''
-        self.payload = ['<img src=1 onerror=alert(1);>',
+        self.payload = ['"/><img src=# onerror=alert(1);>',
                         "><body onload=alert(1)>",
-                        "</script><script>alert(1);</script>",
-                        "<ScRiPt >alert(1);</ScRiPt>",
-                        "eval(%26%23x27 alert(1)%26%23x27);void",
-                        "/><script>alert(1);</script><!--"]
+                        "/></script><ScRiPt>alert(1);<ScRiPt><!--"]
 
     def _scan(self):
         try:
-            r = requests.get(self.target)
+            r = requests.get(self.target, timeout=2)
             # print('get')
-        except:
-            r = requests.post(self.target)
-            # print('post')
+        except requests.exceptions.ConnectionError:
+            return False
+        except requests.exceptions.TooManyRedirects:
+            return False
+        except requests.exceptions.ReadTimeout:
+            return False
         pattern = re.compile('<input.*?type="text".*?name=[\'|\"](.*?)[\'|\"].*?')
         names = re.findall(pattern, r.text)
-        if names:
-            for name in names:
+        for name in names:
+            for payload in self.payload:
                 try:
-                    for payload in self.payload:
-                        r = requests.post(self.target, data={name: payload})
-                        if payload in r.text:
-                            return self.target
+                    r = requests.post(self.target, data={name: payload}, timeout=2)
+                    if payload in r.text:
+                        return self.target
                 except ConnectionResetError:
                     print('连接中断')
                     break
@@ -41,43 +39,22 @@ class Xss:
                     print(e)
                     continue
                 return False
-        else:
-            return False
-
-    def get_xss(self):
-        xss_test = []
-        _xss = []
-
-        for url in self.targets:
-            if ('?' in url) and (url.split('?')[0] not in xss_test):
-                xss_test.append(url.split('?')[0])
-                _xss.append(url)
-            elif urlparse(url).path.rsplit('/', 1)[0] == [] and urlparse(url).path not in xss_test:
-                xss_test.append(urlparse(url).path)
-                _xss.append(url)
-            elif url.rsplit('/', 1)[0] not in xss_test:
-                xss_test.append(url.rsplit('/', 1)[0])
-                _xss.append(url)
-
-        self.targets = _xss
 
     def run(self):
-        print("\n检测XSS:")
+        print("\n# 检测XSS:")
         results = []
-        self.get_xss()
+        # self.get_xss()
         for target in self.targets:
             self.target = target
             result = self._scan()
             if result:
                 print('可能存在漏洞; ' + result)
                 results += result
-        if not results:
-            print('可能不存在漏洞')
         return results
 
 
 def main():
-    target = input('请输入测试网址:')
+    target = ['http://xss-quiz.int21h.jp/']
     s = Xss(target)
     s.run()
 

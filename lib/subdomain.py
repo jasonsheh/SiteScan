@@ -2,6 +2,9 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
+import json
+import dns.resolver
+from urllib.parse import urlparse
 import sys
 import requests
 import threading
@@ -18,6 +21,7 @@ class Domain:
         self.thread_num = 15
         self.ip = []
         self.domain = []
+        self.domains = {}
 
     def init(self):
         if self.target.startswith('http://www.'):
@@ -28,42 +32,86 @@ class Domain:
             self.target = self.target[7:]
         elif self.target.startswith('https://'):
             self.target = self.target[8:]
+        elif self.target.startswith('www.'):
+            self.target = self.target[4:]
 
     def run(self):
         self.init()
-        print('\ni.links.cn子域名查询')
-        self.search()
-        if not self.domain:
-            self.brute()
-        return self.domain
+        self.ilink()
+        # if not self.domain:
+        # self.chaxunla()
+        # elif not self.domain or len(self.domain) < 3:
+        self.brute()
+        self.output()
+        return list(set(self.domains.values()))
 
-    def search(self):
+    def ilink(self):
+        print('\nilink子域名查询')
         url = 'http://i.links.cn/subdomain/'
         data = {'domain': self.target, 'b2': '1', 'b3': '1', 'b4': '1'}
-        r = requests.post(url, data=data)
-        pattern = re.compile('<div class=domain><input.*?value="(.*?)">')
-        self.domain = re.findall(pattern, r.text)
-        for domain in self.domain:
-            print(domain)
+        try:
+            r = requests.post(url, data=data)
+            pattern = re.compile('<div class=domain><input.*?value="http://(.*?)">')
+            self.domain = re.findall(pattern, r.text)
+            for domain in self.domain:
+                ip = socket.gethostbyname(domain)
+                self.domains[ip] = domain
+        except requests.exceptions.ConnectionError:
+            self.domain = []
+        except Exception as e:
+            print(e)
+
+    def chaxunla(self):
+        print('\nchaxunla子域名查询')
+        url = 'http://api.chaxun.la/toolsAPI/getdomain/'
+        data = {'k': 'www.' + self.target, 'action': 'moreson'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+        r = requests.post(url, data=data, headers=headers)
+        url = json.loads(r.text)
+        if url['status'] == 0:
+            print('域名流量太小或者域名错误')
+        elif url['status'] == 3:
+            print('请求次数过多')
+        else:
+            list = url['data']
+            for domain in list:
+                self.domain.append(domain['domain'])
+
+    def domain_dict(self):
+        with open('D://tools/python/SiteScan/dict/domain.txt', 'r') as dirt:
+            for i in dirt:
+                self.q.put(i.strip())
+
+    def sub_domain_dict(self):
+        with open('D://tools/python/SiteScan/dict/sub_domain.txt', 'r') as dirt:
+            for i in dirt:
+                self.q.put(i.strip())
 
     def brute(self):
         t1 = time.time()
         try:
-            print('\n子域名爆破...')
-            with open('dict/domain.txt', 'r') as dirt:
-                for i in dirt:
-                    self.q.put(i.strip())
-
+            print('子域名爆破...')
+            self.domain_dict()
             threads = []
             for i in range(int(self.thread_num)):
                 t = threading.Thread(target=self._brute)
                 threads.append(t)
             for item in threads:
                 item.start()
-
             for item in threads:
                 item.join()
-            print('\n')
+
+            '''print('二级子域名爆破...')
+            self.domain = list(set(self.domains.values()))
+            self.sub_domain_dict()
+            threads = []
+            for i in range(int(self.thread_num)):
+                t = threading.Thread(target=self.sub_brute)
+                threads.append(t)
+            for item in threads:
+                item.start()
+            for item in threads:
+                item.join()'''
 
         except KeyboardInterrupt as e:
             print('\n')
@@ -71,32 +119,59 @@ class Domain:
 
         t2 = time.time()
 
-        print('\nTotal time: \n' + str(t2 - t1))
+        print('\nTotal time: ' + str(t2 - t1) + '\n')
 
     def _brute(self):
         while not self.q.empty():
             dom = self.q.get()
             url = dom + '.' + self.target
-            sys.stdout.write('# 剩余子域名个数' + str(self.q.qsize()) + '\r')
-            sys.stdout.flush()
+
             try:
-                ip = socket.gethostbyname(url)
-                # A = dns.resolver.query(url)
+                answers = dns.resolver.query(url)
+                if answers:
+                    ips = [answer.address for answer in answers]
+
                 # r = requests.get(url, timeout=0.1, allow_redirects=False)
                 # if r.status_code == 200:
-                if ip not in self.ip:
-                    self.ip.append(ip)
-                    self.domain.append('http://'+url)
-                    print(url + '\t\t'+ip)
-                    time.sleep(0.1)
+                    for ip in ips:
+                        if ip in ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204']:
+                            continue
+                        if ip not in self.domains.keys():
+                            self.domains[ip] = url
+                            # print(url + '\t' + ip)
+                            time.sleep(0.1)
             except:
                 continue
 
+    def sub_brute(self):
+        while not self.q.empty():
+            dom = self.q.get()
+            for target in self.domain:
+                url = dom + '.' + target
+                try:
+                    answers = dns.resolver.query(url)
+                    if answers:
+                        ips = [answer.address for answer in answers]
+
+                        for ip in ips:
+                            if ip in ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204']:
+                                continue
+                            if ip not in self.domains.keys():
+                                self.domains[ip] = url
+                                # print(url + '\t' + ip)
+                                time.sleep(0.1)
+                except:
+                    continue
+
+    def output(self):
+        for ip, url in sorted(self.domains.items()):
+            print('%s:\t%s' % (url, ip))
+
 
 def main():
-    target = input('请输入域名:')
-    s = Domain(target)
-    s.run()
+    s = Domain(target="cqsxdb.com")
+    domain = s.run()
+    return domain
 
 if __name__ == '__main__':
     main()
