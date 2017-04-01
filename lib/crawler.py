@@ -58,6 +58,16 @@ class Crawler:
         except:
             pass
 
+<<<<<<< HEAD
+=======
+        try:
+            frames = driver.find_elements_by_xpath("//iframe[@src]")
+            for frame in frames:
+                res.append(frame.get_attribute("src"))
+        except:
+            pass
+
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         a = driver.find_elements_by_tag_name('a')
         for _a in a:
             res.append(_a.get_attribute("href"))
@@ -141,12 +151,22 @@ class Crawler:
     def crawler(self):
         while not self.q.empty():
             url = self.q.get()
+<<<<<<< HEAD
             #print(url)
+=======
+            #try:
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
             new_res = self.dynamic_conn(url)
             res = self.get_url(new_res)
             if not res:
                 continue
             self.filter(res)
+<<<<<<< HEAD
+=======
+            '''except Exception as e:
+                print(e)
+                continue'''
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
 
     # almost done need improved
     def run(self):

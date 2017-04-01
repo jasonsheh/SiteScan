@@ -4,7 +4,10 @@
 
 import json
 import dns.resolver
+<<<<<<< HEAD
 from urllib.parse import urlparse
+=======
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
 import sys
 import requests
 import threading
@@ -37,12 +40,20 @@ class Domain:
 
     def run(self):
         self.init()
+<<<<<<< HEAD
         self.ilink()
+=======
+        # self.ilink()
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         # if not self.domain:
         # self.chaxunla()
         # elif not self.domain or len(self.domain) < 3:
         self.brute()
+<<<<<<< HEAD
         self.output()
+=======
+        # self.output()
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         return list(set(self.domains.values()))
 
     def ilink(self):
@@ -53,6 +64,7 @@ class Domain:
             r = requests.post(url, data=data)
             pattern = re.compile('<div class=domain><input.*?value="http://(.*?)">')
             self.domain = re.findall(pattern, r.text)
+<<<<<<< HEAD
             for domain in self.domain:
                 ip = socket.gethostbyname(domain)
                 self.domains[ip] = domain
@@ -60,6 +72,12 @@ class Domain:
             self.domain = []
         except Exception as e:
             print(e)
+=======
+            '''for domain in self.domain:
+                print(domain)'''
+        except requests.exceptions.ConnectionError:
+            self.domain = []
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
 
     def chaxunla(self):
         print('\nchaxunla子域名查询')
@@ -98,6 +116,7 @@ class Domain:
                 threads.append(t)
             for item in threads:
                 item.start()
+<<<<<<< HEAD
             for item in threads:
                 item.join()
 
@@ -112,6 +131,22 @@ class Domain:
                 item.start()
             for item in threads:
                 item.join()'''
+=======
+            for item in threads:
+                item.join()
+
+            print('二级子域名爆破...')
+            self.domain = list(set(self.domains.values()))
+            self.sub_domain_dict()
+            threads = []
+            for i in range(int(self.thread_num)):
+                t = threading.Thread(target=self.sub_brute)
+                threads.append(t)
+            for item in threads:
+                item.start()
+            for item in threads:
+                item.join()
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
 
         except KeyboardInterrupt as e:
             print('\n')
@@ -138,7 +173,11 @@ class Domain:
                             continue
                         if ip not in self.domains.keys():
                             self.domains[ip] = url
+<<<<<<< HEAD
                             # print(url + '\t' + ip)
+=======
+                            print(url + '\t' + ip)
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
                             time.sleep(0.1)
             except:
                 continue
@@ -158,7 +197,11 @@ class Domain:
                                 continue
                             if ip not in self.domains.keys():
                                 self.domains[ip] = url
+<<<<<<< HEAD
                                 # print(url + '\t' + ip)
+=======
+                                print(url + '\t' + ip)
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
                                 time.sleep(0.1)
                 except:
                     continue
@@ -169,7 +212,11 @@ class Domain:
 
 
 def main():
+<<<<<<< HEAD
     s = Domain(target="cqsxdb.com")
+=======
+    s = Domain(target="smartisan.com")
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
     domain = s.run()
     return domain
 

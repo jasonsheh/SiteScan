@@ -33,7 +33,10 @@ class SiteScan:
             self.target = 'http://' + self.target
         if self.target.endswith('/'):
             self.target = self.target[:-1]
+<<<<<<< HEAD
         print(self.target)
+=======
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         # r = requests.get(self.target)
 
     def site_scan(self):

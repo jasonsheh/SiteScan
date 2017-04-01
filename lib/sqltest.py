@@ -12,7 +12,11 @@ class Sql:
         self.targets = targets
         self.target = ''
         self.waf = ''
+<<<<<<< HEAD
         self.payload = {' and 1=1': ' and 1=2', "' and '1'='1": "' and '1'='2"}
+=======
+        self.payload = {' and 1=1':' and 1=2', "' and '1'='1":"' and '1'='2"}
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
 
     @staticmethod
     def _conn(url):

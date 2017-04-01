@@ -20,6 +20,7 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+<<<<<<< HEAD
       <file leaf-file-name="SiteScan.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/SiteScan.py">
           <provider selected="true" editor-type-id="text-editor">
@@ -35,6 +36,13 @@
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="551">
               <caret line="35" column="25" lean-forward="false" selection-start-line="35" selection-start-column="25" selection-end-line="35" selection-end-column="25" />
+=======
+      <file leaf-file-name="factory.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/lib/factory.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="620">
+              <caret line="48" column="24" lean-forward="true" selection-start-line="48" selection-start-column="24" selection-end-line="48" selection-end-column="24" />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
               <folding>
                 <element signature="e#69#99#0" expanded="true" />
               </folding>
@@ -42,11 +50,29 @@
           </provider>
         </entry>
       </file>
+<<<<<<< HEAD
       <file leaf-file-name="sendir.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/lib/sendir.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="1121">
               <caret line="63" column="43" lean-forward="false" selection-start-line="63" selection-start-column="43" selection-end-line="63" selection-end-column="43" />
+=======
+      <file leaf-file-name="basicinfo.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/lib/basicinfo.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-159">
+              <caret line="8" column="0" lean-forward="false" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="sendir.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/lib/sendir.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="506">
+              <caret line="54" column="42" lean-forward="true" selection-start-line="54" selection-start-column="42" selection-end-line="54" selection-end-column="42" />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
               <folding />
             </state>
           </provider>
@@ -55,8 +81,23 @@
       <file leaf-file-name="sqltest.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/lib/sqltest.py">
           <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
             <state relative-caret-position="285">
               <caret line="17" column="19" lean-forward="false" selection-start-line="17" selection-start-column="19" selection-end-line="17" selection-end-column="19" />
+=======
+            <state relative-caret-position="297">
+              <caret line="102" column="19" lean-forward="false" selection-start-line="102" selection-start-column="19" selection-end-line="102" selection-end-column="19" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="crawler.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/lib/crawler.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="487">
+              <caret line="195" column="0" lean-forward="true" selection-start-line="195" selection-start-column="0" selection-end-line="195" selection-end-column="0" />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
               <folding />
             </state>
           </provider>
@@ -65,11 +106,17 @@
       <file leaf-file-name="port.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/lib/port.py">
           <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
             <state relative-caret-position="133">
               <caret line="30" column="28" lean-forward="true" selection-start-line="30" selection-start-column="28" selection-end-line="30" selection-end-column="28" />
               <folding>
                 <element signature="e#69#80#0" expanded="true" />
               </folding>
+=======
+            <state relative-caret-position="354">
+              <caret line="25" column="33" lean-forward="false" selection-start-line="25" selection-start-column="33" selection-end-line="25" selection-end-column="33" />
+              <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
             </state>
           </provider>
         </entry>
@@ -77,16 +124,37 @@
       <file leaf-file-name="subdomain.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/lib/subdomain.py">
           <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
             <state relative-caret-position="2983">
               <caret line="171" column="35" lean-forward="false" selection-start-line="171" selection-start-column="35" selection-end-line="171" selection-end-column="35" />
               <folding>
                 <element signature="e#69#80#0" expanded="true" />
                 <element signature="e#1844#2447#0" expanded="false" />
+=======
+            <state relative-caret-position="-748">
+              <caret line="38" column="22" lean-forward="true" selection-start-line="38" selection-start-column="22" selection-end-line="38" selection-end-column="22" />
+              <folding>
+                <element signature="e#1180#1672#0" expanded="false" />
+                <element signature="e#1706#2309#0" expanded="false" />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
               </folding>
             </state>
           </provider>
         </entry>
       </file>
+<<<<<<< HEAD
+=======
+      <file leaf-file-name="xss.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/lib/xss.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="190">
+              <caret line="43" column="19" lean-forward="false" selection-start-line="43" selection-start-column="19" selection-end-line="43" selection-end-column="19" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
     </leaf>
   </component>
   <component name="FileTemplateManagerImpl">
@@ -112,7 +180,10 @@
       <find>_test_server</find>
       <find>ljust</find>
       <find>self.domain</find>
+<<<<<<< HEAD
       <find>s</find>
+=======
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -136,6 +207,7 @@
         <option value="$PROJECT_DIR$/../Baidu/baidu.py" />
         <option value="$PROJECT_DIR$/lib/analysis.py" />
         <option value="$PROJECT_DIR$/lib/struts2" />
+<<<<<<< HEAD
         <option value="D:/ScourseCode/subdomain3-master/subdomain3-master/brutedns.py" />
         <option value="$PROJECT_DIR$/../sqltest.py" />
         <option value="$PROJECT_DIR$/lib/xss.py" />
@@ -150,6 +222,20 @@
         <option value="$PROJECT_DIR$/lib/struts2.py" />
         <option value="$PROJECT_DIR$/lib/port.py" />
         <option value="$PROJECT_DIR$/scripts/ftp.py" />
+=======
+        <option value="$PROJECT_DIR$/lib/basicinfo.py" />
+        <option value="D:/ScourseCode/subdomain3-master/subdomain3-master/brutedns.py" />
+        <option value="$PROJECT_DIR$/../sqltest.py" />
+        <option value="$PROJECT_DIR$/lib/subdomain.py" />
+        <option value="$PROJECT_DIR$/lib/struts2.py" />
+        <option value="$PROJECT_DIR$/SiteScan.py" />
+        <option value="$PROJECT_DIR$/lib/sqltest.py" />
+        <option value="$PROJECT_DIR$/lib/xss.py" />
+        <option value="$PROJECT_DIR$/lib/crawler.py" />
+        <option value="$PROJECT_DIR$/lib/sendir.py" />
+        <option value="$PROJECT_DIR$/lib/factory.py" />
+        <option value="$PROJECT_DIR$/lib/port.py" />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       </list>
     </option>
   </component>
@@ -177,7 +263,11 @@
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
+<<<<<<< HEAD
     <navigator currentView="ProjectPane" proportions="" version="1">
+=======
+    <navigator proportions="" version="1">
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       <flattenPackages />
       <showMembers />
       <showModules />
@@ -190,6 +280,7 @@
       <manualOrder />
       <foldersAlwaysOnTop value="true" />
     </navigator>
+<<<<<<< HEAD
     <panes>
       <pane id="Scope" />
       <pane id="Scratches" />
@@ -208,6 +299,9 @@
         </subPane>
       </pane>
     </panes>
+=======
+    <panes />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
   </component>
   <component name="PropertiesComponent">
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
@@ -221,6 +315,7 @@
       </console-settings>
     </option>
   </component>
+<<<<<<< HEAD
   <component name="RunDashboard">
     <option name="ruleStates">
       <list>
@@ -234,6 +329,9 @@
     </option>
   </component>
   <component name="RunManager" selected="Python.ftp">
+=======
+  <component name="RunManager" selected="Python.port">
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
     <configuration default="false" name="subdomain" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -249,7 +347,10 @@
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lib/subdomain.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
+<<<<<<< HEAD
       <option name="EMULATE_TERMINAL" value="false" />
+=======
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       <method />
     </configuration>
     <configuration default="false" name="sendir" type="PythonConfigurationType" factoryName="Python" temporary="true">
@@ -267,16 +368,23 @@
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lib/sendir.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
+<<<<<<< HEAD
       <option name="EMULATE_TERMINAL" value="false" />
       <method />
     </configuration>
     <configuration default="false" name="jitemail" type="PythonConfigurationType" factoryName="Python" temporary="true">
+=======
+      <method />
+    </configuration>
+    <configuration default="false" name="struts2" type="PythonConfigurationType" factoryName="Python" temporary="true">
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
+<<<<<<< HEAD
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/.." />
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
@@ -289,6 +397,19 @@
       <method />
     </configuration>
     <configuration default="false" name="struts2" type="PythonConfigurationType" factoryName="Python" temporary="true">
+=======
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/lib" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="SiteScan" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lib/struts2.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="port" type="PythonConfigurationType" factoryName="Python" temporary="true">
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
@@ -300,6 +421,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="SiteScan" />
+<<<<<<< HEAD
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lib/struts2.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
@@ -307,21 +429,39 @@
       <method />
     </configuration>
     <configuration default="false" name="ftp" type="PythonConfigurationType" factoryName="Python" temporary="true">
+=======
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lib/port.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="xss" type="PythonConfigurationType" factoryName="Python" temporary="true">
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
       <option name="SDK_HOME" value="" />
+<<<<<<< HEAD
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/scripts" />
+=======
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/lib" />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="SiteScan" />
+<<<<<<< HEAD
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/ftp.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
+=======
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lib/xss.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       <method />
     </configuration>
     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
@@ -339,7 +479,10 @@
       <option name="SCRIPT_NAME" value="" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
+<<<<<<< HEAD
       <option name="EMULATE_TERMINAL" value="false" />
+=======
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       <method />
     </configuration>
     <configuration default="true" type="Tox" factoryName="Tox">
@@ -354,7 +497,11 @@
       <module name="SiteScan" />
       <method />
     </configuration>
+<<<<<<< HEAD
     <configuration default="true" type="tests" factoryName="Doctests">
+=======
+    <configuration default="true" type="tests" factoryName="Attests">
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs />
@@ -373,7 +520,11 @@
       <option name="USE_PATTERN" value="false" />
       <method />
     </configuration>
+<<<<<<< HEAD
     <configuration default="true" type="tests" factoryName="Nosetests">
+=======
+    <configuration default="true" type="tests" factoryName="Doctests">
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs />
@@ -383,6 +534,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="SiteScan" />
+<<<<<<< HEAD
       <option name="_new_regexPattern" value="&quot;&quot;" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
       <option name="_new_target" value="&quot;.&quot;" />
@@ -390,6 +542,18 @@
       <method />
     </configuration>
     <configuration default="true" type="tests" factoryName="Unittests">
+=======
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Nosetests">
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs />
@@ -399,12 +563,27 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="SiteScan" />
+<<<<<<< HEAD
       <option name="_new_additionalArguments" value="&quot;&quot;" />
       <option name="_new_target" value="&quot;.&quot;" />
       <option name="_new_targetType" value="&quot;PATH&quot;" />
       <method />
     </configuration>
     <configuration default="true" type="tests" factoryName="py.test">
+=======
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <option name="PARAMS" value="" />
+      <option name="USE_PARAM" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Unittests">
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs />
@@ -414,6 +593,7 @@
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="SiteScan" />
+<<<<<<< HEAD
       <option name="_new_keywords" value="&quot;&quot;" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
       <option name="_new_target" value="&quot;.&quot;" />
@@ -437,6 +617,21 @@
       </list>
     </recent_temporary>
     <configuration default="true" type="tests" factoryName="Attests">
+=======
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <option name="PUREUNITTEST" value="true" />
+      <option name="PARAMS" value="" />
+      <option name="USE_PARAM" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="py.test">
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs />
@@ -453,8 +648,34 @@
       <option name="TEST_TYPE" value="TEST_SCRIPT" />
       <option name="PATTERN" value="" />
       <option name="USE_PATTERN" value="false" />
+<<<<<<< HEAD
       <method />
     </configuration>
+=======
+      <option name="testToRun" value="" />
+      <option name="keywords" value="" />
+      <option name="params" value="" />
+      <option name="USE_PARAM" value="false" />
+      <option name="USE_KEYWORD" value="false" />
+      <method />
+    </configuration>
+    <list size="5">
+      <item index="0" class="java.lang.String" itemvalue="Python.subdomain" />
+      <item index="1" class="java.lang.String" itemvalue="Python.sendir" />
+      <item index="2" class="java.lang.String" itemvalue="Python.struts2" />
+      <item index="3" class="java.lang.String" itemvalue="Python.port" />
+      <item index="4" class="java.lang.String" itemvalue="Python.xss" />
+    </list>
+    <recent_temporary>
+      <list size="5">
+        <item index="0" class="java.lang.String" itemvalue="Python.port" />
+        <item index="1" class="java.lang.String" itemvalue="Python.struts2" />
+        <item index="2" class="java.lang.String" itemvalue="Python.sendir" />
+        <item index="3" class="java.lang.String" itemvalue="Python.subdomain" />
+        <item index="4" class="java.lang.String" itemvalue="Python.xss" />
+      </list>
+    </recent_temporary>
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
   </component>
   <component name="ShelveChangesManager" show_recycled="false">
     <option name="remove_strategy" value="false" />
@@ -485,17 +706,29 @@
     <frame x="-8" y="-8" width="1382" height="744" extended-state="6" />
     <editor active="true" />
     <layout>
+<<<<<<< HEAD
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24962178" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3289689" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3584288" sideWeight="0.51365703" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4140753" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3584288" sideWeight="0.48634294" order="5" side_tool="false" content_ui="tabs" />
+=======
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3289689" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.42880523" sideWeight="0.50818455" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4140753" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3584288" sideWeight="0.49255952" order="5" side_tool="false" content_ui="tabs" />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.42880523" sideWeight="0.49181548" order="10" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3296131" sideWeight="0.5" order="0" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+<<<<<<< HEAD
       <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+=======
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="SLIDING" type="SLIDING" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -534,11 +767,55 @@
           <option name="timeStamp" value="54" />
         </line-breakpoint>
       </breakpoints>
+<<<<<<< HEAD
       <option name="time" value="56" />
+=======
+      <option name="time" value="55" />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
+<<<<<<< HEAD
+=======
+    <entry file="file://D:/ScourseCode/MSpider-master/mspider.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="494">
+          <caret line="35" column="14" lean-forward="false" selection-start-line="35" selection-start-column="14" selection-end-line="35" selection-end-column="14" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://D:/ScourseCode/MSpider-master/lib/core/crawl.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/struts2" />
+    <entry file="file://$PROJECT_DIR$/lib/analysis.py" />
+    <entry file="file://$PROJECT_DIR$/../struts2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="190">
+          <caret line="10" column="20" lean-forward="true" selection-start-line="10" selection-start-column="20" selection-end-line="10" selection-end-column="20" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://D:/ScourseCode/leakScan-master/leakScan-master/scanner/scripts/xss.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="38">
+          <caret line="2" column="9" lean-forward="false" selection-start-line="2" selection-start-column="9" selection-end-line="2" selection-end-column="9" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://D:/ScourseCode/leakScan-master/leakScan-master/scanner/scripts/file_upload.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
     <entry file="file://E:/渗透测试深入加强/0bug撞库脚本.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="190">
@@ -574,6 +851,16 @@
         </state>
       </provider>
     </entry>
+<<<<<<< HEAD
+=======
+    <entry file="file://D:/ScourseCode/lcyscan-master/exploits/server/ftp_remote.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-159">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
     <entry file="file://D:/ScourseCode/lcyscan-master/exploits/server/mongodb_remote.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -613,6 +900,17 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="3116">
           <caret line="240" column="92" lean-forward="false" selection-start-line="240" selection-start-column="92" selection-end-line="240" selection-end-column="92" />
+<<<<<<< HEAD
+=======
+          <folding>
+            <element signature="e#193#205#0" expanded="false" />
+            <element signature="e#2194#3238#0" expanded="false" />
+            <element signature="e#3280#4883#0" expanded="false" />
+            <element signature="e#4924#6102#0" expanded="false" />
+            <element signature="e#11910#12567#0" expanded="false" />
+            <element signature="e#12601#13385#0" expanded="false" />
+          </folding>
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -620,6 +918,23 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1254">
           <caret line="81" column="0" lean-forward="false" selection-start-line="81" selection-start-column="0" selection-end-line="81" selection-end-column="0" />
+<<<<<<< HEAD
+=======
+          <folding>
+            <element signature="e#1848#1920#0" expanded="false" />
+            <element signature="e#8186#9375#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/struts2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="145">
+          <caret line="94" column="19" lean-forward="true" selection-start-line="94" selection-start-column="19" selection-end-line="94" selection-end-column="19" />
+          <folding>
+            <element signature="e#69#78#0" expanded="false" />
+          </folding>
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -627,6 +942,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="208">
           <caret line="11" column="32" lean-forward="false" selection-start-line="11" selection-start-column="32" selection-end-line="11" selection-end-column="32" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -634,6 +953,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="114">
           <caret line="15" column="22" lean-forward="false" selection-start-line="15" selection-start-column="22" selection-end-line="15" selection-end-column="22" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -641,6 +964,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-1672">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -648,6 +975,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -655,6 +986,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-3496">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -662,6 +997,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -669,6 +1008,12 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="19">
           <caret line="1" column="17" lean-forward="false" selection-start-line="1" selection-start-column="17" selection-end-line="1" selection-end-column="17" />
+<<<<<<< HEAD
+=======
+          <folding>
+            <element signature="e#133#143#0" expanded="false" />
+          </folding>
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -676,6 +1021,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -683,6 +1032,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -690,6 +1043,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-501">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -697,6 +1054,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -712,6 +1073,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-776">
           <caret line="8" column="37" lean-forward="true" selection-start-line="8" selection-start-column="37" selection-end-line="8" selection-end-column="37" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -719,6 +1084,12 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-247">
           <caret line="27" column="0" lean-forward="true" selection-start-line="27" selection-start-column="0" selection-end-line="27" selection-end-column="0" />
+<<<<<<< HEAD
+=======
+          <folding>
+            <element signature="e#68#79#0" expanded="false" />
+          </folding>
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -726,6 +1097,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -733,6 +1108,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -740,6 +1119,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -747,6 +1130,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -754,6 +1141,10 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="156">
           <caret line="848" column="28" lean-forward="true" selection-start-line="848" selection-start-column="28" selection-end-line="848" selection-end-column="28" />
+<<<<<<< HEAD
+=======
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
@@ -761,6 +1152,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-2895">
           <caret line="23" column="34" lean-forward="false" selection-start-line="23" selection-start-column="34" selection-end-line="23" selection-end-column="34" />
+<<<<<<< HEAD
         </state>
       </provider>
     </entry>
@@ -776,11 +1168,37 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-684">
           <caret line="24" column="4" lean-forward="false" selection-start-line="24" selection-start-column="4" selection-end-line="24" selection-end-column="4" />
+=======
+          <folding>
+            <element signature="e#39#52#0" expanded="false" />
+            <element signature="e#469#1439#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/subdomain.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-748">
+          <caret line="38" column="22" lean-forward="true" selection-start-line="38" selection-start-column="22" selection-end-line="38" selection-end-column="22" />
+          <folding>
+            <element signature="e#1180#1672#0" expanded="false" />
+            <element signature="e#1706#2309#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/tmp.txt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/xss.py">
       <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
         <state relative-caret-position="798">
           <caret line="43" column="19" lean-forward="false" selection-start-line="43" selection-start-column="19" selection-end-line="43" selection-end-column="19" />
         </state>
@@ -797,11 +1215,17 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-2356">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+=======
+        <state relative-caret-position="190">
+          <caret line="43" column="19" lean-forward="false" selection-start-line="43" selection-start-column="19" selection-end-line="43" selection-end-column="19" />
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/lib/basicinfo.py">
       <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
         <state relative-caret-position="893">
           <caret line="49" column="0" lean-forward="false" selection-start-line="49" selection-start-column="0" selection-end-line="49" selection-end-column="0" />
         </state>
@@ -811,10 +1235,15 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="798">
           <caret line="47" column="0" lean-forward="false" selection-start-line="47" selection-start-column="0" selection-end-line="47" selection-end-column="0" />
+=======
+        <state relative-caret-position="-159">
+          <caret line="8" column="0" lean-forward="false" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
           <folding />
         </state>
       </provider>
     </entry>
+<<<<<<< HEAD
     <entry file="file://$PROJECT_DIR$/../jitemail.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="228">
@@ -854,10 +1283,17 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1121">
           <caret line="63" column="43" lean-forward="false" selection-start-line="63" selection-start-column="43" selection-end-line="63" selection-end-column="43" />
+=======
+    <entry file="file://$PROJECT_DIR$/lib/sendir.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="506">
+          <caret line="54" column="42" lean-forward="true" selection-start-line="54" selection-start-column="42" selection-end-line="54" selection-end-column="42" />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
           <folding />
         </state>
       </provider>
     </entry>
+<<<<<<< HEAD
     <entry file="file://$PROJECT_DIR$/lib/struts2.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1041">
@@ -869,10 +1305,25 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="285">
           <caret line="17" column="19" lean-forward="false" selection-start-line="17" selection-start-column="19" selection-end-line="17" selection-end-column="19" />
+=======
+    <entry file="file://$PROJECT_DIR$/lib/sqltest.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="297">
+          <caret line="102" column="19" lean-forward="false" selection-start-line="102" selection-start-column="19" selection-end-line="102" selection-end-column="19" />
           <folding />
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/lib/crawler.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="487">
+          <caret line="195" column="0" lean-forward="true" selection-start-line="195" selection-start-column="0" selection-end-line="195" selection-end-column="0" />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
+          <folding />
+        </state>
+      </provider>
+    </entry>
+<<<<<<< HEAD
     <entry file="file://D:/ScourseCode/lcyscan-master/exploits/server/ftp_remote.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="513">
@@ -886,10 +1337,27 @@
           <caret line="26" column="17" lean-forward="true" selection-start-line="26" selection-start-column="17" selection-end-line="26" selection-end-column="17" />
           <folding>
             <element signature="e#29#40#0" expanded="true" />
+=======
+    <entry file="file://$PROJECT_DIR$/SiteScan.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="437">
+          <caret line="39" column="21" lean-forward="true" selection-start-line="39" selection-start-column="21" selection-end-line="39" selection-end-column="21" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/factory.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="620">
+          <caret line="48" column="24" lean-forward="true" selection-start-line="48" selection-start-column="24" selection-end-line="48" selection-end-column="24" />
+          <folding>
+            <element signature="e#69#99#0" expanded="true" />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
           </folding>
         </state>
       </provider>
     </entry>
+<<<<<<< HEAD
     <entry file="file://$PROJECT_DIR$/scripts/ftp.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-222">
@@ -905,6 +1373,13 @@
           <folding>
             <element signature="e#69#80#0" expanded="true" />
           </folding>
+=======
+    <entry file="file://$PROJECT_DIR$/lib/port.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="354">
+          <caret line="25" column="33" lean-forward="false" selection-start-line="25" selection-start-column="33" selection-end-line="25" selection-end-column="33" />
+          <folding />
+>>>>>>> b48090a64e299874ab424d042b7633900f626713
         </state>
       </provider>
     </entry>
