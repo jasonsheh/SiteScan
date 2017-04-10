@@ -4,10 +4,7 @@
 
 import json
 import dns.resolver
-<<<<<<< HEAD
 from urllib.parse import urlparse
-=======
->>>>>>> b48090a64e299874ab424d042b7633900f626713
 import sys
 import requests
 import threading
@@ -23,6 +20,7 @@ class Domain:
         self.q = queue.Queue(0)
         self.thread_num = 15
         self.ip = []
+        self.c_count = {}
         self.domain = []
         self.domains = {}
 
@@ -40,21 +38,15 @@ class Domain:
 
     def run(self):
         self.init()
-<<<<<<< HEAD
         self.ilink()
-=======
-        # self.ilink()
->>>>>>> b48090a64e299874ab424d042b7633900f626713
         # if not self.domain:
         # self.chaxunla()
         # elif not self.domain or len(self.domain) < 3:
         self.brute()
-<<<<<<< HEAD
+        self.c_check()
+        self.c_duan()
         self.output()
-=======
-        # self.output()
->>>>>>> b48090a64e299874ab424d042b7633900f626713
-        return list(set(self.domains.values()))
+        return self.domains.keys()
 
     def ilink(self):
         print('\nilink子域名查询')
@@ -64,20 +56,20 @@ class Domain:
             r = requests.post(url, data=data)
             pattern = re.compile('<div class=domain><input.*?value="http://(.*?)">')
             self.domain = re.findall(pattern, r.text)
-<<<<<<< HEAD
             for domain in self.domain:
                 ip = socket.gethostbyname(domain)
-                self.domains[ip] = domain
+                if ip in self.domains.keys():
+                    self.domains[ip].append(domain)
+                    print(domain + '\t' + ip)
+                    time.sleep(0.1)
+                else:
+                    self.domains[ip] = [domain]
+                    print(domain + '\t' + ip)
+                    time.sleep(0.1)
         except requests.exceptions.ConnectionError:
             self.domain = []
         except Exception as e:
             print(e)
-=======
-            '''for domain in self.domain:
-                print(domain)'''
-        except requests.exceptions.ConnectionError:
-            self.domain = []
->>>>>>> b48090a64e299874ab424d042b7633900f626713
 
     def chaxunla(self):
         print('\nchaxunla子域名查询')
@@ -116,7 +108,6 @@ class Domain:
                 threads.append(t)
             for item in threads:
                 item.start()
-<<<<<<< HEAD
             for item in threads:
                 item.join()
 
@@ -131,22 +122,6 @@ class Domain:
                 item.start()
             for item in threads:
                 item.join()'''
-=======
-            for item in threads:
-                item.join()
-
-            print('二级子域名爆破...')
-            self.domain = list(set(self.domains.values()))
-            self.sub_domain_dict()
-            threads = []
-            for i in range(int(self.thread_num)):
-                t = threading.Thread(target=self.sub_brute)
-                threads.append(t)
-            for item in threads:
-                item.start()
-            for item in threads:
-                item.join()
->>>>>>> b48090a64e299874ab424d042b7633900f626713
 
         except KeyboardInterrupt as e:
             print('\n')
@@ -169,15 +144,16 @@ class Domain:
                 # r = requests.get(url, timeout=0.1, allow_redirects=False)
                 # if r.status_code == 200:
                     for ip in ips:
-                        if ip in ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204']:
+                        if ip in ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204',
+                                  '220.250.64.225']:
                             continue
-                        if ip not in self.domains.keys():
-                            self.domains[ip] = url
-<<<<<<< HEAD
-                            # print(url + '\t' + ip)
-=======
+                        if ip in self.domains.keys():
+                            self.domains[ip].append(url)
                             print(url + '\t' + ip)
->>>>>>> b48090a64e299874ab424d042b7633900f626713
+                            time.sleep(0.1)
+                        else:
+                            self.domains[ip] = [url]
+                            print(url + '\t' + ip)
                             time.sleep(0.1)
             except:
                 continue
@@ -195,28 +171,58 @@ class Domain:
                         for ip in ips:
                             if ip in ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204']:
                                 continue
-                            if ip not in self.domains.keys():
-                                self.domains[ip] = url
-<<<<<<< HEAD
-                                # print(url + '\t' + ip)
-=======
+                            if ip in self.domains.keys():
+                                self.domains[ip].append(url)
                                 print(url + '\t' + ip)
->>>>>>> b48090a64e299874ab424d042b7633900f626713
+                                time.sleep(0.1)
+                            else:
+                                self.domains[ip] = [url]
+                                print(url + '\t' + ip)
                                 time.sleep(0.1)
                 except:
                     continue
 
+    @staticmethod
+    def same_ip(ip):
+        url = 'http://cn.bing.com/search?q=ip:' + ip
+        r = requests.get(url)
+        pattern = re.compile('<a target="_blank" href="http://(.*?)/"')
+        domains = re.findall(pattern, r.text)
+        return domains
+
+    def c_duan(self):
+        for ip, count in self.c_count.items():
+            if count > 5:
+                for x in range(1, 256):
+                    _ip = ip + '.' + str(x)
+                    print(_ip)
+                    try:
+                        r = requests.get('http://'+_ip)
+                        domain = self.same_ip(_ip)
+                        if _ip in self.domains.keys():
+                            self.domains[_ip] += domain
+                            time.sleep(0.1)
+                        else:
+                            self.domains[ip] = domain
+                            time.sleep(0.1)
+                    except requests.exceptions.ConnectionError:
+                        continue
+
+    def c_check(self):
+        for ip in self.domains.keys():
+            ip = ip.rsplit('.', 1)[0]
+            if ip not in self.c_count.keys():
+                self.c_count[ip] = 0
+            self.c_count[ip] = self.c_count[ip] + 1
+        print(self.c_count)
+
     def output(self):
-        for ip, url in sorted(self.domains.items()):
-            print('%s:\t%s' % (url, ip))
+        for ip, urls in sorted(self.domains.items()):
+            print(ip, urls)
 
 
 def main():
-<<<<<<< HEAD
-    s = Domain(target="cqsxdb.com")
-=======
-    s = Domain(target="smartisan.com")
->>>>>>> b48090a64e299874ab424d042b7633900f626713
+    s = Domain(target="jit.edu.cn")
     domain = s.run()
     return domain
 
