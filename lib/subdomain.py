@@ -43,8 +43,6 @@ class Domain:
         # self.chaxunla()
         # elif not self.domain or len(self.domain) < 3:
         self.brute()
-        self.c_check()
-        self.c_duan()
         self.output()
         return self.domains.keys()
 
@@ -60,11 +58,11 @@ class Domain:
                 ip = socket.gethostbyname(domain)
                 if ip in self.domains.keys():
                     self.domains[ip].append(domain)
-                    print(domain + '\t' + ip)
+                    # print(domain + '\t' + ip)
                     time.sleep(0.1)
                 else:
                     self.domains[ip] = [domain]
-                    print(domain + '\t' + ip)
+                    # print(domain + '\t' + ip)
                     time.sleep(0.1)
         except requests.exceptions.ConnectionError:
             self.domain = []
@@ -100,7 +98,7 @@ class Domain:
     def brute(self):
         t1 = time.time()
         try:
-            print('子域名爆破...')
+            print('\n子域名爆破...')
             self.domain_dict()
             threads = []
             for i in range(int(self.thread_num)):
@@ -122,6 +120,17 @@ class Domain:
                 item.start()
             for item in threads:
                 item.join()'''
+
+            print('c段扫描...')
+            self.c_check()
+            threads = []
+            for i in range(int(self.thread_num)):
+                t = threading.Thread(target=self.c_duan)
+                threads.append(t)
+            for item in threads:
+                item.start()
+            for item in threads:
+                item.join()
 
         except KeyboardInterrupt as e:
             print('\n')
@@ -186,27 +195,26 @@ class Domain:
     def same_ip(ip):
         url = 'http://cn.bing.com/search?q=ip:' + ip
         r = requests.get(url)
-        pattern = re.compile('<a target="_blank" href="http://(.*?)/"')
+        pattern = re.compile('<a target="_blank" href="http://(.*?)"')
         domains = re.findall(pattern, r.text)
         return domains
 
     def c_duan(self):
-        for ip, count in self.c_count.items():
-            if count > 5:
-                for x in range(1, 256):
-                    _ip = ip + '.' + str(x)
-                    print(_ip)
-                    try:
-                        r = requests.get('http://'+_ip)
-                        domain = self.same_ip(_ip)
-                        if _ip in self.domains.keys():
-                            self.domains[_ip] += domain
-                            time.sleep(0.1)
-                        else:
-                            self.domains[ip] = domain
-                            time.sleep(0.1)
-                    except requests.exceptions.ConnectionError:
-                        continue
+        while not self.q.empty():
+            ip = self.q.get()
+            try:
+                r = requests.get('http://' + ip, timeout=3)
+                domain = self.same_ip(ip)
+                if ip in self.domains.keys():
+                    self.domains[ip] += domain
+                    time.sleep(0.1)
+                else:
+                    self.domains[ip] = domain
+                    time.sleep(0.1)
+            except requests.exceptions.ConnectionError:
+                continue
+            except requests.exceptions.ReadTimeout:
+                continue
 
     def c_check(self):
         for ip in self.domains.keys():
@@ -214,15 +222,25 @@ class Domain:
             if ip not in self.c_count.keys():
                 self.c_count[ip] = 0
             self.c_count[ip] = self.c_count[ip] + 1
+
+        for ip, count in self.c_count.items():
+            if count > 5:
+                for x in range(1, 256):
+                    _ip = ip + '.' + str(x)
+                    self.q.put(_ip)
+
         print(self.c_count)
 
     def output(self):
         for ip, urls in sorted(self.domains.items()):
-            print(ip, urls)
+            print(ip + ':')
+            if urls:
+                for url in urls:
+                    print('\t' + url)
 
 
 def main():
-    s = Domain(target="jit.edu.cn")
+    s = Domain(target="sut.edu.cn")
     domain = s.run()
     return domain
 
