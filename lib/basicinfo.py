@@ -43,10 +43,7 @@ class Info:
         self.get_ip()
         self.get_server()
         return self.ip, self.server
-<<<<<<< HEAD
 
 if __name__ == '__main__':
     s = Info('http://znyywlw.jit.edu.cn')
     s.run()
-=======
->>>>>>> b48090a64e299874ab424d042b7633900f626713

@@ -10,13 +10,14 @@ class Xss:
     def __init__(self, targets):
         self.targets = targets
         self.target = ''
+        self.header = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'}
         self.payload = ['"/><img src=# onerror=alert(1);>',
                         "><body onload=alert(1)>",
                         "/></script><ScRiPt>alert(1);<ScRiPt><!--"]
 
     def _scan(self):
         try:
-            r = requests.get(self.target, timeout=2)
+            r = requests.get(self.target, headers=self.header, timeout=2)
             # print('get')
         except requests.exceptions.ConnectionError:
             return False

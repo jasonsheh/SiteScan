@@ -13,6 +13,7 @@ import time
 import socket
 import re
 
+from database.subdomain import Database
 
 class Domain:
     def __init__(self, target):
@@ -38,12 +39,14 @@ class Domain:
 
     def run(self):
         self.init()
-        self.ilink()
+        # self.ilink()
         # if not self.domain:
         # self.chaxunla()
         # elif not self.domain or len(self.domain) < 3:
         self.brute()
-        self.output()
+        # self.output()
+        s = Database()
+        s.insert(self.domains)
         return self.domains.keys()
 
     def ilink(self):
@@ -86,12 +89,12 @@ class Domain:
                 self.domain.append(domain['domain'])
 
     def domain_dict(self):
-        with open('D://tools/python/SiteScan/dict/domain.txt', 'r') as dirt:
+        with open('/home/jasonsheh/Tools/python/SiteScan/dict/domain.txt', 'r') as dirt:
             for i in dirt:
                 self.q.put(i.strip())
 
     def sub_domain_dict(self):
-        with open('D://tools/python/SiteScan/dict/sub_domain.txt', 'r') as dirt:
+        with open('/home/jasonsheh/Tools/python/SiteScan/dict/sub_domain.txt', 'r') as dirt:
             for i in dirt:
                 self.q.put(i.strip())
 
@@ -240,7 +243,7 @@ class Domain:
 
 
 def main():
-    s = Domain(target="sut.edu.cn")
+    s = Domain(target="jit.edu.cn")
     domain = s.run()
     return domain
 

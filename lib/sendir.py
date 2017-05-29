@@ -61,11 +61,8 @@ class Sendir:
 
 
 def main():
-<<<<<<< HEAD
     s = Sendir(target='http://'+'chinac.com/')
-=======
     s = Sendir(target='http://'+'oa.meizu.com')
->>>>>>> b48090a64e299874ab424d042b7633900f626713
     s.run()
 
 if __name__ == '__main__':

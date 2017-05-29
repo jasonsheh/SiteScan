@@ -23,10 +23,9 @@ class Ftp:
     def weak_password(self):
         with open('../dict/pwd50.txt') as file:
             for password in file:
-                print(password)
                 try:
                     ftp = ftplib.FTP()
-                    ftp.connect(ip, str(port), timeout=8)
+                    ftp.connect(self.target, 21, timeout=8)
                     ftp.login(user='root', passwd=password)
                     print('ftp 密码为: ', password)
 

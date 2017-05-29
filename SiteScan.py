@@ -3,27 +3,10 @@
 # -*- coding:utf-8 -*-
 
 from lib.factory import SiteScan
-from lib.subdomain import Domain
-<<<<<<< HEAD
 
-import argparse
-import time
 import sys
-
-
-=======
-
 import argparse
 import time
-
-
->>>>>>> b48090a64e299874ab424d042b7633900f626713
-def sub_domain(url, sub):
-    if sub == 'true':
-        s = Domain(url)
-        return s.run()
-    else:
-        return [url]
 
 
 def main():
@@ -42,25 +25,14 @@ def main():
     print('\t\t written by Jason_Sheh')
     t1 = time.time()
 
-    urls = sub_domain(args.domain, args.sub)
-
-<<<<<<< HEAD
     try:
-        for url in urls:
-            s = SiteScan(url)
-            s.site_scan()
+        s = SiteScan(args.domain)
+        s.site_scan()
         t2 = time.time()
         print('\nTotal time: ' + str(t2 - t1))
     except KeyboardInterrupt:
         print('用户中断')
         sys.exit(0)
-=======
-    for url in urls:
-        s = SiteScan(url)
-        s.site_scan()
-    t2 = time.time()
-    print('\nTotal time: ' + str(t2 - t1))
->>>>>>> b48090a64e299874ab424d042b7633900f626713
 
 if __name__ == '__main__':
     main()

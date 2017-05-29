@@ -9,7 +9,7 @@ import threading
 import queue
 import time
 import sys
-from selenium import webdriver
+# from selenium import webdriver
 
 
 class Crawler:
@@ -21,8 +21,9 @@ class Crawler:
         self.q = queue.Queue(0)
         self.url_rule = []
         self.thread_num = 4
-        self.cap = webdriver.DesiredCapabilities.PHANTOMJS
-        self.cap["phantomjs.page.settings.loadImages"] = False  # 禁止加载图片
+        self.header = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'}
+        # self.cap = webdriver.DesiredCapabilities.PHANTOMJS
+        # self.cap["phantomjs.page.settings.loadImages"] = False  # 禁止加载图片
 
     def dynamic_conn(self, url):
         """
@@ -58,8 +59,6 @@ class Crawler:
         except:
             pass
 
-<<<<<<< HEAD
-=======
         try:
             frames = driver.find_elements_by_xpath("//iframe[@src]")
             for frame in frames:
@@ -67,13 +66,17 @@ class Crawler:
         except:
             pass
 
->>>>>>> b48090a64e299874ab424d042b7633900f626713
         a = driver.find_elements_by_tag_name('a')
         for _a in a:
             res.append(_a.get_attribute("href"))
 
         driver.quit()
         return res
+
+    def static_conn(self, url):
+        r = requests.get(url, headers=self.header)
+        pattern = re.compile(r'href="(.*?)"')
+        return re.findall(pattern, r.text)
 
     def get_url(self, res):
         """
@@ -99,9 +102,9 @@ class Crawler:
                     continue
                 if re.search('\.(css|jpg|JPG|png|pdf|js|gif|xls|doc|rar|ico|ppt)$', url) or re.search('javascript:', url):
                     continue
-                if not url.startswith('/') and not url.startswith('http') and not url.startswith('www'):
-                    url = '/' + url
-                if url.startswith('/') and not url.startswith('http:') and not url.startswith('https:'):
+                if url.startswith('/'):
+                    url = url[1:]
+                if not url.startswith('http:') and not url.startswith('https:'):
                     url = self.target + url
                 if url.startswith(self.target):
                     new_url.append(url)
@@ -151,30 +154,21 @@ class Crawler:
     def crawler(self):
         while not self.q.empty():
             url = self.q.get()
-<<<<<<< HEAD
-            #print(url)
-=======
-            #try:
->>>>>>> b48090a64e299874ab424d042b7633900f626713
-            new_res = self.dynamic_conn(url)
+
+            new_res = self.static_conn(url)
             res = self.get_url(new_res)
             if not res:
                 continue
             self.filter(res)
-<<<<<<< HEAD
-=======
-            '''except Exception as e:
-                print(e)
-                continue'''
->>>>>>> b48090a64e299874ab424d042b7633900f626713
 
     # almost done need improved
     def run(self):
-        res = self.dynamic_conn(self.target)
+        res = self.static_conn(self.target)
+        # res = self.dynamic_conn(self.target)
 
         res = self.get_url(res)
         if not res:
-            res = self.dynamic_conn(self.target + '/index.html')
+            res = self.static_conn(self.target + '/index.html')
             res = self.get_url(res)
 
         self.filter(res)
@@ -192,7 +186,7 @@ class Crawler:
         print('\n# 扫描链接总数:' + str(len(self.url_set)))
 
         self.urls.sort()
-        for url in self.urls:
+        for url in self.url_set:
             print(url)
 
         # print(len(self.urls))
@@ -201,7 +195,7 @@ class Crawler:
 
 
 def main():
-    s = Crawler(target='http://sec.zbj.com')
+    s = Crawler(target='http://it.jit.edu.cn/')
     s.run()
 
 if __name__ == '__main__':

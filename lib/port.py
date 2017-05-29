@@ -4,11 +4,10 @@
 
 import nmap
 from urllib.parse import urlparse
-<<<<<<< HEAD
 
-from scripts import Ftp
-=======
->>>>>>> b48090a64e299874ab424d042b7633900f626713
+from scripts.ftp import Ftp
+
+from database.port import Database
 
 
 class Port:
@@ -37,6 +36,8 @@ class Port:
                     print('%s\t%s\t%s\t%s\t%s' %
                           (port, self.nm[host][proto][port]['state'], self.nm[host][proto][port]['name'],
                            self.nm[host][proto][port]['product'], self.nm[host][proto][port]['version']))
+
+                Database.insert(self.nm[host])
                 # self.analysis(host, proto, ports)
             print('\n')
 
@@ -44,11 +45,9 @@ class Port:
         for port in ports:
             if port == 21 and self.nm[host][proto][port]['state'] == 'open':
                 print('ftp open')
-<<<<<<< HEAD
                 p = Ftp(self.ip)
                 p.run()
-=======
->>>>>>> b48090a64e299874ab424d042b7633900f626713
+
             if port == 80 and self.nm[host][proto][port]['state'] == 'open':
                 print('http open')
             if port == 3306 and self.nm[host][proto][port]['state'] == 'open':
