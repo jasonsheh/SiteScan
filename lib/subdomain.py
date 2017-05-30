@@ -13,7 +13,7 @@ import time
 import socket
 import re
 
-from database.subdomain import Database
+from database.database import Database
 
 class Domain:
     def __init__(self, target):
@@ -46,7 +46,7 @@ class Domain:
         self.brute()
         # self.output()
         s = Database()
-        s.insert(self.domains)
+        s.insert_subdomain(self.domains)
         return self.domains.keys()
 
     def ilink(self):
@@ -220,15 +220,18 @@ class Domain:
                 continue
 
     def c_check(self):
-        for ip in self.domains.keys():
+        for ip in self.domains.keys():# ips
             ip = ip.rsplit('.', 1)[0]
+
             if ip not in self.c_count.keys():
                 self.c_count[ip] = 0
             self.c_count[ip] = self.c_count[ip] + 1
 
         for ip, count in self.c_count.items():
             if count > 5:
-                for x in range(1, 256):
+                _max = max([int(_ip.rsplit('.', 1)[1]) for _ip in self.domains.keys()])
+                _min = min([int(_ip.rsplit('.', 1)[1]) for _ip in self.domains.keys()])
+                for x in range(_min, _max):
                     _ip = ip + '.' + str(x)
                     self.q.put(_ip)
 
