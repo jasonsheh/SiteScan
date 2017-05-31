@@ -54,8 +54,8 @@
             <li><a href="#">Export</a></li>
           </ul>
           <ul class="nav nav-sidebar">
-            <li class="active"><a href="/domain/1">Subdomain</a></li>
-            <li><a href="/port/1">Port</a></li>
+            <li><a href="/domain/1">Subdomain</a></li>
+            <li class="active"><a href="/port/1">Port</a></li>
             <li><a href="">Directory</a></li>
           </ul>
           <ul class="nav nav-sidebar">
@@ -65,7 +65,7 @@
           </ul>
         </div>
         <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-          <h1 class="page-header">Subdomain</h1>
+          <h1 class="page-header">Port</h1>
 
           <div class="table-responsive">
             <table class="table table-striped">
@@ -73,18 +73,23 @@
                 <tr>
                   <th>Id</th>
                   <th>IP</th>
-                  <th>Url</th>
-                  <th>Title</th>
+                  <th>Port</th>
+                  <th>State</th>
+                  <th>Name</th>
+                  <th>Service</th>
+                  <th>Version</th>
                 </tr>
               </thead>
-              {% for domain in domains %}
+              {% for port in ports %}
               <tbody>
                 <tr>
-                  <td>{{ domain.id }}</td>
-                  <td>{{ domain.ip }}</td>
-                  <td><a href="http://{{ domain.url }}">{{ domain.url }}</a></td>
-                  <td>{{ domain.title }}</td>
-                  <td><a class="btn btn-danger btn-xs" href="/del/{{domain.id}}/subdomain" role="button">删除</a></td>
+                  <td>{{ port.id }}</td>
+                  <td>{{ port.ip }}</td>
+                  <td>{{ port.port }}</td>
+                  <td>{{ port.state }}</td>
+                  <td>{{ port.name }}</td>
+                  <td>{{ port.service }}</td>
+                  <td>{{ port.version }}</td>
                 </tr>
               </tbody>
               {% endfor %}

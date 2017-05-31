@@ -24,6 +24,7 @@ class Domain:
         self.c_count = {}
         self.domain = []
         self.domains = {}
+        self.title = {}
 
     def init(self):
         if self.target.startswith('http://www.'):
@@ -44,9 +45,9 @@ class Domain:
         # self.chaxunla()
         # elif not self.domain or len(self.domain) < 3:
         self.brute()
-        # self.output()
-        s = Database()
-        s.insert_subdomain(self.domains)
+        self.get_title()
+        self.output()
+        Database().insert_subdomain(self.domains, self.title)
         return self.domains.keys()
 
     def ilink(self):
@@ -199,8 +200,12 @@ class Domain:
         url = 'http://cn.bing.com/search?q=ip:' + ip
         r = requests.get(url)
         pattern = re.compile('<a target="_blank" href="http://(.*?)"')
-        domains = re.findall(pattern, r.text)
-        return domains
+        urls = re.findall(pattern, r.text)
+        host = []
+        for url in urls:
+            if url.split('/', 1)[0] not in host:
+                host.append(url.split('/', 1)[0])
+        return host
 
     def c_duan(self):
         while not self.q.empty():
@@ -229,26 +234,70 @@ class Domain:
 
         for ip, count in self.c_count.items():
             if count > 5:
-                _max = max([int(_ip.rsplit('.', 1)[1]) for _ip in self.domains.keys()])
-                _min = min([int(_ip.rsplit('.', 1)[1]) for _ip in self.domains.keys()])
+                temp = []
+                for _ip in self.domains.keys():
+                    if _ip.startswith(ip):
+                        temp.append(_ip.rsplit('.', 1)[1])
+                _max = int(max(temp))
+                _min = int(min(temp))
                 for x in range(_min, _max):
                     _ip = ip + '.' + str(x)
                     self.q.put(_ip)
 
         print(self.c_count)
 
+    def get_title(self):
+        for ip, urls in sorted(self.domains.items()):
+            if urls:
+                for url in urls:
+                    try:
+                        r = requests.get('http://' + url, timeout=3)
+                        if re.findall('<title>(.*?)</title>', r.text, re.I | re.S) and r.encoding in ['utf-8', 'gb2312', 'GBK']:
+                            self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0]
+                        elif re.findall('<title>(.*?)</title>', r.text, re.I | re.S):
+                            self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].encode(r.encoding).decode('utf-8').strip()
+                        else:
+                            self.title[url] = ''
+                    except UnicodeDecodeError:
+                        self.title[url] = ''
+                        continue
+                    except requests.exceptions.ReadTimeout:
+                        self.title[url] = ''
+                        continue
+                    except requests.exceptions.ConnectionError:
+                        self.title[url] = ''
+                        continue
+            else:
+                try:
+                    r = requests.get('http://' + ip, timeout=3)
+                    if re.findall('<title>(.*?)</title>', r.text, re.I | re.S) and r.encoding in ['utf-8', 'gb2312', 'GBK']:
+                        self.title[ip] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0]
+                    elif re.findall('<title>(.*?)</title>', r.text, re.I | re.S):
+                        self.title[ip] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].encode(r.encoding).decode('utf-8').strip()
+                    else:
+                        self.title[ip] = ''
+                except UnicodeDecodeError:
+                    self.title[ip] = ''
+                    continue
+                except requests.exceptions.ReadTimeout:
+                    self.title[ip] = ''
+                    continue
+                except requests.exceptions.ConnectionError:
+                    self.title[ip] = ''
+                    continue
+
     def output(self):
         for ip, urls in sorted(self.domains.items()):
             print(ip + ':')
             if urls:
                 for url in urls:
-                    print('\t' + url)
+                    print('\t' + url + '\t' + self.title[url])
+            else:
+                print('\t' + self.title[ip])
 
 
 def main():
-    s = Domain(target="jit.edu.cn")
-    domain = s.run()
-    return domain
+    Domain(target="jit.edu.cn").run()
 
 if __name__ == '__main__':
     main()

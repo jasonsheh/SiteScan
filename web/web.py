@@ -8,7 +8,8 @@ from flask import Flask, render_template
 from database.database import Database
 app = Flask(__name__)
 
-max_page = Database().count('subdomain')
+max_domain = Database().count('subdomain')
+max_port = Database().count('port')
 
 
 @app.route('/')
@@ -20,7 +21,13 @@ def index():
 @app.route('/domain/<int:page>')
 def SubDomain(page=1):
     domains = Database().select_subdomain(page)
-    return render_template('domain.html', page=page, max_page=max_page//15+1, domains=domains)
+    return render_template('domain.html', page=page, max_page=max_domain//15+1, domains=domains)
+
+
+@app.route('/port/<int:page>')
+def port(page=1):
+    ports = Database().select_ports(page)
+    return render_template('port.html', page=page, max_page=max_port//15+1, ports=ports)
 
 
 @app.route('/del/<int:_id>/<string:mode>')

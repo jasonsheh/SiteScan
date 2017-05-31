@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 from scripts.ftp import Ftp
 
-from database.port import Database
+from database.database import Database
 
 
 class Port:
@@ -17,9 +17,13 @@ class Port:
 
     def scan(self):
         print('\n# 端口扫描...')
+        self.nm.scan(self.ip, arguments='-sT -P0 -sV --script=banner')
+
+        '''
         self.nm.scan(self.ip, arguments='-sT -P0 -sV --script=banner -p T:21-25,80-89,110,143,443,513,873,1080,1433,'
                                         '1521,1158,3306-3308,3389,3690,5900,6379,7001,8000-8090,9000,9418,27017-27019,5'
                                         '0060,111,11211,2049 --unprivileged')
+        '''
 
         for host in self.nm.all_hosts():
             print('-------------------------------------------')
@@ -37,7 +41,7 @@ class Port:
                           (port, self.nm[host][proto][port]['state'], self.nm[host][proto][port]['name'],
                            self.nm[host][proto][port]['product'], self.nm[host][proto][port]['version']))
 
-                Database.insert(self.nm[host])
+                Database().insert_port(host, self.nm[host][proto])
                 # self.analysis(host, proto, ports)
             print('\n')
 
@@ -68,5 +72,5 @@ class Port:
         # return self.nm
 
 if __name__ == '__main__':
-    s = Port(ip='122.194.115.170')
+    s = Port(ip='221.226.37.164')
     s.run()
