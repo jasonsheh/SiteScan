@@ -253,7 +253,7 @@ class Domain:
                     try:
                         r = requests.get('http://' + url, timeout=3)
                         if re.findall('<title>(.*?)</title>', r.text, re.I | re.S) and r.encoding in ['utf-8', 'gb2312', 'GBK']:
-                            self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0]
+                            self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].strip()
                         elif re.findall('<title>(.*?)</title>', r.text, re.I | re.S):
                             self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].encode(r.encoding).decode('utf-8').strip()
                         else:
@@ -271,7 +271,7 @@ class Domain:
                 try:
                     r = requests.get('http://' + ip, timeout=3)
                     if re.findall('<title>(.*?)</title>', r.text, re.I | re.S) and r.encoding in ['utf-8', 'gb2312', 'GBK']:
-                        self.title[ip] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0]
+                        self.title[ip] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].strip()
                     elif re.findall('<title>(.*?)</title>', r.text, re.I | re.S):
                         self.title[ip] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].encode(r.encoding).decode('utf-8').strip()
                     else:
