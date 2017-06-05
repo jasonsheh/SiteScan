@@ -112,16 +112,16 @@
               <li class="disabled"><a><span aria-hidden="true">&larr;</span> 上一页</a></li>
               <li class="disabled"><a>首页</a></li>
               {% else %}
-              <li><a href="/domain/{{ page-1 }}"><span aria-hidden="true">&larr;</span> 上一页</a></li>
-              <li><a href="/domain/1">首页</a></li>
+              <li><a href="/port/{{ page-1 }}"><span aria-hidden="true">&larr;</span> 上一页</a></li>
+              <li><a href="/port/1">首页</a></li>
               {% endif %}
 
               {% if page == max_page %}
               <li class="disabled"><a>尾页</a></li><li>
               <li class="disabled"><a>下一页 <span aria-hidden="true">&rarr;</span></a></li>
               {% else %}
-              <li><a href="/domain/{{ max_page }}">尾页</a></li>
-              <li><a href="/domain/{{ page+1 }}">下一页 <span aria-hidden="true">&rarr;</span></a></li>
+              <li><a href="/port/{{ max_page }}">尾页</a></li>
+              <li><a href="/port/{{ page+1 }}">下一页 <span aria-hidden="true">&rarr;</span></a></li>
               {% endif %}
               </ul>
           </nav>

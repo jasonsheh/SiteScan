@@ -41,7 +41,7 @@ class Database:
         self.clean()
 
     def select_subdomain(self, page):
-        sql = 'select * from subdomain limit %s,15' % ((page-1)*15)
+        sql = 'select * from subdomain order by id desc limit %s,15' % ((page-1)*15)
         self.cursor.execute(sql)
         results = self.cursor.fetchall()
 
@@ -86,7 +86,7 @@ class Database:
         self.conn.commit()
 
     def select_ports(self, page):
-        sql = 'select * from port limit %s,15' % ((page-1)*15)
+        sql = 'select * from port order by id desc limit %s,15' % ((page-1)*15)
         self.cursor.execute(sql)
         results = self.cursor.fetchall()
 
@@ -105,8 +105,44 @@ class Database:
         self.clean()
         return _results
 
+    def create_sendir(self):
+        self.cursor.execute('create table sendir('
+                            'id integer primary key, '
+                            'url varchar(255) '
+                            ')')
+
+        print("create port successfully")
+
+    def insert_sendir(self, urls):
+        for url in urls:
+            sql = "insert into sendir (url ) " \
+                  "values ('%s')" \
+                  % (url)
+            self.cursor.execute(sql)
+        self.conn.commit()
+
+    def select_sendir(self, page):
+        sql = 'select * from port order by id desc limit %s,15' % ((page-1)*15)
+        self.cursor.execute(sql)
+        results = self.cursor.fetchall()
+
+        _results = []
+        for result in results:
+            _result = {}
+            _result['id'] = result[0]
+            _result['url'] = result[1]
+            _results.append(_result)
+
+        self.clean()
+        return _results
+
     def delete(self, _id, mode):
-        self.cursor.execute('delete * from %s where id = %s' % (mode, _id))
+        self.cursor.execute('delete from %s where id = %s' % (mode, _id))
+        self.conn.commit()
+        self.clean()
+
+    def delete_all(self, mode):
+        self.cursor.execute('delete from %s' % mode)
         self.conn.commit()
         self.clean()
 
@@ -123,4 +159,5 @@ if __name__ == '__main__':
     d = Database()
     # d.select_page(page=1)
     # d.select_detail(_id=10)
-    d.create_database()
+    # d.create_database()
+    # d.delete_all('subdomain')
