@@ -15,6 +15,7 @@ import re
 
 from database.database import Database
 
+
 class Domain:
     def __init__(self, target):
         self.target = target

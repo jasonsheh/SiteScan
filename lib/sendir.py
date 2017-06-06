@@ -7,6 +7,7 @@ import requests
 import threading
 import queue
 import time
+from database.database import Database
 
 
 class Sendir:
@@ -51,6 +52,7 @@ class Sendir:
             if len(self.sensitive) < 20:
                 for url in self.sensitive:
                     print(url)
+            Database().insert_sendir(self.sensitive)
             return self.sensitive
         except Exception as e:
             print(e)
@@ -58,7 +60,7 @@ class Sendir:
 
 
 def main():
-    Sendir(target='http://sbc.jit.edu.cn').run()
+    Sendir(target='http://dkxy.jit.edu.cn').run()
 
 if __name__ == '__main__':
     main()

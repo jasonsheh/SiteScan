@@ -37,8 +37,8 @@ def port(page=1):
 @app.route('/sendir')
 @app.route('/sendir/<int:page>')
 def sendir(page=1):
-    ports = Database().select_sendir(page)
-    return render_template('port.html', page=page, max_page=max_sendir//15+1, ports=ports)
+    sendir = Database().select_sendir(page)
+    return render_template('sendir.html', page=page, max_page=max_sendir//15+1, sendirs=sendir)
 
 
 @app.route('/del/<int:_id>/<string:mode>')

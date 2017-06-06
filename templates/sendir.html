@@ -48,15 +48,15 @@
       <div class="row">
         <div class="col-sm-3 col-md-2 sidebar">
           <ul class="nav nav-sidebar">
-            <li><a href="#">Overview <span class="sr-only">(current)</span></a></li>
+            <li><a href="#">Overview</li>
             <li><a href="#">Reports</a></li>
             <li><a href="#">Analytics</a></li>
             <li><a href="#">Export</a></li>
           </ul>
           <ul class="nav nav-sidebar">
-            <li class="active"><a href="/domain/1">Subdomain</a></li>
+            <li><a href="/domain/1">Subdomain</a></li>
             <li><a href="/port/1">Port</a></li>
-            <li><a href="">Directory</a></li>
+            <li class="active"><a href="/sendir/1">Directory</a><span class="sr-only">(current)</span></li>
           </ul>
           <ul class="nav nav-sidebar">
             <li><a href="">Nav item again</a></li>
@@ -65,13 +65,13 @@
           </ul>
         </div>
         <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-          <h1 class="page-header">Subdomain</h1>
+          <h1 class="page-header">Sendir</h1>
           <form class="form-inline" role="form" action="/add" method=post>
                 <span class="form-group-btn">
                 <button class="btn btn-default" type="submit">Scan it!</button>
                 </span>
                 <div class="form-group">
-                  <input type="text" class="form-control" placeholder="Add a task ..." name="domain" value="">
+                  <input type="text" class="form-control" placeholder="Add a task ..." name="sendir" value="">
                 </div><!-- /input-group -->
             </form>
 
@@ -80,19 +80,15 @@
               <thead>
                 <tr>
                   <th>Id</th>
-                  <th>IP</th>
                   <th>Url</th>
-                  <th>Title</th>
                 </tr>
               </thead>
-              {% for domain in domains %}
+              {% for sendir in sendirs %}
               <tbody>
                 <tr>
-                  <td>{{ domain.id }}</td>
-                  <td>{{ domain.ip }}</td>
-                  <td><a href="http://{{ domain.url }}">{{ domain.url }}</a></td>
-                  <td>{{ domain.title }}</td>
-                  <td><a class="btn btn-danger btn-xs" href="/del/{{domain.id}}/subdomain" role="button">删除</a></td>
+                  <td>{{ sendir.id }}</td>
+                  <td><a href="http://{{sendir.url}}">{{ sendir.url }}</a></td>
+                  <td><a class="btn btn-danger btn-xs" href="/del/{{sendir.id}}/subdomain" role="button">删除</a></td>
                 </tr>
               </tbody>
               {% endfor %}
@@ -105,16 +101,16 @@
               <li class="disabled"><a><span aria-hidden="true">&larr;</span> 上一页</a></li>
               <li class="disabled"><a>首页</a></li>
               {% else %}
-              <li><a href="/domain/{{ page-1 }}"><span aria-hidden="true">&larr;</span> 上一页</a></li>
-              <li><a href="/domain/1">首页</a></li>
+              <li><a href="/sendir/{{ page-1 }}"><span aria-hidden="true">&larr;</span> 上一页</a></li>
+              <li><a href="/sendir/1">首页</a></li>
               {% endif %}
 
               {% if page == max_page %}
               <li class="disabled"><a>尾页</a></li><li>
               <li class="disabled"><a>下一页 <span aria-hidden="true">&rarr;</span></a></li>
               {% else %}
-              <li><a href="/domain/{{ max_page }}">尾页</a></li>
-              <li><a href="/domain/{{ page+1 }}">下一页 <span aria-hidden="true">&rarr;</span></a></li>
+              <li><a href="/sendir/{{ max_page }}">尾页</a></li>
+              <li><a href="/sendir/{{ page+1 }}">下一页 <span aria-hidden="true">&rarr;</span></a></li>
               {% endif %}
               </ul>
           </nav>
