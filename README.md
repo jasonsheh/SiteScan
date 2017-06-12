@@ -1,19 +1,11 @@
 # SiteScan
 
-A tool help get the basic information of one site, such as Ip, Used Scripts, Web Server,
-and it can crawl the site to get a sitemap, also can test common sensitive dictionaries, sql injections, xss
-and using nmap to scan ports
+一个简单的安全工具
 
-## Usage
+暂时支持目录爬取, 子域名, 端口 其他功能正在编写
 
-`python SiteScan.py -[option]`
+暂时只放几个截图
 
-`-d or --domain : domain name`
+![subdomain](https://raw.githubusercontent.com/jasonsheh/SiteScan/master/doc/subdomain.png)
 
-`-s or --sub [true|false]: whether use subdomain module`
-
-Notice: SiteScan only works with python 3.x
-
-## Details
-
-please visit octfive.cn to get the analysis about SiteScan
+![port](https://raw.githubusercontent.com/jasonsheh/SiteScan/master/doc/port.png)

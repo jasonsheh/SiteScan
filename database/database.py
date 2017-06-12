@@ -11,31 +11,34 @@ class Database:
         self.cursor = self.conn.cursor()
 
     def create_database(self):
-        #self.create_subdomain()
-        self.create_port()
+        self.create_subdomain()
+        # self.create_port()
+        # self.create_sendir()
+        # self.create_finger()
 
     def create_subdomain(self):
         self.cursor.execute('create table subdomain('
                             'id integer primary key,'
                             'ip varchar(16), '
                             'url varchar(255), '
-                            'title varchar(255)'
+                            'title varchar(255), '
+                            'appname varchar(255)'
                             ')')
 
         print("create subdomain successfully")
 
-    def insert_subdomain(self, domains, title):
+    def insert_subdomain(self, domains, title, appname):
         for ip, urls in sorted(domains.items()):
             if urls:
                 for url in urls:
-                    sql = "insert into subdomain (ip, url, title) " \
-                          "values ('%s', '%s', '%s')"\
-                          % (ip, url, title[url])
+                    sql = "insert into subdomain (ip, url, title, appname) " \
+                          "values ('%s', '%s', '%s', '%s')"\
+                          % (ip, url, title[url], appname[url])
                     self.cursor.execute(sql)
             else:
-                sql = "insert into subdomain (ip, url, title) " \
-                      "values ('%s', '%s', '%s')" \
-                      % (ip, '', title[ip])
+                sql = "insert into subdomain (ip, url, title, appname) " \
+                      "values ('%s', '%s', '%s', '%s')" \
+                      % (ip, ' ', title[ip], appname[ip])
                 self.cursor.execute(sql)
         self.conn.commit()
         self.clean()
@@ -52,6 +55,7 @@ class Database:
             _result['ip'] = result[1]
             _result['url'] = result[2]
             _result['title'] = result[3]
+            _result['appname'] = result[4]
             _results.append(_result)
 
         self.clean()
@@ -136,6 +140,38 @@ class Database:
         self.clean()
         return _results
 
+    def create_finger(self):
+        self.cursor.execute('create table finger('
+                            'id integer primary key, '
+                            'url varchar(255), '
+                            'appname varchar(255)'
+                            ')')
+
+        print("create finger successfully")
+
+    def insert_finger(self, url, appnames):
+        sql = "insert into finger (url, appname ) " \
+              "values ('%s', '%s')" \
+              % (url, appnames)
+        self.cursor.execute(sql)
+        self.conn.commit()
+
+    def select_finger(self, page):
+        sql = 'select * from finger order by id desc limit %s,15' % ((page-1)*15)
+        self.cursor.execute(sql)
+        results = self.cursor.fetchall()
+
+        _results = []
+        for result in results:
+            _result = {}
+            _result['id'] = result[0]
+            _result['url'] = result[1]
+            _result['appname'] = result[1]
+            _results.append(_result)
+
+        self.clean()
+        return _results
+
     def delete(self, _id, mode):
         self.cursor.execute('delete from %s where id = %s' % (mode, _id))
         self.conn.commit()
@@ -159,5 +195,5 @@ if __name__ == '__main__':
     d = Database()
     # d.select_page(page=1)
     # d.select_detail(_id=10)
-    # d.create_database()
+    d.create_database()
     # d.delete_all('subdomain')
