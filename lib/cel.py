@@ -32,3 +32,8 @@ def domain_scan(domain):
 def sendir_scan(domain):
     Sendir(domain).run()
 
+
+@cel.task()
+def site_scan(domain):
+    Domain(domain).run()
+    Sendir(domain).run()

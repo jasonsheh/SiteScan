@@ -14,6 +14,7 @@ import socket
 import re
 
 from database.database import Database
+from lib.fingerprint import FingerPrint
 
 
 class Domain:
@@ -26,6 +27,7 @@ class Domain:
         self.domain = []
         self.domains = {}
         self.title = {}
+        self.appname = {}
 
     def init(self):
         if self.target.startswith('http://www.'):
@@ -38,6 +40,7 @@ class Domain:
             self.target = self.target[8:]
         elif self.target.startswith('www.'):
             self.target = self.target[4:]
+        self.target = self.target.strip('/')
 
     def run(self):
         self.init()
@@ -48,8 +51,11 @@ class Domain:
         self.brute()
         self.get_title()
         self.output()
-        Database().insert_subdomain(self.domains, self.title)
-        return self.domains.keys()
+        self.appname = FingerPrint([y for x in self.domains.values() for y in x]).run()
+        print(self.appname)
+        Database().insert_subdomain(self.domains, self.title, self.appname)
+        print(self.domains)
+        return self.domains
 
     def ilink(self):
         print('\nilink子域名查询')
@@ -154,7 +160,6 @@ class Domain:
                 answers = dns.resolver.query(url)
                 if answers:
                     ips = [answer.address for answer in answers]
-
                 # r = requests.get(url, timeout=0.1, allow_redirects=False)
                 # if r.status_code == 200:
                     for ip in ips:
@@ -206,7 +211,7 @@ class Domain:
         for url in urls:
             if url.split('/', 1)[0] not in host:
                 host.append(url.split('/', 1)[0])
-        return host
+        return list(set(host))
 
     def c_duan(self):
         while not self.q.empty():
@@ -216,6 +221,9 @@ class Domain:
                 domain = self.same_ip(ip)
                 if ip in self.domains.keys():
                     self.domains[ip] += domain
+                    time.sleep(0.1)
+                elif not domain:
+                    self.domains[ip] = [ip]
                     time.sleep(0.1)
                 else:
                     self.domains[ip] = domain
@@ -253,10 +261,10 @@ class Domain:
                 for url in urls:
                     try:
                         r = requests.get('http://' + url, timeout=3)
-                        if re.findall('<title>(.*?)</title>', r.text, re.I | re.S) and r.encoding in ['utf-8', 'gb2312', 'GBK']:
+                        if re.findall('<title>(.*?)</title>', r.text, re.I | re.S) and r.encoding.split(',')[0] in ['utf-8', 'gb2312', 'GBK']:
                             self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].strip()
                         elif re.findall('<title>(.*?)</title>', r.text, re.I | re.S):
-                            self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].encode(r.encoding).decode('utf-8').strip()
+                            self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].encode(r.encoding.split(',')[0]).decode('utf-8').strip()
                         else:
                             self.title[url] = ''
                     except UnicodeDecodeError:
@@ -268,24 +276,6 @@ class Domain:
                     except requests.exceptions.ConnectionError:
                         self.title[url] = ''
                         continue
-            else:
-                try:
-                    r = requests.get('http://' + ip, timeout=3)
-                    if re.findall('<title>(.*?)</title>', r.text, re.I | re.S) and r.encoding in ['utf-8', 'gb2312', 'GBK']:
-                        self.title[ip] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].strip()
-                    elif re.findall('<title>(.*?)</title>', r.text, re.I | re.S):
-                        self.title[ip] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].encode(r.encoding).decode('utf-8').strip()
-                    else:
-                        self.title[ip] = ''
-                except UnicodeDecodeError:
-                    self.title[ip] = ''
-                    continue
-                except requests.exceptions.ReadTimeout:
-                    self.title[ip] = ''
-                    continue
-                except requests.exceptions.ConnectionError:
-                    self.title[ip] = ''
-                    continue
 
     def output(self):
         for ip, urls in sorted(self.domains.items()):
@@ -298,7 +288,7 @@ class Domain:
 
 
 def main():
-    Domain(target="jit.edu.cn").run()
+    Domain(target="http://bilibili.com").run()
 
 if __name__ == '__main__':
     main()
