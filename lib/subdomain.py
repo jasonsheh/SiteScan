@@ -49,12 +49,9 @@ class Domain:
         # self.chaxunla()
         # elif not self.domain or len(self.domain) < 3:
         self.brute()
-        self.get_title()
         self.output()
         self.appname = FingerPrint([y for x in self.domains.values() for y in x]).run()
-        print(self.appname)
         Database().insert_subdomain(self.domains, self.title, self.appname)
-        print(self.domains)
         return self.domains
 
     def ilink(self):
@@ -120,8 +117,8 @@ class Domain:
             for item in threads:
                 item.join()
 
-            '''print('二级子域名爆破...')
-            self.domain = list(set(self.domains.values()))
+            print('\n二级子域名爆破...')
+            self.domain = list(set([y for x in self.domains.values() for y in x]))
             self.sub_domain_dict()
             threads = []
             for i in range(int(self.thread_num)):
@@ -130,9 +127,9 @@ class Domain:
             for item in threads:
                 item.start()
             for item in threads:
-                item.join()'''
+                item.join()
 
-            print('c段扫描...')
+            print('\nc段扫描...')
             self.c_check()
             threads = []
             for i in range(int(self.thread_num)):
@@ -143,13 +140,26 @@ class Domain:
             for item in threads:
                 item.join()
 
+            t2 = time.time()
+            print('\nTotal time: ' + str(t2 - t1) + '\n')
+
+            print('\n网站标题扫描')
+            self.enqueue_title()
+            threads = []
+            for i in range(int(self.thread_num)):
+                t = threading.Thread(target=self.get_title)
+                threads.append(t)
+            for item in threads:
+                item.start()
+            for item in threads:
+                item.join()
+
+            t3 = time.time()
+            print('\nTotal time: ' + str(t3 - t2) + '\n')
+
         except KeyboardInterrupt as e:
             print('\n')
             print(e)
-
-        t2 = time.time()
-
-        print('\nTotal time: ' + str(t2 - t1) + '\n')
 
     def _brute(self):
         while not self.q.empty():
@@ -160,8 +170,6 @@ class Domain:
                 answers = dns.resolver.query(url)
                 if answers:
                     ips = [answer.address for answer in answers]
-                # r = requests.get(url, timeout=0.1, allow_redirects=False)
-                # if r.status_code == 200:
                     for ip in ips:
                         if ip in ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204',
                                   '220.250.64.225']:
@@ -186,11 +194,12 @@ class Domain:
                     answers = dns.resolver.query(url)
                     if answers:
                         ips = [answer.address for answer in answers]
-
                         for ip in ips:
-                            if ip in ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204']:
+                            if ip in ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204',
+                                      '220.250.64.225']:
                                 continue
                             if ip in self.domains.keys():
+                                # if len(self.domains[ip]) > 20:
                                 self.domains[ip].append(url)
                                 print(url + '\t' + ip)
                                 time.sleep(0.1)
@@ -255,8 +264,13 @@ class Domain:
 
         print(self.c_count)
 
+    def enqueue_title(self):
+        for urls in sorted(self.domains.values()):
+            self.q.put(urls)
+
     def get_title(self):
-        for ip, urls in sorted(self.domains.items()):
+        while not self.q.empty():
+            urls = self.q.get()
             if urls:
                 for url in urls:
                     try:
@@ -267,6 +281,7 @@ class Domain:
                             self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].encode(r.encoding.split(',')[0]).decode('utf-8').strip()
                         else:
                             self.title[url] = ''
+                        # print(url, self.title[url])
                     except UnicodeDecodeError:
                         self.title[url] = ''
                         continue
@@ -274,6 +289,9 @@ class Domain:
                         self.title[url] = ''
                         continue
                     except requests.exceptions.ConnectionError:
+                        self.title[url] = ''
+                        continue
+                    except requests.exceptions.TooManyRedirects:
                         self.title[url] = ''
                         continue
 
@@ -288,7 +306,7 @@ class Domain:
 
 
 def main():
-    Domain(target="http://bilibili.com").run()
+    Domain(target="www.jit.edu.cn").run()
 
 if __name__ == '__main__':
     main()

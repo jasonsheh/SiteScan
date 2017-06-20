@@ -16,9 +16,41 @@ class Database:
         # self.create_sendir()
         # self.create_finger()
 
+    def create_task(self):
+        self.cursor.execute('create table task('
+                            'id integer primary key,'
+                            'name varchar(64)'
+                            ')')
+
+        print("create task successfully")
+
+    def insert_task(self, name):
+        sql = "insert into task (name) " \
+              "values ('%s')"\
+              % (name)
+        self.cursor.execute(sql)
+        self.conn.commit()
+        self.clean()
+
+    def select_task(self, page):
+        sql = 'select * from task order by id desc limit %s,15' % ((page-1)*15)
+        self.cursor.execute(sql)
+        results = self.cursor.fetchall()
+
+        _results = []
+        for result in results:
+            _result = {}
+            _result['id'] = result[0]
+            _result['name'] = result[1]
+            _results.append(_result)
+
+        self.clean()
+        return _results
+
     def create_subdomain(self):
         self.cursor.execute('create table subdomain('
                             'id integer primary key,'
+                            'taskid integer, '
                             'ip varchar(16), '
                             'url varchar(255), '
                             'title varchar(255), '
@@ -35,11 +67,6 @@ class Database:
                           "values ('%s', '%s', '%s', '%s')"\
                           % (ip, url, title[url], appname[url])
                     self.cursor.execute(sql)
-            else:
-                sql = "insert into subdomain (ip, url, title, appname) " \
-                      "values ('%s', '%s', '%s', '%s')" \
-                      % (ip, ' ', title[ip], appname[ip])
-                self.cursor.execute(sql)
         self.conn.commit()
         self.clean()
 
@@ -64,6 +91,7 @@ class Database:
     def create_port(self):
         self.cursor.execute('create table port('
                             'id integer primary key, '
+                            'taskid integer, '
                             'ip varchar(255), '
                             'port varchar(6), '
                             'state varchar(10), '
@@ -112,6 +140,7 @@ class Database:
     def create_sendir(self):
         self.cursor.execute('create table sendir('
                             'id integer primary key, '
+                            'taskid integer, '
                             'url varchar(255) '
                             ')')
 
@@ -126,7 +155,7 @@ class Database:
         self.conn.commit()
 
     def select_sendir(self, page):
-        sql = 'select * from port order by id desc limit %s,15' % ((page-1)*15)
+        sql = 'select * from sendir order by id desc limit %s,15' % ((page-1)*15)
         self.cursor.execute(sql)
         results = self.cursor.fetchall()
 
@@ -143,6 +172,7 @@ class Database:
     def create_finger(self):
         self.cursor.execute('create table finger('
                             'id integer primary key, '
+                            'taskid integer, '
                             'url varchar(255), '
                             'appname varchar(255)'
                             ')')
@@ -172,8 +202,8 @@ class Database:
         self.clean()
         return _results
 
-    def delete(self, _id, mode):
-        self.cursor.execute('delete from %s where id = %s' % (mode, _id))
+    def delete(self, id, mode):
+        self.cursor.execute('delete from %s where id = %s' % (mode, id))
         self.conn.commit()
         self.clean()
 
