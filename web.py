@@ -30,8 +30,28 @@ def index(page=1):
 @app.route('/detail')
 @app.route('/detail/<int:id>')
 def detail(id=1):
-    domains = Database().select_subdomain(id)
-    return render_template('detail.html', page=page, max_page=max_domain//15+1, domains=domains)
+    domain_number = Database().count_task('subdomain', id)
+    port_number = Database().count_task('port', id)
+    sendir_number = Database().count_task('sendir', id)
+    return render_template('detail.html', id=id, domain_number=domain_number,
+                           port_number=port_number, sendir_number=sendir_number)
+
+
+@app.route('/detail/<string:mode>/<int:id>')
+@app.route('/detail/<string:mode>/<int:id>/<int:page>')
+def detail_domain(mode, id, page=1):
+    if mode == 'domain':
+        domain_number = Database().count_task('subdomain', id)
+        domains = Database().select_task_subdomain(page, id)
+        return render_template('detail.html', id=id, mode=mode, page=page, max_page=domain_number//15+1, domains=domains)
+    if mode == 'port':
+        port_number = Database().count_task('port', id)
+        ports = Database().select_task_port(page, id)
+        return render_template('detail.html', id=id, mode=mode, page=page, max_page=port_number//15+1, ports=ports)
+    if mode == 'sendir':
+        sendir_number = Database().count_task('sendir', id)
+        sendir = Database().select_task_sendir(page, id)
+        return render_template('detail.html', id=id, mode=mode, page=page, max_page=sendir_number//15+1, sendirs=sendir)
 
 
 @app.route('/domain')
@@ -44,7 +64,7 @@ def subdomain(page=1):
 @app.route('/port')
 @app.route('/port/<int:page>')
 def port(page=1):
-    ports = Database().select_ports(page)
+    ports = Database().select_port(page)
     return render_template('port.html', page=page, max_page=max_port//15+1, ports=ports)
 
 
@@ -80,7 +100,17 @@ def add_task():
             sendir_scan.delay(request.form['sendir'])
             return redirect('/sendir/1')
         elif request.form.get('sitescan'):
-            site_scan.delay(request.form['sitescan'])
+            if request.form['sitescan'].startswith('http://www.'):
+                target = request.form['sitescan'][11:]
+            elif request.form['sitescan'].startswith('https://www.'):
+                target = request.form['sitescan'][12:]
+            elif request.form['sitescan'].startswith('http://'):
+                target = request.form['sitescan'][7:]
+            elif request.form['sitescan'].startswith('https://'):
+                target = request.form['sitescan'][8:]
+            else:
+                target = request.form['sitescan']
+            site_scan.delay(target)
             return redirect('/index')
 
 

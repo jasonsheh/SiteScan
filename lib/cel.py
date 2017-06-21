@@ -14,6 +14,8 @@ from lib.struts2 import Struts2
 from lib.port import Port
 from lib.subdomain import Domain
 
+from database.database import Database
+
 from celery import Celery
 cel = Celery('cel', broker='redis://localhost:6379')
 
@@ -35,5 +37,6 @@ def sendir_scan(domain):
 
 @cel.task()
 def site_scan(domain):
-    Domain(domain).run()
-    Sendir(domain).run()
+    id = Database().insert_task(domain)
+    domains = Domain(domain, id).run()
+    Sendir(domains, id).run()

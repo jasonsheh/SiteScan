@@ -8,8 +8,8 @@
     <title>SiteScan</title>
 
     <!-- Bootstrap -->
-    <link href="./static/css/bootstrap.min.css" rel="stylesheet">
-    <link href="./static/css/dashboard.css" rel="stylesheet">
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/dashboard.css" rel="stylesheet">
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -49,7 +49,7 @@
       <div class="row">
         <div class="col-sm-3 col-md-2 sidebar">
           <ul class="nav nav-sidebar">
-            <li ><a href="#">Overview</a></li>
+            <li ><a href="/">Overview</a></li>
             <li class="active"><a href="/detail">Detail</a></li>
             <li><a href="#">Analytics</a></li>
           </ul>
@@ -66,63 +66,177 @@
         </div>
         <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
             <ul class="nav nav-tabs">
-              <li class="active"><a href="#">Index</a></li>
-              <li><a href="#">Subdomain</a></li>
-              <li><a href="#">Port</a></li>
-              <li><a href="#">Directory</a></li>
-            </ul>
+              {% if mode %}
+              <li><a href="#">Index</a></li>
+              {% else %}
+              <li class="active"><a href="/detail">Index</a></li>
+              {% endif %}
 
+              {% if mode == 'domain' %}
+              <li class="active"><a href="/detail/domain/{{ id }}">Subdomain</a></li>
+              <li><a href="/detail/port/{{ id }}">Port</a></li>
+              <li><a href="/detail/sendir/{{ id }}">Directory</a></li>
+              {% elif mode == 'port' %}
+              <li><a href="/detail/domain/{{ id }}">Subdomain</a></li>
+              <li class="active"><a href="/detail/port/{{ id }}">Port</a></li>
+              <li><a href="/detail/sendir/{{ id }}">Directory</a></li>
+              {% elif mode == 'sendir' %}
+              <li><a href="/detail/domain/{{ id }}">Subdomain</a></li>
+              <li><a href="/detail/port/{{ id }}">Port</a></li>
+              <li class="active"><a href="/detail/sendir/{{ id }}">Directory</a></li>
+              {% else %}
+              <li><a href="/detail/domain/{{ id }}">Subdomain</a></li>
+              <li><a href="/detail/port/{{ id }}">Port</a></li>
+              <li><a href="/detail/sendir/{{ id }}">Directory</a></li>
+              {% endif %}
+            </ul>
+          {% if not mode %}
           <div class="row placeholders">
             <div class="col-xs-6 col-sm-3 placeholder">
               <h4>Subdomain</h4>
-              <span class="text-muted">{{ max_domain }}</span>
+              <span class="text-muted">{{ domain_number }}</span>
             </div>
             <div class="col-xs-6 col-sm-3 placeholder">
               <h4>Port</h4>
-              <span class="text-muted">{{ max_port }}</span>
+              <span class="text-muted">{{ port_number }}</span>
             </div>
             <div class="col-xs-6 col-sm-3 placeholder">
               <h4>Directory</h4>
-              <span class="text-muted">{{ max_sendir }}</span>
-            </div>
-            <div class="col-xs-6 col-sm-3 placeholder">
-              <h4>FingerPrint</h4>
-              <span class="text-muted">{{ max_fingerprint }}</span>
+              <span class="text-muted">{{ sendir_number }}</span>
             </div>
           </div>
-
-          <h2 class="sub-header">Task List</h2>
-          <form class="form-inline" role="form" action="/add" method=post>
-                <span class="form-group-btn">
-                <button class="btn btn-default" type="submit">Scan it!</button>
-                </span>
-                <div class="form-group">
-                  <input type="text" class="form-control" placeholder="Add a task ..." name="sitescan" value="">
-                </div><!-- /input-group -->
-            </form>
-
+          {% elif mode == 'domain' %}
           <div class="table-responsive">
             <table class="table table-striped">
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>ID</th>
-                  <th>Target</th>
-                  <th>Header</th>
-                  <th>Header</th>
+                  <th>Id</th>
+                  <th>IP</th>
+                  <th>Url</th>
+                  <th>Title</th>
+                  <th>Appname</th>
                 </tr>
               </thead>
+              {% for domain in domains %}
               <tbody>
                 <tr>
-                  <td>1,001</td>
-                  <td>Lorem</td>
-                  <td>ipsum</td>
-                  <td>dolor</td>
-                  <td>sit</td>
+                  <td>{{ domain.id }}</td>
+                  <td>{{ domain.ip }}</td>
+                  <td><a href="http://{{ domain.url }}">{{ domain.url }}</a></td>
+                  <td>{{ domain.title }}</td>
+                  <td>{{ domain.appname }}</td>
                 </tr>
               </tbody>
+              {% endfor %}
             </table>
           </div>
+          <nav>
+              <ul class="pager">
+              {% if page <= 1 %}
+              <li class="disabled"><a><span aria-hidden="true">&larr;</span> 上一页</a></li>
+              <li class="disabled"><a>首页</a></li>
+              {% else %}
+              <li><a href="/detail/domain/{{ id }}/{{ page-1 }}"><span aria-hidden="true">&larr;</span> 上一页</a></li>
+              <li><a href="/detail/domain/{{ id }}/1">首页</a></li>
+              {% endif %}
+
+              {% if page == max_page %}
+              <li class="disabled"><a>尾页</a></li><li>
+              <li class="disabled"><a>下一页 <span aria-hidden="true">&rarr;</span></a></li>
+              {% else %}
+              <li><a href="/detail/domain/{{ id }}/{{ max_page }}">尾页</a></li>
+              <li><a href="/detail/domain/{{ id }}/{{ page+1 }}">下一页 <span aria-hidden="true">&rarr;</span></a></li>
+              {% endif %}
+              </ul>
+          </nav>
+          {% elif mode == 'port' %}
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Id</th>
+                  <th>IP</th>
+                  <th>Port</th>
+                  <th>State</th>
+                  <th>Name</th>
+                  <th>Service</th>
+                  <th>Version</th>
+                </tr>
+              </thead>
+              {% for port in ports %}
+              <tbody>
+                <tr>
+                  <td>{{ port.id }}</td>
+                  <td>{{ port.ip }}</td>
+                  <td>{{ port.port }}</td>
+                  <td>{{ port.state }}</td>
+                  <td>{{ port.name }}</td>
+                  <td>{{ port.service }}</td>
+                  <td>{{ port.version }}</td>
+                </tr>
+              </tbody>
+              {% endfor %}
+            </table>
+          </div>
+          <nav>
+              <ul class="pager">
+              {% if page <= 1 %}
+              <li class="disabled"><a><span aria-hidden="true">&larr;</span> 上一页</a></li>
+              <li class="disabled"><a>首页</a></li>
+              {% else %}
+              <li><a href="/detail/port/{{ id }}//{{ page-1 }}"><span aria-hidden="true">&larr;</span> 上一页</a></li>
+              <li><a href="/detail/port/{{ id }}//1">首页</a></li>
+              {% endif %}
+
+              {% if page == max_page %}
+              <li class="disabled"><a>尾页</a></li><li>
+              <li class="disabled"><a>下一页 <span aria-hidden="true">&rarr;</span></a></li>
+              {% else %}
+              <li><a href="/detail/port/{{ id }}//{{ max_page }}">尾页</a></li>
+              <li><a href="/detail/port/{{ id }}//{{ page+1 }}">下一页 <span aria-hidden="true">&rarr;</span></a></li>
+              {% endif %}
+              </ul>
+          </nav>
+          {% else %}
+          <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Id</th>
+                  <th>Url</th>
+                </tr>
+              </thead>
+              {% for sendir in sendirs %}
+              <tbody>
+                <tr>
+                  <td>{{ sendir.id }}</td>
+                  <td><a href="http://{{sendir.url}}">{{ sendir.url }}</a></td>
+                  <td><a class="btn btn-danger btn-xs" href="/del/{{sendir.id}}/subdomain" role="button">删除</a></td>
+                </tr>
+              </tbody>
+              {% endfor %}
+            </table>
+          </div>
+              <nav>
+              <ul class="pager">
+              {% if page <= 1 %}
+              <li class="disabled"><a><span aria-hidden="true">&larr;</span> 上一页</a></li>
+              <li class="disabled"><a>首页</a></li>
+              {% else %}
+              <li><a href="/detail/sendir/{{ id }}//{{ page-1 }}"><span aria-hidden="true">&larr;</span> 上一页</a></li>
+              <li><a href="/detail/sendir/{{ id }}//1">首页</a></li>
+              {% endif %}
+
+              {% if page == max_page %}
+              <li class="disabled"><a>尾页</a></li><li>
+              <li class="disabled"><a>下一页 <span aria-hidden="true">&rarr;</span></a></li>
+              {% else %}
+              <li><a href="/detail/sendir/{{ id }}//{{ max_page }}">尾页</a></li>
+              <li><a href="/detail/sendir/{{ id }}//{{ page+1 }}">下一页 <span aria-hidden="true">&rarr;</span></a></li>
+              {% endif %}
+              </ul>
+          </nav>
+          {% endif %}
         </div>
       </div>
     </div>

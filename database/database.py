@@ -11,10 +11,11 @@ class Database:
         self.cursor = self.conn.cursor()
 
     def create_database(self):
+        self.create_task()
         self.create_subdomain()
-        # self.create_port()
-        # self.create_sendir()
-        # self.create_finger()
+        self.create_port()
+        self.create_sendir()
+        self.create_finger()
 
     def create_task(self):
         self.cursor.execute('create table task('
@@ -30,7 +31,14 @@ class Database:
               % (name)
         self.cursor.execute(sql)
         self.conn.commit()
+
+        sql = "select id from task where name = '%s'" \
+              % (name)
+        self.cursor.execute(sql)
+        id = self.cursor.fetchall()
         self.clean()
+
+        return id[0][0]
 
     def select_task(self, page):
         sql = 'select * from task order by id desc limit %s,15' % ((page-1)*15)
@@ -47,25 +55,81 @@ class Database:
         self.clean()
         return _results
 
+    def select_task_subdomain(self, page, id):
+        sql = 'select * from subdomain where taskid = %s order by id desc limit %s,15' % (id, (page-1)*15)
+        self.cursor.execute(sql)
+        results = self.cursor.fetchall()
+
+        _results = []
+        for result in results:
+            _result = {}
+            _result['id'] = result[0]
+            _result['ip'] = result[1]
+            _result['url'] = result[2]
+            _result['title'] = result[3]
+            _result['appname'] = result[4]
+            _result['taskid'] = result[5]
+            _results.append(_result)
+
+        self.clean()
+        return _results
+
+    def select_task_port(self, page, id):
+        sql = 'select * from port where taskid = %s order by id desc limit %s,15' % (id, (page-1)*15)
+        self.cursor.execute(sql)
+        results = self.cursor.fetchall()
+
+        _results = []
+        for result in results:
+            _result = {}
+            _result['id'] = result[0]
+            _result['ip'] = result[1]
+            _result['port'] = result[2]
+            _result['state'] = result[3]
+            _result['name'] = result[4]
+            _result['service'] = result[5]
+            _result['version'] = result[6]
+            _result['taskid'] = result[7]
+            _results.append(_result)
+
+        self.clean()
+        return _results
+
+    def select_task_sendir(self, page, id):
+        sql = 'select * from sendir where taskid = %s order by id desc limit %s,15' % (id, (page-1)*15)
+        self.cursor.execute(sql)
+        results = self.cursor.fetchall()
+
+        _results = []
+        for result in results:
+            _result = {}
+            _result['id'] = result[0]
+            _result['url'] = result[1]
+            _result['taskid'] = result[2]
+            _results.append(_result)
+
+        self.clean()
+        return _results
+
     def create_subdomain(self):
-        self.cursor.execute('create table subdomain('
+        self.cursor.execute('create table subdomain ('
                             'id integer primary key,'
-                            'taskid integer, '
                             'ip varchar(16), '
                             'url varchar(255), '
                             'title varchar(255), '
-                            'appname varchar(255)'
+                            'appname varchar(255), '
+                            'taskid integer '
                             ')')
 
         print("create subdomain successfully")
 
-    def insert_subdomain(self, domains, title, appname):
+    def insert_subdomain(self, domains, title, appname, taskid=''):
         for ip, urls in sorted(domains.items()):
             if urls:
                 for url in urls:
-                    sql = "insert into subdomain (ip, url, title, appname) " \
-                          "values ('%s', '%s', '%s', '%s')"\
-                          % (ip, url, title[url], appname[url])
+                    sql = "insert into subdomain (ip, url, title, appname, taskid) " \
+                          "values ('%s', '%s', '%s', '%s', '%s')"\
+                          % (ip, url, title[url], appname[url], taskid)
                     self.cursor.execute(sql)
         self.conn.commit()
         self.clean()
@@ -83,6 +147,7 @@ class Database:
             _result['url'] = result[2]
             _result['title'] = result[3]
             _result['appname'] = result[4]
+            _result['taskid'] = result[5]
             _results.append(_result)
 
         self.clean()
@@ -91,18 +156,18 @@ class Database:
     def create_port(self):
         self.cursor.execute('create table port('
                             'id integer primary key, '
-                            'taskid integer, '
                             'ip varchar(255), '
                             'port varchar(6), '
                             'state varchar(10), '
                             'name varchar(10), '
                             'service varchar(40), '
-                            'version varchar(40)'
+                            'version varchar(40), '
+                            'taskid integer '
                             ')')
 
         print("create port successfully")
 
-    def insert_port(self, host, porto):
+    def insert_port(self, host, porto, taskid=''):
         ports = list(porto.keys())
         ports.sort()
         for port in ports:
@@ -111,13 +176,13 @@ class Database:
             service = porto[port]['product']
             version = porto[port]['version']
 
-            sql = "insert into port (ip, port, state, name, service, version ) " \
-                  "values ('%s', '%s', '%s', '%s', '%s', '%s' )"\
-                  % (host, port, state, name, service, version)
+            sql = "insert into port (ip, port, state, name, service, version, taskid ) " \
+                  "values ('%s', '%s', '%s', '%s', '%s', '%s', '%s' )"\
+                  % (host, port, state, name, service, version, taskid)
             self.cursor.execute(sql)
         self.conn.commit()
 
-    def select_ports(self, page):
+    def select_port(self, page):
         sql = 'select * from port order by id desc limit %s,15' % ((page-1)*15)
         self.cursor.execute(sql)
         results = self.cursor.fetchall()
@@ -132,6 +197,7 @@ class Database:
             _result['name'] = result[4]
             _result['service'] = result[5]
             _result['version'] = result[6]
+            _result['taskid'] = result[7]
             _results.append(_result)
 
         self.clean()
@@ -140,17 +206,17 @@ class Database:
     def create_sendir(self):
         self.cursor.execute('create table sendir('
                             'id integer primary key, '
-                            'taskid integer, '
-                            'url varchar(255) '
+                            'url varchar(255), '
+                            'taskid integer '
                             ')')
 
         print("create port successfully")
 
-    def insert_sendir(self, urls):
+    def insert_sendir(self, urls, taskid=''):
         for url in urls:
             sql = "insert into sendir (url ) " \
-                  "values ('%s')" \
-                  % (url)
+                  "values ('%s', '%s')" \
+                  % (url, taskid)
             self.cursor.execute(sql)
         self.conn.commit()
 
@@ -164,6 +230,7 @@ class Database:
             _result = {}
             _result['id'] = result[0]
             _result['url'] = result[1]
+            _result['taskid'] = result[2]
             _results.append(_result)
 
         self.clean()
@@ -172,17 +239,17 @@ class Database:
     def create_finger(self):
         self.cursor.execute('create table finger('
                             'id integer primary key, '
-                            'taskid integer, '
                             'url varchar(255), '
-                            'appname varchar(255)'
+                            'appname varchar(255), '
+                            'taskid integer '
                             ')')
 
         print("create finger successfully")
 
-    def insert_finger(self, url, appnames):
-        sql = "insert into finger (url, appname ) " \
-              "values ('%s', '%s')" \
-              % (url, appnames)
+    def insert_finger(self, url, appnames, taskid=''):
+        sql = "insert into finger (url, appname, taskid ) " \
+              "values ('%s', '%s', '%s')" \
+              % (url, appnames, taskid)
         self.cursor.execute(sql)
         self.conn.commit()
 
@@ -196,7 +263,8 @@ class Database:
             _result = {}
             _result['id'] = result[0]
             _result['url'] = result[1]
-            _result['appname'] = result[1]
+            _result['appname'] = result[2]
+            _result['taskid'] = result[3]
             _results.append(_result)
 
         self.clean()
@@ -214,6 +282,11 @@ class Database:
 
     def count(self, mode):
         self.cursor.execute('select count(*) from %s' % mode)
+        total = self.cursor.fetchone()
+        return total[0]
+
+    def count_task(self, mode, id):
+        self.cursor.execute('select count(*) from %s where taskid = %s' % (mode, id))
         total = self.cursor.fetchone()
         return total[0]
 
