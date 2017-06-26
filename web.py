@@ -6,6 +6,7 @@
 from flask import Flask, render_template, request, redirect
 from database.database import Database
 from database.rules import Rules
+from database.vuldb import VulRules
 from lib.cel import port_scan, domain_scan, sendir_scan, site_scan
 
 app = Flask(__name__)
@@ -15,6 +16,7 @@ max_port = Database().count('port')
 max_sendir = Database().count('sendir')
 max_fingerprint = Rules().count('application')
 max_task = Database().count('task')
+max_vul = VulRules().count('vul')
 
 
 @app.route('/')
@@ -80,6 +82,31 @@ def sendir(page=1):
 def fingerprint(page=1):
     finger_print = Rules().select_application(page)
     return render_template('fingerprint.html', page=page, max_page=max_fingerprint//15+1, fingerprints=finger_print)
+
+
+@app.route('/add_rule', methods=['POST'])
+def add_rule():
+    if request.method == 'POST':
+        if request.form.get('name') and request.form.get('rule'):
+            # print(request.form['name'], request.form['rule'])
+            Rules().insert_application(request.form['name'], request.form['rule'])
+            return redirect('/fingerprint/1')
+
+
+@app.route('/vul')
+@app.route('/vul/<int:page>')
+def vulnerability(page=1):
+    vul = VulRules().select_vul(page)
+    return render_template('vulrule.html', page=page, max_page=max_vul//15+1, vuls=vul)
+
+
+@app.route('/add_vul', methods=['POST'])
+def add_vul():
+    if request.method == 'POST':
+        if request.form.get('name') and request.form.get('rule'):
+            print(request.form['name'], request.form['rule'])
+            # Rules().insert_application(request.form['name'], request.form['rule'])
+            return redirect('/fingerprint/1')
 
 
 @app.route('/del/<int:_id>/<string:mode>')
