@@ -25,6 +25,12 @@ class Crawler:
         # self.cap = webdriver.DesiredCapabilities.PHANTOMJS
         # self.cap["phantomjs.page.settings.loadImages"] = False  # 禁止加载图片
 
+    def init(self):
+        if not self.target.startswith('http://') and not self.target.startswith('https://'):
+            self.target = 'http://' + self.target
+        if not self.target.endswith('/'):
+            self.target += '/'
+
     def dynamic_conn(self, url):
         """
         动态
@@ -74,6 +80,7 @@ class Crawler:
         return res
 
     def static_conn(self, url):
+        print(url)
         r = requests.get(url, headers=self.header)
         pattern = re.compile(r'href="(.*?)"')
         return re.findall(pattern, r.text)
@@ -100,6 +107,11 @@ class Crawler:
 
                 if (url.startswith('http://') or url.startswith('https://')) and not url.startswith(self.target):
                     continue
+                if url.startswith('ftp://'):
+                    new_url.append(url)
+                    continue
+                if url.startswith('mailto:'):
+                    continue
                 if re.search('\.(css|jpg|JPG|png|pdf|js|gif|xls|doc|rar|ico|ppt)$', url) or re.search('javascript:', url):
                     continue
                 if url.startswith('/'):
@@ -125,12 +137,14 @@ class Crawler:
                 self.url_set.append(i)
                 # self.q.put(i)
 
-            if urlparse(i).path == ('/' or ''):
+            # print(urlparse(i).path)
+            if urlparse(i).path in ['/', '']:
                 rule = ''
             elif len(urlparse(i).path.split('/')) == 2 and '?' in i:
                 rule = urlparse(i).path.split('/')[1][:3]
             else:
                 rule = urlparse(i).path.split('/')[1][:3]
+
             for path in urlparse(i).path.split('/')[1:]:
                 rule += str(len(path))  # 判断网址相似规则
 
@@ -162,8 +176,10 @@ class Crawler:
             self.filter(res)
 
     # almost done need improved
-    def run(self):
+    def scan(self):
+        self.init()
         res = self.static_conn(self.target)
+        print(res)
         # res = self.dynamic_conn(self.target)
 
         res = self.get_url(res)
@@ -172,6 +188,7 @@ class Crawler:
             res = self.get_url(res)
 
         self.filter(res)
+        print(self.url_set)
 
         threads = []
         for i in range(int(self.thread_num)):
@@ -186,7 +203,7 @@ class Crawler:
         print('\n# 扫描链接总数:' + str(len(self.url_set)))
 
         self.urls.sort()
-        for url in self.url_set:
+        for url in self.urls:
             print(url)
 
         # print(len(self.urls))
@@ -195,8 +212,7 @@ class Crawler:
 
 
 def main():
-    s = Crawler(target='http://it.jit.edu.cn/')
-    s.run()
+    Crawler(target='http://www.freebuf.com/').scan()
 
 if __name__ == '__main__':
     main()
