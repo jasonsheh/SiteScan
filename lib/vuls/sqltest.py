@@ -13,7 +13,7 @@ class Sql:
         self.target = ''
         self.waf = ''
         self.payload = {' and 1=1': ' and 1=2', "' and '1'='1": "' and '1'='2"}
-        self.payload = {' and 1=1':' and 1=2', "' and '1'='1":"' and '1'='2"}
+        self.payload = {' and 1=1': ' and 1=2', "' and '1'='1": "' and '1'='2"}
 
     @staticmethod
     def _conn(url):
@@ -92,18 +92,9 @@ class Sql:
             print('不存在注入'+str(e))
             return False
 
-    def get_sql_in(self):
-        sql_in = []
-        pattern = re.compile('(.*\?.*=\d+)|(.*/\d+)')
-        for target in self.targets:
-            if re.search(pattern, target):
-                sql_in.append(target)  # 获取所有可能的注入点
-        self.targets = sql_in
-
     def run(self):
         print("\n# 检测SQL注入:")
         results = []
-        self.get_sql_in()
         for target in self.targets:
             self.target = target
             result = self._scan()

