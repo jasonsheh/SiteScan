@@ -6,7 +6,6 @@
 from flask import Flask, render_template, request, redirect
 from database.database import Database
 from database.rules import Rules
-from database.vuldb import VulRules
 from lib.cel import port_scan, domain_scan, sendir_scan, site_scan
 
 app = Flask(__name__)
@@ -16,7 +15,7 @@ max_port = Database().count('port')
 max_sendir = Database().count('sendir')
 max_fingerprint = Rules().count('application')
 max_task = Database().count('task')
-max_vul = VulRules().count('vul')
+max_vul = Database().count('vul')
 
 
 @app.route('/')
@@ -26,7 +25,8 @@ def index(page=1):
     tasks = Database().select_task(page)
     return render_template('index.html', page=page, max_page=max_task, tasks=tasks,
                            max_domain=max_domain, max_port=max_port,
-                           max_sendir=max_sendir, max_fingerprint=max_fingerprint)
+                           max_sendir=max_sendir, max_fingerprint=max_fingerprint,
+                           max_vul=max_vul)
 
 
 @app.route('/detail')
@@ -35,8 +35,9 @@ def detail(id=1):
     domain_number = Database().count_task('subdomain', id)
     port_number = Database().count_task('port', id)
     sendir_number = Database().count_task('sendir', id)
+    vul_number = Database().count_task('vul', id)
     return render_template('detail.html', id=id, domain_number=domain_number,
-                           port_number=port_number, sendir_number=sendir_number)
+                           port_number=port_number, sendir_number=sendir_number, vul_number=vul_number)
 
 
 @app.route('/detail/<string:mode>/<int:id>')
@@ -54,6 +55,11 @@ def detail_domain(mode, id, page=1):
         sendir_number = Database().count_task('sendir', id)
         sendir = Database().select_task_sendir(page, id)
         return render_template('detail.html', id=id, mode=mode, page=page, max_page=sendir_number//15+1, sendirs=sendir)
+    if mode == 'sendir':
+        vul_number = Database().count_task('vul', id)
+        vuls = Database().select_task_vul(page, id)
+        return render_template('detail.html', id=id, mode=mode, page=page, max_page=vul_number//15+1, sendirs=vuls)
+
 
 
 @app.route('/domain')
@@ -77,6 +83,13 @@ def sendir(page=1):
     return render_template('sendir.html', page=page, max_page=max_sendir//15+1, sendirs=sendir)
 
 
+@app.route('/vul')
+@app.route('/vul/<int:page>')
+def vul(page=1):
+    vuls = Database().select_vul(page)
+    return render_template('vul.html', page=page, max_page=max_vul//15+1, sendirs=vuls)
+
+
 @app.route('/fingerprint')
 @app.route('/fingerprint/<int:page>')
 def fingerprint(page=1):
@@ -90,22 +103,6 @@ def add_rule():
         if request.form.get('name') and request.form.get('rule'):
             # print(request.form['name'], request.form['rule'])
             Rules().insert_application(request.form['name'], request.form['rule'])
-            return redirect('/fingerprint/1')
-
-
-@app.route('/vul')
-@app.route('/vul/<int:page>')
-def vulnerability(page=1):
-    vul = VulRules().select_vul(page)
-    return render_template('vulrule.html', page=page, max_page=max_vul//15+1, vuls=vul)
-
-
-@app.route('/add_vul', methods=['POST'])
-def add_vul():
-    if request.method == 'POST':
-        if request.form.get('name') and request.form.get('rule'):
-            print(request.form['name'], request.form['rule'])
-            # Rules().insert_application(request.form['name'], request.form['rule'])
             return redirect('/fingerprint/1')
 
 
@@ -126,18 +123,11 @@ def add_task():
         elif request.form.get('sendir'):
             sendir_scan.delay(request.form['sendir'])
             return redirect('/sendir/1')
+        elif request.form.get('vul'):
+            sendir_scan.delay(request.form['vul'])
+            return redirect('/vul/1')
         elif request.form.get('sitescan'):
-            if request.form['sitescan'].startswith('http://www.'):
-                target = request.form['sitescan'][11:]
-            elif request.form['sitescan'].startswith('https://www.'):
-                target = request.form['sitescan'][12:]
-            elif request.form['sitescan'].startswith('http://'):
-                target = request.form['sitescan'][7:]
-            elif request.form['sitescan'].startswith('https://'):
-                target = request.form['sitescan'][8:]
-            else:
-                target = request.form['sitescan']
-            site_scan.delay(target)
+            site_scan.delay(request.form['sendir'])
             return redirect('/index')
 
 

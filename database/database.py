@@ -16,6 +16,7 @@ class Database:
         self.create_port()
         self.create_sendir()
         self.create_finger()
+        self.create_vul()
 
     def create_task(self):
         self.cursor.execute('create table task('
@@ -106,6 +107,23 @@ class Database:
             _result['id'] = result[0]
             _result['url'] = result[1]
             _result['taskid'] = result[2]
+            _results.append(_result)
+
+        self.clean()
+        return _results
+
+    def select_task_vul(self, page, id):
+        sql = 'select * from vul where taskid = %s order by id desc limit %s,15' % (id, (page-1)*15)
+        self.cursor.execute(sql)
+        results = self.cursor.fetchall()
+
+        _results = []
+        for result in results:
+            _result = {}
+            _result['id'] = result[0]
+            _result['url'] = result[1]
+            _result['name'] = result[2]
+            _result['taskid'] = result[3]
             _results.append(_result)
 
         self.clean()
@@ -214,7 +232,7 @@ class Database:
 
     def insert_sendir(self, urls, taskid=''):
         for url in urls:
-            sql = "insert into sendir (url ) " \
+            sql = "insert into sendir (url, taskid ) " \
                   "values ('%s', '%s')" \
                   % (url, taskid)
             self.cursor.execute(sql)
@@ -231,6 +249,41 @@ class Database:
             _result['id'] = result[0]
             _result['url'] = result[1]
             _result['taskid'] = result[2]
+            _results.append(_result)
+
+        self.clean()
+        return _results
+
+    def create_vul(self):
+        self.cursor.execute('create table vul('
+                            'id integer primary key, '
+                            'url varchar(255), '
+                            'name varchar(64), '
+                            'taskid integer '
+                            ')')
+
+        print("create vul successfully")
+
+    def insert_vul(self, urls, name, taskid=''):
+        for url in urls:
+            sql = "insert into vul (url, name, taskid ) " \
+                  "values ('%s', '%s', '%s')" \
+                  % (url, name, taskid)
+            self.cursor.execute(sql)
+        self.conn.commit()
+
+    def select_vul(self, page):
+        sql = 'select * from vul order by id desc limit %s,15' % ((page-1)*15)
+        self.cursor.execute(sql)
+        results = self.cursor.fetchall()
+
+        _results = []
+        for result in results:
+            _result = {}
+            _result['id'] = result[0]
+            _result['url'] = result[1]
+            _result['name'] = result[2]
+            _result['taskid'] = result[3]
             _results.append(_result)
 
         self.clean()
@@ -298,5 +351,5 @@ if __name__ == '__main__':
     d = Database()
     # d.select_page(page=1)
     # d.select_detail(_id=10)
-    d.create_database()
+    d.create_vul()
     # d.delete_all('subdomain')

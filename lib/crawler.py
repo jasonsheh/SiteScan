@@ -80,8 +80,10 @@ class Crawler:
         return res
 
     def static_conn(self, url):
-        print(url)
-        r = requests.get(url, headers=self.header)
+        try:
+            r = requests.get(url, headers=self.header)
+        except requests.exceptions.ChunkedEncodingError:
+            return []
         pattern = re.compile(r'href="(.*?)"')
         return re.findall(pattern, r.text)
 
@@ -108,7 +110,6 @@ class Crawler:
                 if (url.startswith('http://') or url.startswith('https://')) and not url.startswith(self.target):
                     continue
                 if url.startswith('ftp://'):
-                    new_url.append(url)
                     continue
                 if url.startswith('mailto:'):
                     continue
@@ -178,17 +179,23 @@ class Crawler:
     # almost done need improved
     def scan(self):
         self.init()
-        res = self.static_conn(self.target)
-        print(res)
-        # res = self.dynamic_conn(self.target)
+        try:
+            r = requests.get(self.target, headers=self.header)
+            pattern = re.compile(r'href="(.*?)"')
+            res = re.findall(pattern, r.text)
+            self.target = r.url
+        except requests.exceptions.ConnectionError:
+            return self.url_set
+        except requests.exceptions.ReadTimeout:
+            return self.url_set
 
         res = self.get_url(res)
+        print(res)
         if not res:
             res = self.static_conn(self.target + '/index.html')
             res = self.get_url(res)
 
         self.filter(res)
-        print(self.url_set)
 
         threads = []
         for i in range(int(self.thread_num)):
@@ -200,19 +207,20 @@ class Crawler:
         for item in threads:
             item.join()
 
-        print('\n# 扫描链接总数:' + str(len(self.url_set)))
+        if self.url_set:
+            print('\n# 扫描链接总数:' + str(len(self.url_set)))
 
-        self.urls.sort()
-        for url in self.urls:
-            print(url)
+            self.urls.sort()
+            for url in self.url_set:
+                print(url)
 
         # print(len(self.urls))
 
-        return self.url_set, self.urls
+        return self.urls
 
 
 def main():
-    Crawler(target='http://www.freebuf.com/').scan()
+    Crawler(target='http://it.jit.edu.cn/').scan()
 
 if __name__ == '__main__':
     main()

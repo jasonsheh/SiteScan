@@ -5,14 +5,11 @@
 import sys
 sys.path.append('/home/jasonsheh/Tools/python/SiteScan')
 
-from lib.basicinfo import Info
 from lib.crawler import Crawler
-from lib.sqltest import Sql
 from lib.sendir import Sendir
-from lib.xss import Xss
-from lib.struts2 import Struts2
 from lib.port import Port
 from lib.subdomain import Domain
+from lib.vul import Vul
 
 from database.database import Database
 
@@ -41,6 +38,12 @@ def sendir_scan(domain):
 
 
 @cel.task()
+def vul_scan(domain):
+    url = Crawler(domain).scan()
+    Vul(url).run()
+
+
+@cel.task()
 def site_scan(domain):
     if domain.startswith('http://www.'):
         domain = domain[11:]
@@ -54,6 +57,7 @@ def site_scan(domain):
     id = Database().insert_task(domain)
     domains, ips = Domain(domain, id).run()
     for domain in domains:
-        url_set = Crawler(domain).scan()
+        url = Crawler(domain).scan()
+        Vul(url, id).run()
     Sendir(domains, id).run()
     Port(id).run(ips)
