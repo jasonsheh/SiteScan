@@ -2,7 +2,7 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
-from lib.factory import SiteScan
+from lib.factory import site_scan
 
 import sys
 import argparse
@@ -26,8 +26,7 @@ def main():
     t1 = time.time()
 
     try:
-        s = SiteScan(args.domain)
-        s.site_scan()
+        site_scan(args.domain)
         t2 = time.time()
         print('\nTotal time: ' + str(t2 - t1))
     except KeyboardInterrupt:

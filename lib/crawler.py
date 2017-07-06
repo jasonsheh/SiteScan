@@ -113,7 +113,7 @@ class Crawler:
                     continue
                 if url.startswith('mailto:'):
                     continue
-                if re.search('\.(css|jpg|JPG|png|pdf|js|gif|xls|doc|rar|ico|ppt)$', url) or re.search('javascript:', url):
+                if re.search('\.(css|jpg|JPG|png|pdf|js|gif|xls|doc|docx|rar|ico|ppt)$', url) or re.search('javascript:', url):
                     continue
                 if url.startswith('/'):
                     url = url[1:]
@@ -211,7 +211,7 @@ class Crawler:
             print('\n# 扫描链接总数:' + str(len(self.url_set)))
 
             self.urls.sort()
-            for url in self.url_set:
+            for url in self.urls:
                 print(url)
 
         # print(len(self.urls))

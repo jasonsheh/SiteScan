@@ -18,16 +18,19 @@ from lib.fingerprint import FingerPrint
 
 
 class Domain:
-    def __init__(self, target):
+    def __init__(self, target, id=''):
         self.target = target
         self.q = queue.Queue(0)
-        self.thread_num = 15
+        self.thread_num = 10
         self.ip = []
+        self.dns_ip = ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204',
+                                  '220.250.64.225']
         self.c_count = {}
         self.domain = []
         self.domains = {}
         self.title = {}
         self.appname = {}
+        self.id = id
 
     def init(self):
         if self.target.startswith('http://www.'):
@@ -51,8 +54,8 @@ class Domain:
         self.brute()
         self.output()
         self.appname = FingerPrint([y for x in self.domains.values() for y in x]).run()
-        Database().insert_subdomain(self.domains, self.title, self.appname)
-        return self.domains
+        Database().insert_subdomain(self.domains, self.title, self.appname, self.id)
+        return [y for x in self.domains.values() for y in x], [x for x in self.domains.keys()]
 
     def ilink(self):
         print('\nilink子域名查询')
@@ -108,6 +111,14 @@ class Domain:
         try:
             print('\n子域名爆破...')
             self.domain_dict()
+
+            url = 'this_subdomain_will_never_exist' +'.' + self.target
+            answers = dns.resolver.query(url)
+            if answers:
+                ips = [answer.address for answer in answers]
+                for ip in ips:
+                    self.dns_ip.append(ip)
+
             threads = []
             for i in range(int(self.thread_num)):
                 t = threading.Thread(target=self._brute)
@@ -117,6 +128,7 @@ class Domain:
             for item in threads:
                 item.join()
 
+            '''
             print('\n二级子域名爆破...')
             self.domain = list(set([y for x in self.domains.values() for y in x]))
             self.sub_domain_dict()
@@ -128,6 +140,7 @@ class Domain:
                 item.start()
             for item in threads:
                 item.join()
+                '''
 
             print('\nc段扫描...')
             self.c_check()
@@ -171,11 +184,11 @@ class Domain:
                 if answers:
                     ips = [answer.address for answer in answers]
                     for ip in ips:
-                        if ip in ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204',
-                                  '220.250.64.225']:
+                        if ip in self.dns_ip:
                             continue
                         if ip in self.domains.keys():
-                            self.domains[ip].append(url)
+                            if url not in self.domains[ip]:
+                                self.domains[ip].append(url)
                             print(url + '\t' + ip)
                             time.sleep(0.1)
                         else:
@@ -195,8 +208,7 @@ class Domain:
                     if answers:
                         ips = [answer.address for answer in answers]
                         for ip in ips:
-                            if ip in ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204',
-                                      '220.250.64.225']:
+                            if ip in self.dns_ip:
                                 continue
                             if ip in self.domains.keys():
                                 # if len(self.domains[ip]) > 20:
@@ -262,8 +274,6 @@ class Domain:
                     _ip = ip + '.' + str(x)
                     self.q.put(_ip)
 
-        print(self.c_count)
-
     def enqueue_title(self):
         for urls in sorted(self.domains.values()):
             self.q.put(urls)
@@ -275,6 +285,11 @@ class Domain:
                 for url in urls:
                     try:
                         r = requests.get('http://' + url, timeout=3)
+                        if not r.text:
+                            self.title[url] = ''
+                            continue
+                        if not r.encoding:
+                            r.encoding = re.findall('charset=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S)[0]
                         if re.findall('<title>(.*?)</title>', r.text, re.I | re.S) and r.encoding.split(',')[0] in ['utf-8', 'gb2312', 'GBK']:
                             self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].strip()
                         elif re.findall('<title>(.*?)</title>', r.text, re.I | re.S):
@@ -306,7 +321,7 @@ class Domain:
 
 
 def main():
-    Domain(target="www.jit.edu.cn").run()
+    Domain(target="www.njnu.edu.cn").run()
 
 if __name__ == '__main__':
     main()
