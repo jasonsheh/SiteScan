@@ -11,56 +11,84 @@ from database.database import Database
 
 
 class Sendir:
-    def __init__(self, target):
-        self.target = target
+    def __init__(self, targets, id=''):
+        self.targets = targets
+        self.id = id
         self.q = queue.Queue(0)
-        self.thread_num = 3
+        self.thread_num = 5
         self.sensitive = []
         self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
 
+    def init(self):
+        targets = []
+        for target in self.targets:
+            if not target.startswith('http://') and not target.startswith('https://'):
+                target = 'http://' + target
+            if target.endswith('/'):
+                target = target[0:-1]
+            targets.append(target)
+        self.targets = targets
+
     def dirt(self):
         while not self.q.empty():
+            _dir = self.q.get()
+            for target in self.targets:
+                try:
+                    url = target + _dir
+                    r = requests.get(url, timeout=4, allow_redirects=False)
+
+                    if r.status_code in [200, 403]:
+                        self.sensitive.append(url)
+                        print(url)
+                except requests.exceptions.ReadTimeout:
+                    continue
+                except requests.exceptions.ConnectionError:
+                    continue
+                except requests.exceptions.TooManyRedirects:
+                    continue
+
+    def error_page(self):
+        for target in self.targets:
             try:
-                _dir = self.q.get()
-                url = self.target + _dir
-                r = requests.get(url, timeout=2, allow_redirects=False)
-
-                if r.status_code in [200, 403]:
-                    self.sensitive.append(url)
-
-                time.sleep(0.1)
-            except:
+                for not_exist in ['config', 'jsp', 'asp', 'aspx', 'php']:
+                    url = target + '/this_page_will_never_exists.' + not_exist
+                    r = requests.get(url, timeout=4, allow_redirects=False)
+                    if r.status_code in [200, 403]:
+                        self.targets.remove(target)
+                        print(target)
+                        break
+            except requests.exceptions.ConnectTimeout:
+                continue
+            except requests.exceptions.ConnectionError:
+                continue
+            except requests.exceptions.TooManyRedirects:
                 continue
 
     def run(self):
-        try:
-            print('\n# 检测敏感目录...')
+        self.init()
+        print('\n# 检测敏感目录...')
 
-            with open('/home/jasonsheh/Tools/python/SiteScan/dict/dir.txt', 'r') as file:
-                for eachline in file:
-                    self.q.put(eachline.strip())
+        self.error_page()
 
-            threads = []
-            for i in range(int(self.thread_num)):
-                t = threading.Thread(target=self.dirt)
-                threads.append(t)
-            for item in threads:
-                item.start()
-            for item in threads:
-                item.join()
+        with open('/home/jasonsheh/Tools/python/SiteScan/dict/dir.txt', 'r') as file:
+            for eachline in file:
+                self.q.put(eachline.strip())
 
-            if len(self.sensitive) < 20:
-                for url in self.sensitive:
-                    print(url)
-            Database().insert_sendir(self.sensitive)
-            return self.sensitive
-        except Exception as e:
-            print(e)
-            return self.sensitive
+        threads = []
+        for i in range(int(self.thread_num)):
+            t = threading.Thread(target=self.dirt)
+            threads.append(t)
+        for item in threads:
+            item.start()
+        for item in threads:
+            item.join()
+
+        Database().insert_sendir(self.sensitive, self.id)
+        return self.sensitive
 
 
 def main():
-    Sendir(target='http://dkxy.jit.edu.cn').run()
+    Sendir(targets=['ylc.njutcm.edu.cn', 'www.njutcm.edu.cn', 'its.njutcm.edu.cn', 'stu.njutcm.edu.cn']).run()
 
 if __name__ == '__main__':
     main()

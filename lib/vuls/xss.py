@@ -15,6 +15,12 @@ class Xss:
                         "><body onload=alert(1)>",
                         "/></script><ScRiPt>alert(1);<ScRiPt><!--"]
 
+    def init(self):
+        if not self.target.startswith('http://') and not self.target.startswith('https://'):
+            self.target = 'http://' + self.target
+        if not self.target.endswith('/'):
+            self.target += '/'
+
     def _scan(self):
         try:
             r = requests.get(self.target, headers=self.header, timeout=2)
@@ -24,6 +30,8 @@ class Xss:
         except requests.exceptions.TooManyRedirects:
             return False
         except requests.exceptions.ReadTimeout:
+            return False
+        except requests.exceptions.ChunkedEncodingError:
             return False
         pattern = re.compile('<input.*?type="text".*?name=[\'|\"](.*?)[\'|\"].*?')
         names = re.findall(pattern, r.text)
@@ -42,11 +50,11 @@ class Xss:
                 return False
 
     def run(self):
-        print("\n# 检测XSS:")
         results = []
         # self.get_xss()
         for target in self.targets:
             self.target = target
+            self.init()
             result = self._scan()
             if result:
                 print('可能存在漏洞; ' + result)

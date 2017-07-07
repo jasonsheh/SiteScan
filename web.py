@@ -55,7 +55,7 @@ def detail_domain(mode, id, page=1):
         sendir_number = Database().count_task('sendir', id)
         sendir = Database().select_task_sendir(page, id)
         return render_template('detail.html', id=id, mode=mode, page=page, max_page=sendir_number//15+1, sendirs=sendir)
-    if mode == 'sendir':
+    if mode == 'vul':
         vul_number = Database().count_task('vul', id)
         vuls = Database().select_task_vul(page, id)
         return render_template('detail.html', id=id, mode=mode, page=page, max_page=vul_number//15+1, sendirs=vuls)
@@ -106,9 +106,9 @@ def add_rule():
             return redirect('/fingerprint/1')
 
 
-@app.route('/del/<int:_id>/<string:mode>')
-def delete():
-    Database().delete(_id, mode)
+@app.route('/del/<int:id>/<string:mode>')
+def delete(id, mode):
+    Database().delete(id, mode)
 
 
 @app.route('/add', methods=['POST'])

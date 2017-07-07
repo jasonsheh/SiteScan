@@ -57,17 +57,18 @@
             <li><a href="/domain/1">Subdomain</a></li>
             <li><a href="/port/1">Port</a></li>
             <li><a href="/sendir/1">Directory</a></li>
+            <li><a href="/vul/1">Vul</a></li>
           </ul>
           <ul class="nav nav-sidebar">
             <li><a href="/fingerprint/1">FingerRules</a></li>
-            <li><a href="">One more nav</a></li>
+            <li><a href="/vul/1">Vulnerability</a></li>
             <li><a href="">Another nav item</a></li>
           </ul>
         </div>
         <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
             <ul class="nav nav-tabs">
               {% if mode %}
-              <li><a href="#">Index</a></li>
+              <li><a href="/detail">Index</a></li>
               {% else %}
               <li class="active"><a href="/detail">Index</a></li>
               {% endif %}
@@ -76,18 +77,27 @@
               <li class="active"><a href="/detail/domain/{{ id }}">Subdomain</a></li>
               <li><a href="/detail/port/{{ id }}">Port</a></li>
               <li><a href="/detail/sendir/{{ id }}">Directory</a></li>
+                <li><a href="/detail/vul/{{ id }}">Vul</a></li>
               {% elif mode == 'port' %}
               <li><a href="/detail/domain/{{ id }}">Subdomain</a></li>
               <li class="active"><a href="/detail/port/{{ id }}">Port</a></li>
               <li><a href="/detail/sendir/{{ id }}">Directory</a></li>
+                <li><a href="/detail/vul/{{ id }}">Vul</a></li>
               {% elif mode == 'sendir' %}
               <li><a href="/detail/domain/{{ id }}">Subdomain</a></li>
               <li><a href="/detail/port/{{ id }}">Port</a></li>
               <li class="active"><a href="/detail/sendir/{{ id }}">Directory</a></li>
+                <li><a href="/detail/vul/{{ id }}">Vul</a></li>
+                {% elif mode == 'vul' %}
+              <li><a href="/detail/domain/{{ id }}">Subdomain</a></li>
+              <li><a href="/detail/port/{{ id }}">Port</a></li>
+                <li><a href="/detail/sendir/{{ id }}">Directory</a></li>
+              <li class="active"><a href="/detail/vul/{{ id }}">Vul</a></li>
               {% else %}
               <li><a href="/detail/domain/{{ id }}">Subdomain</a></li>
               <li><a href="/detail/port/{{ id }}">Port</a></li>
               <li><a href="/detail/sendir/{{ id }}">Directory</a></li>
+                <li><a href="/detail/vul/{{ id }}">Vul</a></li>
               {% endif %}
             </ul>
           {% if not mode %}
@@ -197,6 +207,29 @@
               {% endif %}
               </ul>
           </nav>
+            {% elif mode == 'vul' %}
+            <div class="table-responsive">
+            <table class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Id</th>
+                  <th>Url</th>
+                  <th>Name</th>
+                </tr>
+              </thead>
+              {% for vul in vuls %}
+              <tbody>
+                <tr>
+                  <td>{{ vul.id }}</td>
+                  <td>{{ vul.url }}</td>
+                  <td>{{ vul.name }}</td>
+                </tr>
+              </tbody>
+              {% endfor %}
+            </table>
+          </div>
+        </div>
+              <nav>
           {% else %}
           <div class="table-responsive">
             <table class="table table-striped">

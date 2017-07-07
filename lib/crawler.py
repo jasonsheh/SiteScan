@@ -190,7 +190,6 @@ class Crawler:
             return self.url_set
 
         res = self.get_url(res)
-        print(res)
         if not res:
             res = self.static_conn(self.target + '/index.html')
             res = self.get_url(res)
@@ -210,9 +209,11 @@ class Crawler:
         if self.url_set:
             print('\n# 扫描链接总数:' + str(len(self.url_set)))
 
+        '''
             self.urls.sort()
             for url in self.urls:
                 print(url)
+        '''
 
         # print(len(self.urls))
 

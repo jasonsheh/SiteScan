@@ -14,12 +14,14 @@ from lib.vul import Vul
 def site_scan(domain):
     if domain.startswith('http://www.'):
         domain = domain[11:]
-    elif domain.startswith('https://www.'):
+    if domain.startswith('https://www.'):
         domain = domain[12:]
-    elif domain.startswith('http://'):
+    if domain.startswith('http://'):
         domain = domain[7:]
-    elif domain.startswith('https://'):
+    if domain.startswith('https://'):
         domain = domain[8:]
+    if domain.endswith('/'):
+        domain = domain[:-1]
 
     id = Database().insert_task(domain)
 
@@ -30,8 +32,6 @@ def site_scan(domain):
         url = Crawler(domain).scan()
         Vul(url, id).run()
 
-    print('敏感信息泄露')
     Sendir(domains, id).run()
 
-    print('端口扫描')
     Port(id).run(ips)

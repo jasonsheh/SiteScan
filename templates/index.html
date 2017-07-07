@@ -8,8 +8,8 @@
     <title>SiteScan</title>
 
     <!-- Bootstrap -->
-    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/static/css/dashboard.css" rel="stylesheet">
+    <link href="./static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="./static/css/dashboard.css" rel="stylesheet">
 
     <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
     <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -49,19 +49,19 @@
       <div class="row">
         <div class="col-sm-3 col-md-2 sidebar">
           <ul class="nav nav-sidebar">
-            <li class="active"><a href="#">Overview</a></li>
-            <li><a href="#">Reports</a></li>
+            <li class="active"><a href="/">Overview</a></li>
+            <li><a href="/detail">Detail</a></li>
             <li><a href="#">Analytics</a></li>
-            <li><a href="#">Export</a></li>
           </ul>
           <ul class="nav nav-sidebar">
             <li><a href="/domain/1">Subdomain</a></li>
             <li><a href="/port/1">Port</a></li>
             <li><a href="/sendir/1">Directory</a></li>
+            <li><a href="/vul/1">Vul</a></li>
           </ul>
           <ul class="nav nav-sidebar">
-            <li><a href="">Nav item again</a></li>
-            <li><a href="">One more nav</a></li>
+            <li><a href="/fingerprint/1">FingerRules</a></li>
+            <li><a href="/vul/1">Vulnerability</a></li>
             <li><a href="">Another nav item</a></li>
           </ul>
         </div>
@@ -69,46 +69,76 @@
           <h1 class="page-header">Dashboard</h1>
 
           <div class="row placeholders">
-            <div class="col-xs-6 col-sm-3 placeholder">
-              <h4>Label</h4>
-              <span class="text-muted">Something else</span>
+            <div class="col-xs-6 col-sm-2 placeholder">
+              <h4>Subdomain</h4>
+              <span class="text-muted">{{ max_domain }}</span>
             </div>
-            <div class="col-xs-6 col-sm-3 placeholder">
-              <h4>Label</h4>
-              <span class="text-muted">Something else</span>
+            <div class="col-xs-5 col-sm-2 placeholder">
+              <h4>Port</h4>
+              <span class="text-muted">{{ max_port }}</span>
             </div>
-            <div class="col-xs-6 col-sm-3 placeholder">
-              <h4>Label</h4>
-              <span class="text-muted">Something else</span>
+            <div class="col-xs-5 col-sm-2 placeholder">
+              <h4>Directory</h4>
+              <span class="text-muted">{{ max_sendir }}</span>
             </div>
-            <div class="col-xs-6 col-sm-3 placeholder">
-              <h4>Label</h4>
-              <span class="text-muted">Something else</span>
+            <div class="col-xs-5 col-sm-2 placeholder">
+              <h4>Vul</h4>
+              <span class="text-muted">{{ max_vul }}</span>
+            </div>
+            <div class="col-xs-5 col-sm-2 placeholder">
+              <h4>FingerPrint</h4>
+              <span class="text-muted">{{ max_fingerprint }}</span>
             </div>
           </div>
 
-          <h2 class="sub-header">Section title</h2>
+          <h2 class="sub-header">Task List</h2>
+          <form class="form-inline" role="form" action="/add_vul" method=post>
+                <span class="form-group-btn">
+                <button class="btn btn-default" type="submit">Scan it!</button>
+                </span>
+                <div class="form-group">
+                  <input type="text" class="form-control" placeholder="Add a task ..." name="sitescan" value="">
+                </div><!-- /input-group -->
+            </form>
+
           <div class="table-responsive">
             <table class="table table-striped">
+
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th>Header</th>
-                  <th>Header</th>
-                  <th>Header</th>
-                  <th>Header</th>
+                  <th>ID</th>
+                  <th>Name</th>
                 </tr>
               </thead>
+              {% for task in tasks %}
               <tbody>
                 <tr>
-                  <td>1,001</td>
-                  <td>Lorem</td>
-                  <td>ipsum</td>
-                  <td>dolor</td>
-                  <td>sit</td>
+                  <td>{{ task.id }}</td>
+                  <td>{{ task.name }}</td>
+                  <td><a class="btn btn-info btn-xs" href="/detail/{{ task.id }}" role="button">任务详情</a></td>
                 </tr>
               </tbody>
+              {% endfor %}
             </table>
+            <nav>
+              <ul class="pager">
+              {% if page <= 1 %}
+              <li class="disabled"><a><span aria-hidden="true">&larr;</span> 上一页</a></li>
+              <li class="disabled"><a>首页</a></li>
+              {% else %}
+              <li><a href="/index/{{ page-1 }}"><span aria-hidden="true">&larr;</span> 上一页</a></li>
+              <li><a href="/index/1">首页</a></li>
+              {% endif %}
+
+              {% if page == max_task %}
+              <li class="disabled"><a>尾页</a></li><li>
+              <li class="disabled"><a>下一页 <span aria-hidden="true">&rarr;</span></a></li>
+              {% else %}
+              <li><a href="/index/{{ max_page }}">尾页</a></li>
+              <li><a href="/index/{{ page+1 }}">下一页 <span aria-hidden="true">&rarr;</span></a></li>
+              {% endif %}
+              </ul>
+          </nav>
           </div>
         </div>
       </div>

