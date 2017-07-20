@@ -53,9 +53,9 @@ class Domain:
         # elif not self.domain or len(self.domain) < 3:
         self.brute()
         self.output()
-        self.appname = FingerPrint([y for x in self.domains.values() for y in x]).run()
+        self.appname = FingerPrint([y for x in self.domains.keys() for y in x]).run()
         Database().insert_subdomain(self.domains, self.title, self.appname, self.id)
-        return [y for x in self.domains.values() for y in x], [x for x in self.domains.keys()]
+        return [y for x in self.domains.keys() for y in x], [x for x in self.domains.values()]
 
     def ilink(self):
         print('\nilink子域名查询')
@@ -108,74 +108,72 @@ class Domain:
 
     def brute(self):
         t1 = time.time()
-        try:
-            print('\n子域名爆破...')
-            self.domain_dict()
 
+        print('\n子域名爆破...')
+        self.domain_dict()
+
+        try:
             url = 'this_subdomain_will_never_exist' +'.' + self.target
             answers = dns.resolver.query(url)
             if answers:
                 ips = [answer.address for answer in answers]
                 for ip in ips:
                     self.dns_ip.append(ip)
+        except dns.resolver.NoAnswer:
+            pass
 
-            threads = []
-            for i in range(int(self.thread_num)):
-                t = threading.Thread(target=self._brute)
-                threads.append(t)
-            for item in threads:
-                item.start()
-            for item in threads:
-                item.join()
+        threads = []
+        for i in range(int(self.thread_num)):
+            t = threading.Thread(target=self._brute)
+            threads.append(t)
+        for item in threads:
+            item.start()
+        for item in threads:
+            item.join()
 
-            '''
-            print('\n二级子域名爆破...')
-            self.domain = list(set([y for x in self.domains.values() for y in x]))
-            self.sub_domain_dict()
-            threads = []
-            for i in range(int(self.thread_num)):
-                t = threading.Thread(target=self.sub_brute)
-                threads.append(t)
-            for item in threads:
-                item.start()
-            for item in threads:
-                item.join()
-                '''
+        print('\n二级子域名爆破...')
+        self.domain = list(set([y for x in self.domains.keys() for y in x]))
+        self.sub_domain_dict()
+        threads = []
+        for i in range(int(self.thread_num)):
+            t = threading.Thread(target=self.sub_brute)
+            threads.append(t)
+        for item in threads:
+            item.start()
+        for item in threads:
+            item.join()
 
-            print('\nc段扫描...')
-            self.c_check()
-            threads = []
-            for i in range(int(self.thread_num)):
-                t = threading.Thread(target=self.c_duan)
-                threads.append(t)
-            for item in threads:
-                item.start()
-            for item in threads:
-                item.join()
+        print('\nc段扫描...')
+        self.c_check()
+        threads = []
+        for i in range(int(self.thread_num)):
+            t = threading.Thread(target=self.c_duan)
+            threads.append(t)
+        for item in threads:
+            item.start()
+        for item in threads:
+            item.join()
 
-            t2 = time.time()
-            print('\nTotal time: ' + str(t2 - t1) + '\n')
+        t2 = time.time()
+        print('\nTotal time: ' + str(t2 - t1) + '\n')
 
-            print('\n网站标题扫描')
-            self.enqueue_title()
-            threads = []
-            for i in range(int(self.thread_num)):
-                t = threading.Thread(target=self.get_title)
-                threads.append(t)
-            for item in threads:
-                item.start()
-            for item in threads:
-                item.join()
+        print('\n网站标题扫描')
+        self.enqueue_title()
+        threads = []
+        for i in range(int(self.thread_num)):
+            t = threading.Thread(target=self.get_title)
+            threads.append(t)
+        for item in threads:
+            item.start()
+        for item in threads:
+            item.join()
 
-            t3 = time.time()
-            print('\nTotal time: ' + str(t3 - t2) + '\n')
-
-        except KeyboardInterrupt as e:
-            print('\n')
-            print(e)
+        t3 = time.time()
+        print('\nTotal time: ' + str(t3 - t2) + '\n')
 
     def _brute(self):
         while not self.q.empty():
+            flag = 1
             dom = self.q.get()
             url = dom + '.' + self.target
 
@@ -185,21 +183,18 @@ class Domain:
                     ips = [answer.address for answer in answers]
                     for ip in ips:
                         if ip in self.dns_ip:
-                            continue
-                        if ip in self.domains.keys():
-                            if url not in self.domains[ip]:
-                                self.domains[ip].append(url)
-                            print(url + '\t' + ip)
-                            time.sleep(0.1)
-                        else:
-                            self.domains[ip] = [url]
-                            print(url + '\t' + ip)
-                            time.sleep(0.1)
+                            flag = 0
+                            break
+                    if flag:
+                        self.domains[url] = ips
+                        print(url + '\t' + ips)
+                        time.sleep(0.1)
             except:
                 continue
 
     def sub_brute(self):
         while not self.q.empty():
+            flag = 1
             dom = self.q.get()
             for target in self.domain:
                 url = dom + '.' + target
@@ -209,16 +204,12 @@ class Domain:
                         ips = [answer.address for answer in answers]
                         for ip in ips:
                             if ip in self.dns_ip:
-                                continue
-                            if ip in self.domains.keys():
-                                # if len(self.domains[ip]) > 20:
-                                self.domains[ip].append(url)
-                                print(url + '\t' + ip)
-                                time.sleep(0.1)
-                            else:
-                                self.domains[ip] = [url]
-                                print(url + '\t' + ip)
-                                time.sleep(0.1)
+                                flag = 0
+                                break
+                        if flag:
+                            self.domains[url] = ips
+                            print(url + '\t' + ips)
+                            time.sleep(0.1)
                 except:
                     continue
 
@@ -240,22 +231,22 @@ class Domain:
             try:
                 r = requests.get('http://' + ip, timeout=3)
                 domain = self.same_ip(ip)
-                if ip in self.domains.keys():
-                    self.domains[ip] += domain
-                    time.sleep(0.1)
-                elif not domain:
-                    self.domains[ip] = [ip]
-                    time.sleep(0.1)
-                else:
-                    self.domains[ip] = domain
-                    time.sleep(0.1)
+                if domain:
+                    for url in domain:
+                        if url in self.domains.keys():
+                            self.domains[url] += ip
+                            time.sleep(0.1)
+                        else:
+                            self.domains[url] = [ip]
+                            time.sleep(0.1)
+
             except requests.exceptions.ConnectionError:
                 continue
             except requests.exceptions.ReadTimeout:
                 continue
 
     def c_check(self):
-        for ip in self.domains.keys():# ips
+        for ip in self.domains.values():# ips
             ip = ip.rsplit('.', 1)[0]
 
             if ip not in self.c_count.keys():
@@ -265,7 +256,7 @@ class Domain:
         for ip, count in self.c_count.items():
             if count > 5:
                 temp = []
-                for _ip in self.domains.keys():
+                for _ip in self.domains.values():
                     if _ip.startswith(ip):
                         temp.append(_ip.rsplit('.', 1)[1])
                 _max = int(max(temp))
@@ -275,7 +266,7 @@ class Domain:
                     self.q.put(_ip)
 
     def enqueue_title(self):
-        for urls in sorted(self.domains.values()):
+        for urls in sorted(self.domains.keys()):
             self.q.put(urls)
 
     def get_title(self):
@@ -289,7 +280,13 @@ class Domain:
                             self.title[url] = ''
                             continue
                         if not r.encoding:
-                            r.encoding = re.findall('charset=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S)[0]
+                            if re.findall('charset=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S):
+                                r.encoding = re.findall('charset=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S)[0]
+                            elif re.findall('encoding=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S):
+                                r.encoding = re.findall('charset=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S)[0]
+                            else:
+                                self.title[url] = ''
+                                continue
                         if re.findall('<title>(.*?)</title>', r.text, re.I | re.S) and r.encoding.split(',')[0] in ['utf-8', 'gb2312', 'GBK']:
                             self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].strip()
                         elif re.findall('<title>(.*?)</title>', r.text, re.I | re.S):
@@ -311,13 +308,9 @@ class Domain:
                         continue
 
     def output(self):
-        for ip, urls in sorted(self.domains.items()):
-            print(ip + ':')
-            if urls:
-                for url in urls:
-                    print('\t' + url + '\t' + self.title[url])
-            else:
-                print('\t' + self.title[ip])
+        for url, ips in sorted(self.domains.items()):
+            print(url + ':' + ips + '\t' + self.title[url])
+
 
 
 def main():

@@ -121,8 +121,8 @@
               <thead>
                 <tr>
                   <th>Id</th>
+                    <th>Url</th>
                   <th>IP</th>
-                  <th>Url</th>
                   <th>Title</th>
                   <th>Appname</th>
                 </tr>
@@ -131,8 +131,8 @@
               <tbody>
                 <tr>
                   <td>{{ domain.id }}</td>
+                    <td><a href="http://{{ domain.url }}">{{ domain.url }}</a></td>
                   <td>{{ domain.ip }}</td>
-                  <td><a href="http://{{ domain.url }}">{{ domain.url }}</a></td>
                   <td>{{ domain.title }}</td>
                   <td>{{ domain.appname }}</td>
                 </tr>
@@ -194,16 +194,16 @@
               <li class="disabled"><a><span aria-hidden="true">&larr;</span> 上一页</a></li>
               <li class="disabled"><a>首页</a></li>
               {% else %}
-              <li><a href="/detail/port/{{ id }}//{{ page-1 }}"><span aria-hidden="true">&larr;</span> 上一页</a></li>
-              <li><a href="/detail/port/{{ id }}//1">首页</a></li>
+              <li><a href="/detail/port/{{ id }}/{{ page-1 }}"><span aria-hidden="true">&larr;</span> 上一页</a></li>
+              <li><a href="/detail/port/{{ id }}/1">首页</a></li>
               {% endif %}
 
               {% if page == max_page %}
               <li class="disabled"><a>尾页</a></li><li>
               <li class="disabled"><a>下一页 <span aria-hidden="true">&rarr;</span></a></li>
               {% else %}
-              <li><a href="/detail/port/{{ id }}//{{ max_page }}">尾页</a></li>
-              <li><a href="/detail/port/{{ id }}//{{ page+1 }}">下一页 <span aria-hidden="true">&rarr;</span></a></li>
+              <li><a href="/detail/port/{{ id }}/{{ max_page }}">尾页</a></li>
+              <li><a href="/detail/port/{{ id }}/{{ page+1 }}">下一页 <span aria-hidden="true">&rarr;</span></a></li>
               {% endif %}
               </ul>
           </nav>
@@ -243,7 +243,7 @@
               <tbody>
                 <tr>
                   <td>{{ sendir.id }}</td>
-                  <td><a href="http://{{sendir.url}}">{{ sendir.url }}</a></td>
+                  <td><a href="{{sendir.url}}">{{ sendir.url }}</a></td>
                   <td><a class="btn btn-danger btn-xs" href="/del/{{sendir.id}}/subdomain" role="button">删除</a></td>
                 </tr>
               </tbody>
@@ -256,16 +256,16 @@
               <li class="disabled"><a><span aria-hidden="true">&larr;</span> 上一页</a></li>
               <li class="disabled"><a>首页</a></li>
               {% else %}
-              <li><a href="/detail/sendir/{{ id }}//{{ page-1 }}"><span aria-hidden="true">&larr;</span> 上一页</a></li>
-              <li><a href="/detail/sendir/{{ id }}//1">首页</a></li>
+              <li><a href="/detail/sendir/{{ id }}/{{ page-1 }}"><span aria-hidden="true">&larr;</span> 上一页</a></li>
+              <li><a href="/detail/sendir/{{ id }}/1">首页</a></li>
               {% endif %}
 
               {% if page == max_page %}
               <li class="disabled"><a>尾页</a></li><li>
               <li class="disabled"><a>下一页 <span aria-hidden="true">&rarr;</span></a></li>
               {% else %}
-              <li><a href="/detail/sendir/{{ id }}//{{ max_page }}">尾页</a></li>
-              <li><a href="/detail/sendir/{{ id }}//{{ page+1 }}">下一页 <span aria-hidden="true">&rarr;</span></a></li>
+              <li><a href="/detail/sendir/{{ id }}/{{ max_page }}">尾页</a></li>
+              <li><a href="/detail/sendir/{{ id }}/{{ page+1 }}">下一页 <span aria-hidden="true">&rarr;</span></a></li>
               {% endif %}
               </ul>
           </nav>

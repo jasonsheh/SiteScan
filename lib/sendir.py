@@ -20,6 +20,7 @@ class Sendir:
         self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
 
     def init(self):
+        self.targets = list(set(self.targets))
         targets = []
         for target in self.targets:
             if not target.startswith('http://') and not target.startswith('https://'):
@@ -48,27 +49,32 @@ class Sendir:
                     continue
 
     def error_page(self):
+        _targets = []
         for target in self.targets:
-            try:
-                for not_exist in ['config', 'jsp', 'asp', 'aspx', 'php']:
+            for not_exist in ['config', 'jsp', 'asp', 'aspx', 'php']:
+                try:
                     url = target + '/this_page_will_never_exists.' + not_exist
                     r = requests.get(url, timeout=4, allow_redirects=False)
+                    # print(url, r.status_code)
                     if r.status_code in [200, 403]:
-                        self.targets.remove(target)
-                        print(target)
+                        _targets.append(target)
                         break
-            except requests.exceptions.ConnectTimeout:
-                continue
-            except requests.exceptions.ConnectionError:
-                continue
-            except requests.exceptions.TooManyRedirects:
-                continue
+                except requests.exceptions.ConnectTimeout:
+                    continue
+                except requests.exceptions.ConnectionError:
+                    continue
+                except requests.exceptions.TooManyRedirects:
+                    continue
+                except requests.exceptions.ReadTimeout:
+                    continue
+
+        for target in _targets:
+            self.targets.remove(target)
 
     def run(self):
         self.init()
-        print('\n# 检测敏感目录...')
-
         self.error_page()
+        print('\n# 检测敏感目录...')
 
         with open('/home/jasonsheh/Tools/python/SiteScan/dict/dir.txt', 'r') as file:
             for eachline in file:
@@ -88,7 +94,9 @@ class Sendir:
 
 
 def main():
-    Sendir(targets=['ylc.njutcm.edu.cn', 'www.njutcm.edu.cn', 'its.njutcm.edu.cn', 'stu.njutcm.edu.cn']).run()
+    s = Sendir(targets=['ylc.njutcm.edu.cn', 'www.njutcm.edu.cn', 'its.njutcm.edu.cn', 'stu.njutcm.edu.cn'])
+    s.init()
+    s.error_page()
 
 if __name__ == '__main__':
     main()

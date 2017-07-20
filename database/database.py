@@ -132,7 +132,7 @@ class Database:
     def create_subdomain(self):
         self.cursor.execute('create table subdomain ('
                             'id integer primary key,'
-                            'ip varchar(16), '
+                            'ip varchar(255), '
                             'url varchar(255), '
                             'title varchar(255), '
                             'appname varchar(255), '
@@ -142,13 +142,11 @@ class Database:
         print("create subdomain successfully")
 
     def insert_subdomain(self, domains, title, appname, taskid=''):
-        for ip, urls in sorted(domains.items()):
-            if urls:
-                for url in urls:
-                    sql = "insert into subdomain (ip, url, title, appname, taskid) " \
-                          "values ('%s', '%s', '%s', '%s', '%s')"\
-                          % (ip, url, title[url], appname[url], taskid)
-                    self.cursor.execute(sql)
+        for url, ips in sorted(domains.items()):
+            sql = "insert into subdomain (url, ip, title, appname, taskid) " \
+                  "values ('%s', '%s', '%s', '%s', '%s')"\
+                  % (url, ips, title[url], appname[url], taskid)
+            self.cursor.execute(sql)
         self.conn.commit()
         self.clean()
 
@@ -351,5 +349,6 @@ if __name__ == '__main__':
     d = Database()
     # d.select_page(page=1)
     # d.select_detail(_id=10)
-    d.create_vul()
+    # d.create_vul()
+    d.create_subdomain()
     # d.delete_all('subdomain')

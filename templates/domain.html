@@ -80,8 +80,8 @@
               <thead>
                 <tr>
                   <th>Id</th>
-                  <th>IP</th>
                   <th>Url</th>
+                  <th>IP</th>
                   <th>Title</th>
                   <th>Appname</th>
                 </tr>
@@ -90,8 +90,8 @@
               <tbody>
                 <tr>
                   <td>{{ domain.id }}</td>
-                  <td>{{ domain.ip }}</td>
                   <td><a href="http://{{ domain.url }}">{{ domain.url }}</a></td>
+                  <td>{{ domain.ip }}</td>
                   <td>{{ domain.title }}</td>
                   <td>{{ domain.appname }}</td>
                   <td><a class="btn btn-danger btn-xs" href="/del/{{domain.id}}/subdomain" role="button">删除</a></td>
