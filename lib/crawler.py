@@ -188,6 +188,8 @@ class Crawler:
             return self.url_set
         except requests.exceptions.ReadTimeout:
             return self.url_set
+        except requests.exceptions.ChunkedEncodingError:
+            return self.url_set
 
         res = self.get_url(res)
         if not res:

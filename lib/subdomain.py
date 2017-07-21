@@ -53,9 +53,9 @@ class Domain:
         # elif not self.domain or len(self.domain) < 3:
         self.brute()
         self.output()
-        self.appname = FingerPrint([y for x in self.domains.keys() for y in x]).run()
+        self.appname = FingerPrint([x for x in self.domains.keys()]).run()
         Database().insert_subdomain(self.domains, self.title, self.appname, self.id)
-        return [y for x in self.domains.keys() for y in x], [x for x in self.domains.values()]
+        return [x for x in self.domains.keys()], [y for x in self.domains.values() for y in x]
 
     def ilink(self):
         print('\nilink子域名查询')
@@ -115,10 +115,9 @@ class Domain:
         try:
             url = 'this_subdomain_will_never_exist' +'.' + self.target
             answers = dns.resolver.query(url)
-            if answers:
-                ips = [answer.address for answer in answers]
-                for ip in ips:
-                    self.dns_ip.append(ip)
+            ips = [answer.address for answer in answers]
+            for ip in ips:
+                self.dns_ip.append(ip)
         except dns.resolver.NoAnswer:
             pass
 
@@ -132,7 +131,7 @@ class Domain:
             item.join()
 
         print('\n二级子域名爆破...')
-        self.domain = list(set([y for x in self.domains.keys() for y in x]))
+        self.domain = list(set([x for x in self.domains.keys()]))
         self.sub_domain_dict()
         threads = []
         for i in range(int(self.thread_num)):
@@ -143,6 +142,7 @@ class Domain:
         for item in threads:
             item.join()
 
+        '''
         print('\nc段扫描...')
         self.c_check()
         threads = []
@@ -156,6 +156,7 @@ class Domain:
 
         t2 = time.time()
         print('\nTotal time: ' + str(t2 - t1) + '\n')
+        '''
 
         print('\n网站标题扫描')
         self.enqueue_title()
@@ -169,7 +170,7 @@ class Domain:
             item.join()
 
         t3 = time.time()
-        print('\nTotal time: ' + str(t3 - t2) + '\n')
+        print('\nTotal time: ' + str(t3 - t1) + '\n')
 
     def _brute(self):
         while not self.q.empty():
@@ -179,17 +180,18 @@ class Domain:
 
             try:
                 answers = dns.resolver.query(url)
-                if answers:
-                    ips = [answer.address for answer in answers]
-                    for ip in ips:
-                        if ip in self.dns_ip:
-                            flag = 0
-                            break
-                    if flag:
-                        self.domains[url] = ips
-                        print(url + '\t' + ips)
-                        time.sleep(0.1)
-            except:
+                ips = [answer.address for answer in answers]
+
+                for ip in ips:
+                    if ip in self.dns_ip:
+                        flag = 0
+                        break
+                if flag:
+                    self.domains[url] = ips
+                    print(url)
+                    time.sleep(0.1)
+            except Exception as e:
+                print(e)
                 continue
 
     def sub_brute(self):
@@ -200,16 +202,15 @@ class Domain:
                 url = dom + '.' + target
                 try:
                     answers = dns.resolver.query(url)
-                    if answers:
-                        ips = [answer.address for answer in answers]
-                        for ip in ips:
-                            if ip in self.dns_ip:
-                                flag = 0
-                                break
-                        if flag:
-                            self.domains[url] = ips
-                            print(url + '\t' + ips)
-                            time.sleep(0.1)
+                    ips = [answer.address for answer in answers]
+                    for ip in ips:
+                        if ip in self.dns_ip:
+                            flag = 0
+                            break
+                    if flag:
+                        self.domains[url] = ips
+                        print(url)
+                        time.sleep(0.1)
                 except:
                     continue
 
@@ -233,7 +234,7 @@ class Domain:
                 domain = self.same_ip(ip)
                 if domain:
                     for url in domain:
-                        if url in self.domains.keys():
+                        if url in self.domains.values():
                             self.domains[url] += ip
                             time.sleep(0.1)
                         else:
@@ -246,7 +247,7 @@ class Domain:
                 continue
 
     def c_check(self):
-        for ip in self.domains.values():# ips
+        for ip in [y for x in self.domains.values() for y in x]:# ips
             ip = ip.rsplit('.', 1)[0]
 
             if ip not in self.c_count.keys():
@@ -256,7 +257,7 @@ class Domain:
         for ip, count in self.c_count.items():
             if count > 5:
                 temp = []
-                for _ip in self.domains.values():
+                for _ip in [y for x in self.domains.values() for y in x]:
                     if _ip.startswith(ip):
                         temp.append(_ip.rsplit('.', 1)[1])
                 _max = int(max(temp))
@@ -266,50 +267,50 @@ class Domain:
                     self.q.put(_ip)
 
     def enqueue_title(self):
-        for urls in sorted(self.domains.keys()):
-            self.q.put(urls)
+        for url in sorted(self.domains.keys()):
+            self.q.put(url)
 
     def get_title(self):
         while not self.q.empty():
-            urls = self.q.get()
-            if urls:
-                for url in urls:
-                    try:
-                        r = requests.get('http://' + url, timeout=3)
-                        if not r.text:
-                            self.title[url] = ''
-                            continue
-                        if not r.encoding:
-                            if re.findall('charset=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S):
-                                r.encoding = re.findall('charset=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S)[0]
-                            elif re.findall('encoding=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S):
-                                r.encoding = re.findall('charset=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S)[0]
-                            else:
-                                self.title[url] = ''
-                                continue
-                        if re.findall('<title>(.*?)</title>', r.text, re.I | re.S) and r.encoding.split(',')[0] in ['utf-8', 'gb2312', 'GBK']:
-                            self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].strip()
-                        elif re.findall('<title>(.*?)</title>', r.text, re.I | re.S):
-                            self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].encode(r.encoding.split(',')[0]).decode('utf-8').strip()
-                        else:
-                            self.title[url] = ''
-                        # print(url, self.title[url])
-                    except UnicodeDecodeError:
+            url = self.q.get()
+            try:
+                r = requests.get('http://' + url, timeout=3)
+                if not r.text:
+                    self.title[url] = ''
+                    continue
+                if not r.encoding:
+                    if re.findall('[charset]=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S):
+                        r.encoding = re.findall('charset=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S)[0]
+                    elif re.findall('encoding=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S):
+                        r.encoding = re.findall('encoding=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S)[0]
+                    else:
                         self.title[url] = ''
                         continue
-                    except requests.exceptions.ReadTimeout:
-                        self.title[url] = ''
-                        continue
-                    except requests.exceptions.ConnectionError:
-                        self.title[url] = ''
-                        continue
-                    except requests.exceptions.TooManyRedirects:
-                        self.title[url] = ''
-                        continue
+                if re.findall('<title>(.*?)</title>', r.text, re.I | re.S) and r.encoding.split(',')[0] in ['utf-8', 'gb2312', 'GBK']:
+                    self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].strip()
+                elif re.findall('<title>(.*?)</title>', r.text, re.I | re.S):
+                    self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].encode(r.encoding.split(',')[0]).decode('utf-8').strip()
+                else:
+                    self.title[url] = ''
+                # print(url, self.title[url])
+            except UnicodeDecodeError:
+                self.title[url] = ''
+                continue
+            except requests.exceptions.ReadTimeout:
+                self.title[url] = ''
+                continue
+            except requests.exceptions.ConnectionError:
+                self.title[url] = ''
+                continue
+            except requests.exceptions.TooManyRedirects:
+                self.title[url] = ''
+                continue
 
     def output(self):
         for url, ips in sorted(self.domains.items()):
-            print(url + ':' + ips + '\t' + self.title[url])
+            print(url + ':\t' + self.title[url])
+            for ip in ips:
+                print('\t' + ip)
 
 
 

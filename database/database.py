@@ -143,6 +143,7 @@ class Database:
 
     def insert_subdomain(self, domains, title, appname, taskid=''):
         for url, ips in sorted(domains.items()):
+            ips = ' '.join(ips)
             sql = "insert into subdomain (url, ip, title, appname, taskid) " \
                   "values ('%s', '%s', '%s', '%s', '%s')"\
                   % (url, ips, title[url], appname[url], taskid)

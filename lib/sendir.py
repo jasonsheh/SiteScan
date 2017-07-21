@@ -40,7 +40,7 @@ class Sendir:
 
                     if r.status_code in [200, 403]:
                         self.sensitive.append(url)
-                        print(url)
+                        print(url+'\t'+str(r.status_code))
                 except requests.exceptions.ReadTimeout:
                     continue
                 except requests.exceptions.ConnectionError:
