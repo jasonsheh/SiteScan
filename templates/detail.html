@@ -102,6 +102,7 @@
             </ul>
           {% if not mode %}
           <div class="row placeholders">
+              <h3>{{ task_name }}</h3>
             <div class="col-xs-6 col-sm-3 placeholder">
               <h4>Subdomain</h4>
               <span class="text-muted">{{ domain_number }}</span>
@@ -237,6 +238,7 @@
                 <tr>
                   <th>Id</th>
                   <th>Url</th>
+                    <th>Status Code</th>
                 </tr>
               </thead>
               {% for sendir in sendirs %}
@@ -244,6 +246,7 @@
                 <tr>
                   <td>{{ sendir.id }}</td>
                   <td><a href="{{sendir.url}}">{{ sendir.url }}</a></td>
+                    <td>{{ sendir.status_code }}</td>
                   <td><a class="btn btn-danger btn-xs" href="/del/{{sendir.id}}/subdomain" role="button">删除</a></td>
                 </tr>
               </tbody>

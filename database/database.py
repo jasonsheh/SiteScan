@@ -56,6 +56,21 @@ class Database:
         self.clean()
         return _results
 
+    def select_task_name(self, id):
+        sql = 'select * from task where id = %s' % (id)
+        self.cursor.execute(sql)
+        results = self.cursor.fetchall()
+
+        _results = []
+        for result in results:
+            _result = {}
+            _result['id'] = result[0]
+            _result['name'] = result[1]
+            _results.append(_result)
+
+        self.clean()
+        return _results[0]['name']
+
     def select_task_subdomain(self, page, id):
         sql = 'select * from subdomain where taskid = %s order by id desc limit %s,15' % (id, (page-1)*15)
         self.cursor.execute(sql)
@@ -106,7 +121,8 @@ class Database:
             _result = {}
             _result['id'] = result[0]
             _result['url'] = result[1]
-            _result['taskid'] = result[2]
+            _result['status_code'] = result[2]
+            _result['taskid'] = result[3]
             _results.append(_result)
 
         self.clean()
@@ -224,16 +240,17 @@ class Database:
         self.cursor.execute('create table sendir('
                             'id integer primary key, '
                             'url varchar(255), '
+                            'status_code varchar(4), '
                             'taskid integer '
                             ')')
 
-        print("create port successfully")
+        print("create sendir successfully")
 
-    def insert_sendir(self, urls, taskid=''):
-        for url in urls:
-            sql = "insert into sendir (url, taskid ) " \
-                  "values ('%s', '%s')" \
-                  % (url, taskid)
+    def insert_sendir(self, sensitive, taskid=''):
+        for url in sensitive:
+            sql = "insert into sendir (url, status_code, taskid ) " \
+                  "values ('%s', '%s', '%s')" \
+                  % (url, sensitive[url], taskid)
             self.cursor.execute(sql)
         self.conn.commit()
 
@@ -247,7 +264,8 @@ class Database:
             _result = {}
             _result['id'] = result[0]
             _result['url'] = result[1]
-            _result['taskid'] = result[2]
+            _result['status_code'] = result[2]
+            _result['taskid'] = result[3]
             _results.append(_result)
 
         self.clean()
@@ -351,5 +369,5 @@ if __name__ == '__main__':
     # d.select_page(page=1)
     # d.select_detail(_id=10)
     # d.create_vul()
-    d.create_subdomain()
+    d.create_sendir()
     # d.delete_all('subdomain')

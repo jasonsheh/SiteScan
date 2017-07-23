@@ -190,8 +190,7 @@ class Domain:
                     self.domains[url] = ips
                     print(url)
                     time.sleep(0.1)
-            except Exception as e:
-                print(e)
+            except:
                 continue
 
     def sub_brute(self):

@@ -32,11 +32,12 @@ def index(page=1):
 @app.route('/detail')
 @app.route('/detail/<int:id>')
 def detail(id=1):
+    task_name = Database().select_task_name(id)
     domain_number = Database().count_task('subdomain', id)
     port_number = Database().count_task('port', id)
     sendir_number = Database().count_task('sendir', id)
     vul_number = Database().count_task('vul', id)
-    return render_template('detail.html', id=id, domain_number=domain_number,
+    return render_template('detail.html', id=id, task_name=task_name, domain_number=domain_number,
                            port_number=port_number, sendir_number=sendir_number, vul_number=vul_number)
 
 

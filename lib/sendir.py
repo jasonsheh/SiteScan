@@ -16,7 +16,7 @@ class Sendir:
         self.id = id
         self.q = queue.Queue(0)
         self.thread_num = 5
-        self.sensitive = []
+        self.sensitive = {}
         self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
 
     def init(self):
@@ -31,6 +31,10 @@ class Sendir:
         self.targets = targets
 
     def dirt(self):
+        '''
+        对网站进行敏感目录检测
+        :return:
+        '''
         while not self.q.empty():
             _dir = self.q.get()
             for target in self.targets:
@@ -39,7 +43,7 @@ class Sendir:
                     r = requests.get(url, timeout=4, allow_redirects=False)
 
                     if r.status_code in [200, 403]:
-                        self.sensitive.append(url)
+                        self.sensitive[url] = r.status_code
                         print(url+'\t'+str(r.status_code))
                 except requests.exceptions.ReadTimeout:
                     continue
@@ -49,6 +53,10 @@ class Sendir:
                     continue
 
     def error_page(self):
+        '''
+        判断有无错误界面，有则把该网站删除列表
+        :return:
+        '''
         _targets = []
         for target in self.targets:
             for not_exist in ['config', 'jsp', 'asp', 'aspx', 'php']:
@@ -76,6 +84,7 @@ class Sendir:
         self.error_page()
         print('\n# 检测敏感目录...')
 
+        # 文件入队列
         with open('/home/jasonsheh/Tools/python/SiteScan/dict/dir.txt', 'r') as file:
             for eachline in file:
                 self.q.put(eachline.strip())
