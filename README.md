@@ -1,10 +1,32 @@
 # SiteScan
 
-一个简单的安全工具
 
-暂时支持目录爬取, 子域名, 端口 其他功能正在编写
+***
+## Install
 
-暂时只放几个截图
+#### requirement
++ celery
++
+
+run `python3 ./database/database.py` to create database
+
+***
+## Run
+
+### run as promgram
+
+run `python3 ./sitescan.py -d [domain]` to collect infomation of that domain
+
+run `python3 ./web.py` to open the web interface
+
+### run as web service
+
+run `celery -A cel worker -l info --config=celeryconfig`
+
+run `python3 ./web.py` to open the web interface
+
+***
+## Example
 
 ![subdomain](https://raw.githubusercontent.com/jasonsheh/SiteScan/master/doc/subdomain.png)
 

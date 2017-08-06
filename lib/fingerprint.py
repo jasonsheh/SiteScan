@@ -60,14 +60,15 @@ class FingerPrint:
             self.result[self.target] = ''
         except requests.exceptions.ReadTimeout:
             self.result[self.target] = ''
+        except requests.exceptions.TooManyRedirects:
+            self.result[self.target] = ''
 
     def run(self):
         print('服务指纹识别')
         for self.target in self.targets:
             self.scan()
             # Database().insert_finger(self.target, self.result[self.target])
-            # print(self.result)
         return self.result
 
 if __name__ == '__main__':
-    FingerPrint(urls=['http://zkxy.jit.edu.cn/admin/']).run()
+    FingerPrint(urls=['http://v57.demo.dedecms.com/']).run()

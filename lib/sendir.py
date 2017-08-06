@@ -59,23 +59,31 @@ class Sendir:
         '''
         _targets = []
         for target in self.targets:
-            for not_exist in ['config', 'jsp', 'asp', 'aspx', 'php']:
-                try:
-                    url = target + '/this_page_will_never_exists.' + not_exist
+            try:
+                for not_exist in ['/', '.config', '.jsp', '.asp', '.aspx', '.php', '.html']:
+                    url = target + '/this_page_will_never_exists' + not_exist
                     r = requests.get(url, timeout=4, allow_redirects=False)
                     # print(url, r.status_code)
                     if r.status_code in [200, 403]:
                         _targets.append(target)
                         break
-                except requests.exceptions.ConnectTimeout:
-                    continue
-                except requests.exceptions.ConnectionError:
-                    continue
-                except requests.exceptions.TooManyRedirects:
-                    continue
-                except requests.exceptions.ReadTimeout:
-                    continue
 
+                url = target + '/.this_page_will_never_exists_lalala'
+                r = requests.get(url, timeout=4, allow_redirects=False)
+                # print(url, r.status_code)
+                if r.status_code in [200, 403]:
+                    _targets.append(target)
+
+            except requests.exceptions.ConnectTimeout:
+                continue
+            except requests.exceptions.ConnectionError:
+                continue
+            except requests.exceptions.TooManyRedirects:
+                continue
+            except requests.exceptions.ReadTimeout:
+                continue
+
+        _targets = list(set(_targets))
         for target in _targets:
             self.targets.remove(target)
 
