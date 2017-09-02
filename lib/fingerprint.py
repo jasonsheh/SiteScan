@@ -8,10 +8,12 @@ import requests
 
 from database.database import Database
 
+from setting import user_path
+
 
 class FingerPrint:
     def __init__(self, urls):
-        self.conn = sqlite3.connect('/home/jasonsheh/Tools/python/SiteScan/db/Rules.db')
+        self.conn = sqlite3.connect(user_path + '/db/Rules.db')
         self.cursor = self.conn.cursor()
         self.targets = urls
         self.result = {}

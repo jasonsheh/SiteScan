@@ -2,8 +2,10 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
+
+from setting import user_path
 import sys
-sys.path.append('/home/jasonsheh/Tools/python/SiteScan')
+sys.path.append(user_path)
 
 from lib.crawler import Crawler
 from lib.sendir import Sendir

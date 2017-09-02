@@ -6,14 +6,17 @@
 
 #### requirement
 + celery
++ redis
 +
+
+change the path in setting.py to your own path
 
 run `python3 ./database/database.py` to create database
 
 ***
 ## Run
 
-### run as promgram
+### run as program
 
 run `python3 ./sitescan.py -d [domain]` to collect infomation of that domain
 

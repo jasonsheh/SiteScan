@@ -3,11 +3,12 @@
 # -*- coding:utf-8 -*-
 
 import sqlite3
+from setting import user_path
 
 
 class Rules:
     def __init__(self):
-        self.conn = sqlite3.connect('/home/jasonsheh/Tools/python/SiteScan/db/Rules.db')
+        self.conn = sqlite3.connect(user_path + '/db/Rules.db')
         self.cursor = self.conn.cursor()
 
     def insert_application(self, app, rule):

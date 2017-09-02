@@ -16,6 +16,8 @@ import re
 from database.database import Database
 from lib.fingerprint import FingerPrint
 
+from setting import user_path
+
 
 class Domain:
     def __init__(self, target, id=''):
@@ -97,12 +99,12 @@ class Domain:
                 self.domain.append(domain['domain'])
 
     def domain_dict(self):
-        with open('/home/jasonsheh/Tools/python/SiteScan/dict/domain.txt', 'r') as dirt:
+        with open(user_path + '/dict/domain.txt', 'r') as dirt:
             for i in dirt:
                 self.q.put(i.strip())
 
     def sub_domain_dict(self):
-        with open('/home/jasonsheh/Tools/python/SiteScan/dict/sub_domain.txt', 'r') as dirt:
+        with open(user_path + '/dict/sub_domain.txt', 'r') as dirt:
             for i in dirt:
                 self.q.put(i.strip())
 
@@ -118,6 +120,8 @@ class Domain:
             ips = [answer.address for answer in answers]
             for ip in ips:
                 self.dns_ip.append(ip)
+        except dns.resolver.NXDOMAIN:
+            pass
         except dns.resolver.NoAnswer:
             pass
 
