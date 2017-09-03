@@ -338,12 +338,12 @@ class Database:
         self.clean()
 
     def count(self, mode):
-        self.cursor.execute('select count(*) from ?', (mode, ))
+        self.cursor.execute('select count(*) from {}'.format(mode))
         total = self.cursor.fetchone()
         return total[0]
 
     def count_task(self, mode, id):
-        self.cursor.execute('select count(*) from ? where taskid = ?', (mode, id))
+        self.cursor.execute('select count(*) from {} where taskid = ?'.format(mode), (id, ))
         total = self.cursor.fetchone()
         return total[0]
 

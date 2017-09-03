@@ -122,7 +122,7 @@
               <thead>
                 <tr>
                   <th>Id</th>
-                    <th>Url</th>
+                  <th>Url</th>
                   <th>IP</th>
                   <th>Title</th>
                   <th>Appname</th>
@@ -132,7 +132,7 @@
               <tbody>
                 <tr>
                   <td>{{ domain.id }}</td>
-                    <td><a href="http://{{ domain.url }}">{{ domain.url }}</a></td>
+                    <td><a href="http://{{ domain.url }}" target="_blank">{{ domain.url }}</a></td>
                   <td>{{ domain.ip }}</td>
                   <td>{{ domain.title }}</td>
                   <td>{{ domain.appname }}</td>
@@ -245,7 +245,7 @@
               <tbody>
                 <tr>
                   <td>{{ sendir.id }}</td>
-                  <td><a href="{{sendir.url}}">{{ sendir.url }}</a></td>
+                  <td><a href="{{sendir.url}}" target="_blank">{{ sendir.url }}</a></td>
                     <td>{{ sendir.status_code }}</td>
                   <td><a class="btn btn-danger btn-xs" href="/del/{{sendir.id}}/subdomain" role="button">删除</a></td>
                 </tr>
