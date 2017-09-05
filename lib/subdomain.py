@@ -277,7 +277,7 @@ class Domain:
         while not self.q.empty():
             url = self.q.get()
             try:
-                r = requests.get('http://' + url, timeout=3)
+                r = requests.get('http://' + url, timeout=3, headers={'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'})
                 if not r.text:
                     self.title[url] = ''
                     continue

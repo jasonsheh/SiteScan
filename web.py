@@ -110,6 +110,7 @@ def add_rule():
 @app.route('/del/<int:id>/<string:mode>')
 def delete(id, mode):
     Database().delete(id, mode)
+    return redirect(request.referrer)
 
 
 @app.route('/add', methods=['POST'])

@@ -7,7 +7,7 @@ import sqlite3
 
 class Database:
     def __init__(self):
-        self.conn = sqlite3.connect('/home/jasonsheh/Tools/python/SiteScan/db/SiteScan.db')
+        self.conn = sqlite3.connect(user_path + '/db/SiteScan.db')
         self.cursor = self.conn.cursor()
 
     def create_database(self):
@@ -21,7 +21,7 @@ class Database:
     def create_task(self):
         self.cursor.execute('create table task('
                             'id integer primary key,'
-                            'name varchar(64)'
+                            'name varchar(64) '
                             ')')
 
         print("create task successfully")
@@ -328,12 +328,21 @@ class Database:
         return _results
 
     def delete(self, id, mode):
-        self.cursor.execute('delete from ? where id = ?', (mode, id))
+        self.cursor.execute('delete from {} where id = ?'.format(mode), (id, ))
         self.conn.commit()
+
+        if mode == 'task':
+            self.cursor.execute('delete from sendir where taskid = ?', (id,))
+            self.cursor.execute('delete from subdomain where taskid = ?', (id,))
+            self.cursor.execute('delete from port where taskid = ?', (id,))
+            self.cursor.execute('delete from finger where taskid = ?', (id,))
+            self.cursor.execute('delete from vul where taskid = ?', (id,))
+            self.conn.commit()
+
         self.clean()
 
     def delete_all(self, mode):
-        self.cursor.execute('delete from ?', (mode, ))
+        self.cursor.execute('delete from {}'.format(mode))
         self.conn.commit()
         self.clean()
 

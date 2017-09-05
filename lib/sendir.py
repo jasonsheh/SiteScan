@@ -7,8 +7,9 @@ import requests
 import threading
 import queue
 import time
-from database.database import Database
 
+from database.database import Database
+from setting import user_path
 
 class Sendir:
     def __init__(self, targets, id=''):
@@ -60,16 +61,16 @@ class Sendir:
         _targets = []
         for target in self.targets:
             try:
-                for not_exist in ['/', '.config', '.jsp', '.asp', '.aspx', '.php', '.html']:
+                for not_exist in ['', '/', '.config', '.jsp', '.asp', '.aspx', '.php', '.html']:
                     url = target + '/this_page_will_never_exists' + not_exist
-                    r = requests.get(url, timeout=4, allow_redirects=False)
+                    r = requests.get(url, timeout=6, allow_redirects=False)
                     # print(url, r.status_code)
                     if r.status_code in [200, 403]:
                         _targets.append(target)
                         break
 
                 url = target + '/.this_page_will_never_exists_lalala'
-                r = requests.get(url, timeout=4, allow_redirects=False)
+                r = requests.get(url, timeout=6, allow_redirects=False)
                 # print(url, r.status_code)
                 if r.status_code in [200, 403]:
                     _targets.append(target)
@@ -93,7 +94,7 @@ class Sendir:
         print('\n# 检测敏感目录...')
 
         # 文件入队列
-        with open('/home/jasonsheh/Tools/python/SiteScan/dict/dir.txt', 'r') as file:
+        with open(user_path+'/dict/dir.txt', 'r') as file:
             for eachline in file:
                 self.q.put(eachline.strip())
 
@@ -111,7 +112,7 @@ class Sendir:
 
 
 def main():
-    s = Sendir(targets=['ylc.njutcm.edu.cn', 'www.njutcm.edu.cn', 'its.njutcm.edu.cn', 'stu.njutcm.edu.cn'])
+    s = Sendir(targets=['http://apollo.yirendai.com/'])
     s.init()
     s.error_page()
 
