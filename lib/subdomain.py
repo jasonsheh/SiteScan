@@ -115,7 +115,7 @@ class Domain:
         self.domain_dict()
 
         try:
-            url = 'this_subdomain_will_never_exist' +'.' + self.target
+            url = 'this_subdomain_will_never_exist' + '.' + self.target
             answers = dns.resolver.query(url)
             ips = [answer.address for answer in answers]
             for ip in ips:
@@ -138,7 +138,7 @@ class Domain:
         self.domain = list(set([x for x in self.domains.keys()]))
         self.sub_domain_dict()
         threads = []
-        for i in range(int(self.thread_num)):
+        for i in range(int(self.thread_num)*2):
             t = threading.Thread(target=self.sub_brute)
             threads.append(t)
         for item in threads:

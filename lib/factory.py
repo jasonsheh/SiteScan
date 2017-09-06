@@ -35,7 +35,7 @@ def site_scan(domain):
     for domain in domains:
         try:
             r = requests.get('http://'+domain, timeout=4, allow_redirects=False)
-            if r.status_code in [400, 500]:
+            if r.status_code in [400, 403, 500]:
                 removed_domains.append(domain)
         except:
             removed_domains.append(domain)
@@ -60,11 +60,11 @@ def site_scan(domain):
 
     Sendir(domains, id).run()
 
+    Port(domains, id).run()
+
     '''
     print('漏洞扫描')
     for domain in domains:
         url = Crawler(domain).scan()
         Vul(url, id).run()
-
-    Port(id).run(ips)
     '''

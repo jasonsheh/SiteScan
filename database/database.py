@@ -4,6 +4,8 @@
 
 import sqlite3
 
+from setting import user_path
+
 
 class Database:
     def __init__(self):
@@ -185,6 +187,7 @@ class Database:
         self.cursor.execute('create table port('
                             'id integer primary key, '
                             'ip varchar(255), '
+                            'url varchar(255), '
                             'port varchar(6), '
                             'state varchar(10), '
                             'name varchar(10), '
@@ -195,7 +198,7 @@ class Database:
 
         print("create port successfully")
 
-    def insert_port(self, host, porto, taskid=''):
+    def insert_port(self, host, url, porto, taskid=''):
         ports = list(porto.keys())
         ports.sort()
         for port in ports:
@@ -204,8 +207,8 @@ class Database:
             service = porto[port]['product']
             version = porto[port]['version']
 
-            sql = "insert into port (ip, port, state, name, service, version, taskid ) values (?, ?, ?, ?, ?, ?, ? )"
-            self.cursor.execute(sql, (host, port, state, name, service, version, taskid))
+            sql = "insert into port (ip, url, port, state, name, service, version, taskid ) values (?, ?, ?, ?, ?, ?, ?, ? )"
+            self.cursor.execute(sql, (host, url, port, state, name, service, version, taskid))
         self.conn.commit()
 
     def select_port(self, page):
@@ -218,12 +221,13 @@ class Database:
             _result = {}
             _result['id'] = result[0]
             _result['ip'] = result[1]
-            _result['port'] = result[2]
-            _result['state'] = result[3]
-            _result['name'] = result[4]
-            _result['service'] = result[5]
-            _result['version'] = result[6]
-            _result['taskid'] = result[7]
+            _result['url'] = result[2]
+            _result['port'] = result[3]
+            _result['state'] = result[4]
+            _result['name'] = result[5]
+            _result['service'] = result[6]
+            _result['version'] = result[7]
+            _result['taskid'] = result[8]
             _results.append(_result)
 
         self.clean()
