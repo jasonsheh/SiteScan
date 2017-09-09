@@ -10,16 +10,20 @@ import time
 
 
 class Port:
-    def __init__(self, urls, id=''):
-        self.urls = urls
+    def __init__(self, domains, id=''):
+        self.domains = domains
+        self.ips = []
         self.id = id
         self.nm = nmap.PortScanner()
 
     def run(self):
         t1 = time.time()
         print('\n# 端口扫描...')
-        for url in self.urls:
-            self.scan(url)
+        for url, ip_list in self.domains.items():
+            ips = [ip for ip in self.ips]
+            for ip in ip_list:
+                if ip not in ips:
+                    self.scan(ip)
         t2 = time.time()
         print(t2-t1)
 
@@ -45,8 +49,5 @@ class Port:
                            self.nm[host][proto][port]['product'], self.nm[host][proto][port]['version']))
 
                 Database().insert_port(host, self.nm[host].hostname(), self.nm[host][proto], self.id)
+                self.ips.append(host)
                 # analysis(host, proto, ports)
-
-
-if __name__ == '__main__':
-    Port(urls=['3g.jit.edu.cn']).run()

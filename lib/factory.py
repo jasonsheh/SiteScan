@@ -29,16 +29,17 @@ def site_scan(domain):
 
     id = Database().insert_task(domain)
 
-    domains, ips = Domain(domain, id).run()
+    domains = Domain(domain, id).run()
 
-    removed_domains = []
-    for domain in domains:
+    # , [y for x in self.domains.values() for y in x]
+
+    real_domains = []
+    for domain in [x for x in domains.keys()]:
         try:
             r = requests.get('http://'+domain, timeout=4, allow_redirects=False)
-            if r.status_code in [400, 403, 500]:
-                removed_domains.append(domain)
+            if r.status_code not in [400, 403, 500]:
+                real_domains.append(domain)
         except:
-            removed_domains.append(domain)
             continue
         '''
         except requests.exceptions.ConnectTimeout:
@@ -55,10 +56,7 @@ def site_scan(domain):
             continue
         '''
 
-    for removed_domain in removed_domains:
-        domains.remove(removed_domain)
-
-    Sendir(domains, id).run()
+    Sendir(real_domains, id).run()
 
     Port(domains, id).run()
 

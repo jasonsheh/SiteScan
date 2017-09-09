@@ -57,7 +57,7 @@ class Domain:
         self.output()
         self.appname = FingerPrint([x for x in self.domains.keys()]).run()
         Database().insert_subdomain(self.domains, self.title, self.appname, self.id)
-        return [x for x in self.domains.keys()], [y for x in self.domains.values() for y in x]
+        return self.domains
 
     def ilink(self):
         print('\nilink子域名查询')
@@ -282,10 +282,10 @@ class Domain:
                     self.title[url] = ''
                     continue
                 if not r.encoding:
-                    if re.findall('[charset]=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S):
-                        r.encoding = re.findall('charset=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S)[0]
-                    elif re.findall('encoding=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S):
-                        r.encoding = re.findall('encoding=[\'|\"](.*?)[\'|\"]', r.text, re.I | re.S)[0]
+                    if re.findall('[charset]=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S):
+                        r.encoding = re.findall('charset=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S)[0]
+                    elif re.findall('encoding=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S):
+                        r.encoding = re.findall('encoding=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S)[0]
                     else:
                         self.title[url] = ''
                         continue
@@ -316,9 +316,5 @@ class Domain:
                 print('\t' + ip)
 
 
-
-def main():
-    Domain(target="www.njnu.edu.cn").run()
-
 if __name__ == '__main__':
-    main()
+    Domain(target="www.njnu.edu.cn").run()
