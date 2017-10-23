@@ -13,26 +13,28 @@ import time
 import socket
 import re
 
+'''
 from database.database import Database
 from lib.fingerprint import FingerPrint
 
 from setting import user_path
+'''
 
-
-class Domain:
+class Domain(object):
     def __init__(self, target, id=''):
         self.target = target
+        self.id = id
         self.q = queue.Queue(0)
-        self.thread_num = 10
+        self.thread_num = 20
         self.ip = []
         self.dns_ip = ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204',
-                                  '220.250.64.225']
+                       '220.250.64.225']
         self.c_count = {}
         self.domain = []
         self.domains = {}
         self.title = {}
         self.appname = {}
-        self.id = id
+        self.init()
 
     def init(self):
         if self.target.startswith('http://www.'):
@@ -47,56 +49,21 @@ class Domain:
             self.target = self.target[4:]
         self.target = self.target.strip('/')
 
+    def output(self):
+        for url, ips in sorted(self.domains.items()):
+            print(url + ':\t' + self.title[url])
+            for ip in ips:
+                print('\t' + ip)
+
+
+class BruteDomain(Domain):
+    def __init__(self, target, id=''):
+        super().__init__(target, id)
+        self.thread_num = 20
+
     def run(self):
-        self.init()
-        # self.ilink()
-        # if not self.domain:
-        # self.chaxunla()
-        # elif not self.domain or len(self.domain) < 3:
         self.brute()
         self.output()
-        self.appname = FingerPrint([x for x in self.domains.keys()]).run()
-        Database().insert_subdomain(self.domains, self.title, self.appname, self.id)
-        return self.domains
-
-    def ilink(self):
-        print('\nilink子域名查询')
-        url = 'http://i.links.cn/subdomain/'
-        data = {'domain': self.target, 'b2': '1', 'b3': '1', 'b4': '1'}
-        try:
-            r = requests.post(url, data=data)
-            pattern = re.compile('<div class=domain><input.*?value="http://(.*?)">')
-            self.domain = re.findall(pattern, r.text)
-            for domain in self.domain:
-                ip = socket.gethostbyname(domain)
-                if ip in self.domains.keys():
-                    self.domains[ip].append(domain)
-                    # print(domain + '\t' + ip)
-                    time.sleep(0.1)
-                else:
-                    self.domains[ip] = [domain]
-                    # print(domain + '\t' + ip)
-                    time.sleep(0.1)
-        except requests.exceptions.ConnectionError:
-            self.domain = []
-        except Exception as e:
-            print(e)
-
-    def chaxunla(self):
-        print('\nchaxunla子域名查询')
-        url = 'http://api.chaxun.la/toolsAPI/getdomain/'
-        data = {'k': 'www.' + self.target, 'action': 'moreson'}
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
-        r = requests.post(url, data=data, headers=headers)
-        url = json.loads(r.text)
-        if url['status'] == 0:
-            print('域名流量太小或者域名错误')
-        elif url['status'] == 3:
-            print('请求次数过多')
-        else:
-            list = url['data']
-            for domain in list:
-                self.domain.append(domain['domain'])
 
     def domain_dict(self):
         with open(user_path + '/dict/domain.txt', 'r') as dirt:
@@ -138,7 +105,7 @@ class Domain:
         self.domain = list(set([x for x in self.domains.keys()]))
         self.sub_domain_dict()
         threads = []
-        for i in range(int(self.thread_num)*2):
+        for i in range(int(self.thread_num) * 2):
             t = threading.Thread(target=self.sub_brute)
             threads.append(t)
         for item in threads:
@@ -193,7 +160,6 @@ class Domain:
                 if flag:
                     self.domains[url] = ips
                     print(url)
-                    time.sleep(0.1)
             except:
                 continue
 
@@ -216,6 +182,57 @@ class Domain:
                         time.sleep(0.1)
                 except:
                     continue
+
+
+class SearchDomain(Domain):
+    def __init__(self, target, id=''):
+        super().__init__(target, id)
+
+    def run(self):
+        self.ilink()
+        self.chaxunla()
+        # self.appname = FingerPrint([x for x in self.domains.keys()]).run()
+        print(self.domain)
+        return self.domains
+
+    def ilink(self):
+        print('\nilink子域名查询')
+        url = 'http://i.links.cn/subdomain/'
+        data = {'domain': self.target, 'b2': '1', 'b3': '1', 'b4': '1'}
+        try:
+            r = requests.post(url, data=data)
+            pattern = re.compile('<div class=domain><input.*?value="http://(.*?)">')
+            self.domain = re.findall(pattern, r.text)
+            for domain in self.domain:
+                ip = socket.gethostbyname(domain)
+                if ip in self.domains.keys():
+                    self.domains[ip].append(domain)
+                    print(domain + '\t' + ip)
+                    time.sleep(0.1)
+                else:
+                    self.domains[ip] = [domain]
+                    print(domain + '\t' + ip)
+                    time.sleep(0.1)
+        except requests.exceptions.ConnectionError:
+            self.domain = []
+        except Exception as e:
+            print(e)
+
+    def chaxunla(self):
+        print('\nchaxunla子域名查询')
+        url = 'http://api.chaxun.la/toolsAPI/getdomain/'
+        data = {'k': 'www.' + self.target, 'action': 'moreson'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+        r = requests.post(url, data=data, headers=headers)
+        url = json.loads(r.text)
+        if url['status'] == 0:
+            print('域名流量太小或者域名错误')
+        elif url['status'] == 3:
+            print('请求次数过多')
+        else:
+            list = url['data']
+            for domain in list:
+                self.domain.append(domain['domain'])
 
     @staticmethod
     def same_ip(ip):
@@ -309,12 +326,16 @@ class Domain:
                 self.title[url] = ''
                 continue
 
-    def output(self):
-        for url, ips in sorted(self.domains.items()):
-            print(url + ':\t' + self.title[url])
-            for ip in ips:
-                print('\t' + ip)
+
+class AllDomain(BruteDomain, SearchDomain):
+    def __init__(self, target, id=''):
+        super().__init__(target, id)
+
+    def run(self):
+        super(SearchDomain, self).run()
+        super(BruteDomainDomain, self).run()
+        # Database().insert_subdomain(self.domains, self.title, self.appname, self.id)
 
 
 if __name__ == '__main__':
-    Domain(target="www.njnu.edu.cn").run()
+    SearchDomain('www.jit.edu.cn').run()
