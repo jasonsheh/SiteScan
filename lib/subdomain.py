@@ -20,6 +20,7 @@ from lib.fingerprint import FingerPrint
 from setting import user_path
 '''
 
+
 class Domain(object):
     def __init__(self, target, id=''):
         self.target = target
@@ -61,7 +62,8 @@ class BruteDomain(Domain):
         super().__init__(target, id)
         self.thread_num = 20
 
-    def run(self):
+    def run_brute(self):
+        print(1)
         self.brute()
         self.output()
 
@@ -188,12 +190,27 @@ class SearchDomain(Domain):
     def __init__(self, target, id=''):
         super().__init__(target, id)
 
-    def run(self):
-        self.ilink()
-        self.chaxunla()
+    def run_search(self):
+        # self.ilink()
+        # self.chaxunla()
+        # self.yahoo()
+        # self.baidu()
+        # self.bing()
+        # self.so360()
         # self.appname = FingerPrint([x for x in self.domains.keys()]).run()
-        print(self.domain)
+        print(0)
         return self.domains
+
+    def get_ip(self, domains):
+        for domain in domains:
+            try:
+                ip = socket.gethostbyname(domain)
+                if ip in self.domains.keys() and domain not in self.domains[ip]:
+                    self.domains[ip].append(domain)
+                else:
+                    self.domains[ip] = [domain]
+            except socket.gaierror:
+                continue
 
     def ilink(self):
         print('\nilink子域名查询')
@@ -202,21 +219,10 @@ class SearchDomain(Domain):
         try:
             r = requests.post(url, data=data)
             pattern = re.compile('<div class=domain><input.*?value="http://(.*?)">')
-            self.domain = re.findall(pattern, r.text)
-            for domain in self.domain:
-                ip = socket.gethostbyname(domain)
-                if ip in self.domains.keys():
-                    self.domains[ip].append(domain)
-                    print(domain + '\t' + ip)
-                    time.sleep(0.1)
-                else:
-                    self.domains[ip] = [domain]
-                    print(domain + '\t' + ip)
-                    time.sleep(0.1)
+            domains = re.findall(pattern, r.text)
+            self.get_ip(domains)
         except requests.exceptions.ConnectionError:
-            self.domain = []
-        except Exception as e:
-            print(e)
+            self.domains = {}
 
     def chaxunla(self):
         print('\nchaxunla子域名查询')
@@ -232,7 +238,130 @@ class SearchDomain(Domain):
         else:
             list = url['data']
             for domain in list:
-                self.domain.append(domain['domain'])
+                try:
+                    ip = socket.gethostbyname(domain['domain'])
+                    if ip in self.domains.keys() and domain not in self.domains[ip]:
+                        self.domains[ip].append(domain['domain'])
+                    else:
+                        self.domains[ip] = [domain['domain']]
+                except socket.gaierror:
+                    continue
+
+    def yahoo(self):
+        print('\nyahoo子域名查询')
+        domains = []
+        total_page = 30
+        url = 'https://search.yahoo.com/search?p = site:' + self.target + '&pz=10&b='
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+        pattern = re.compile('<span class=" fz-ms fw-m fc-12th wr-bw lh-17">(.*?)</b>')
+        for page in range(1, total_page):
+            r = requests.get(url + str(page+1), headers=headers)
+            domains += re.findall(pattern, r.text)
+        domains = list(set(domains))
+        removed = []
+        for domain in domains:
+            domains[domains.index(domain)] = domain.replace('<b>', '')
+
+        for domain in domains:
+            if '/' in domain:
+                domains[domains.index(domain)] = domain.split('/')[0]
+                continue
+            if not domain.endswith(self.target):
+                removed.append(domain)
+        domains = list(set(domains))
+        for remove in removed:
+            domains.remove(remove)
+
+        self.get_ip(domains)
+
+    def baidu(self):
+        print('\nbaidu子域名查询')
+        domains = []
+        total_page = 30
+        url = 'http://www.baidu.com/s?wd=site:'+self.target+'&pn='
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+        pattern = re.compile('<a.*?class="c-showurl".*?>(.*?)/&nbsp;</a>')
+        for page in range(1, total_page):
+            r = requests.get(url+str(page), headers=headers)
+            domains += re.findall(pattern, r.text)
+        domains = list(set(domains))
+        removed = []
+        for domain in domains:
+            if domain.startswith('https://'):
+                domains[domains.index(domain)] = domain.replace('https://', '')
+                continue
+            elif '/' in domain:
+                domains[domains.index(domain)] = domain.split('/')[0]
+                continue
+            if not domain.endswith(self.target):
+                removed.append(domain)
+        domains = list(set(domains))
+        for remove in removed:
+            domains.remove(remove)
+
+        self.get_ip(domains)
+
+    def bing(self):
+        print('\nbing子域名查询')
+        domains = []
+        total_page = 30
+        url = 'https://cn.bing.com/search?q=site:' + self.target + '&first='
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+        pattern = re.compile('<cite>(.*?)</strong>')
+        for page in range(0, total_page):
+            r = requests.get(url + str(page*10), headers=headers)
+            domains += re.findall(pattern, r.text)
+        domains = list(set(domains))
+        removed = []
+        for domain in domains:
+            domains[domains.index(domain)] = domain.replace('<strong>', '')
+
+        for domain in domains:
+            if domain.startswith('https://'):
+                domains[domains.index(domain)] = domain.replace('https://', '')
+                continue
+            elif '/' in domain:
+                domains[domains.index(domain)] = domain.split('/')[0]
+                continue
+
+        for domain in domains:
+            if not domain.endswith(self.target):
+                removed.append(domain)
+        domains = list(set(domains))
+        for remove in removed:
+            domains.remove(remove)
+
+        self.get_ip(domains)
+
+    def so360(self):
+        print('\n360搜索子域名查询')
+        domains = []
+        total_page = 10
+        url = 'https://www.so.com/s?q=site:' + self.target + '&pn='
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+        pattern = re.compile('<cite>(.*?)</cite>')
+        for page in range(0, total_page):
+            r = requests.get(url + str(page), headers=headers)
+            domains += re.findall(pattern, r.text)
+        domains = list(set(domains))
+        removed = []
+
+        for domain in domains:
+            if domain.startswith('https://'):
+                domains[domains.index(domain)] = domain.replace('https://', '')
+                continue
+            elif '/' in domain:
+                domains[domains.index(domain)] = domain.split('/')[0]
+                continue
+
+        for domain in domains:
+            if not domain.endswith(self.target):
+                removed.append(domain)
+        domains = list(set(domains))
+        for remove in removed:
+            domains.remove(remove)
+
+        self.get_ip(domains)
 
     @staticmethod
     def same_ip(ip):
@@ -327,15 +456,15 @@ class SearchDomain(Domain):
                 continue
 
 
-class AllDomain(BruteDomain, SearchDomain):
+class AllDomain(SearchDomain, BruteDomain):
     def __init__(self, target, id=''):
         super().__init__(target, id)
 
     def run(self):
-        super(SearchDomain, self).run()
-        super(BruteDomainDomain, self).run()
+        super().run_search()
+        # super().run_brute()
         # Database().insert_subdomain(self.domains, self.title, self.appname, self.id)
 
 
 if __name__ == '__main__':
-    SearchDomain('www.jit.edu.cn').run()
+    AllDomain('www.jit.edu.cn').run()
