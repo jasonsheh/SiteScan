@@ -16,9 +16,9 @@ import re
 '''
 from database.database import Database
 from lib.fingerprint import FingerPrint
-
-from setting import user_path
 '''
+sys.path.append('C:\Code\SiteScan')
+from setting import user_path
 
 
 class Domain(object):
@@ -26,7 +26,6 @@ class Domain(object):
         self.target = target
         self.id = id
         self.q = queue.Queue(0)
-        self.thread_num = 20
         self.ip = []
         self.dns_ip = ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204',
                        '220.250.64.225']
@@ -60,12 +59,11 @@ class Domain(object):
 class BruteDomain(Domain):
     def __init__(self, target, id=''):
         super().__init__(target, id)
-        self.thread_num = 20
+        self.thread_num = 100
 
     def run_brute(self):
-        print(1)
         self.brute()
-        self.output()
+        # self.output()
 
     def domain_dict(self):
         with open(user_path + '/dict/domain.txt', 'r') as dirt:
@@ -103,6 +101,7 @@ class BruteDomain(Domain):
         for item in threads:
             item.join()
 
+        '''
         print('\n二级子域名爆破...')
         self.domain = list(set([x for x in self.domains.keys()]))
         self.sub_domain_dict()
@@ -114,8 +113,7 @@ class BruteDomain(Domain):
             item.start()
         for item in threads:
             item.join()
-
-        '''
+        
         print('\nc段扫描...')
         self.c_check()
         threads = []
@@ -129,7 +127,7 @@ class BruteDomain(Domain):
 
         t2 = time.time()
         print('\nTotal time: ' + str(t2 - t1) + '\n')
-        '''
+        
 
         print('\n网站标题扫描')
         self.enqueue_title()
@@ -141,47 +139,43 @@ class BruteDomain(Domain):
             item.start()
         for item in threads:
             item.join()
+        '''
 
         t3 = time.time()
         print('\nTotal time: ' + str(t3 - t1) + '\n')
 
     def _brute(self):
         while not self.q.empty():
-            flag = 1
-            dom = self.q.get()
-            url = dom + '.' + self.target
-
+            sub = self.q.get()
+            domain = sub + '.' + self.target
             try:
-                answers = dns.resolver.query(url)
+                answers = dns.resolver.query(domain)
                 ips = [answer.address for answer in answers]
-
                 for ip in ips:
-                    if ip in self.dns_ip:
-                        flag = 0
-                        break
-                if flag:
-                    self.domains[url] = ips
-                    print(url)
+                    if ip not in self.dns_ip:
+                        if ip in self.domains.keys() and domain not in self.domains[ip]:
+                            self.domains[ip].append(domain)
+                        else:
+                            self.domains[ip] = [domain]
+                        print(domain)
             except:
                 continue
 
     def sub_brute(self):
         while not self.q.empty():
-            flag = 1
-            dom = self.q.get()
+            sub = self.q.get()
             for target in self.domain:
-                url = dom + '.' + target
+                domain = sub + '.' + target
                 try:
-                    answers = dns.resolver.query(url)
+                    answers = dns.resolver.query(domain)
                     ips = [answer.address for answer in answers]
                     for ip in ips:
-                        if ip in self.dns_ip:
-                            flag = 0
-                            break
-                    if flag:
-                        self.domains[url] = ips
-                        print(url)
-                        time.sleep(0.1)
+                        if ip not in self.dns_ip:
+                            if ip in self.domains.keys() and domain not in self.domains[ip]:
+                                self.domains[ip].append(domain)
+                            else:
+                                self.domains[ip] = [domain]
+                    print(domain)
                 except:
                     continue
 
@@ -193,12 +187,14 @@ class SearchDomain(Domain):
     def run_search(self):
         # self.ilink()
         # self.chaxunla()
+        # self.threatcrowd()
+        self.virustotal()
         # self.yahoo()
         # self.baidu()
         # self.bing()
         # self.so360()
         # self.appname = FingerPrint([x for x in self.domains.keys()]).run()
-        print(0)
+        print(self.domains)
         return self.domains
 
     def get_ip(self, domains):
@@ -246,6 +242,23 @@ class SearchDomain(Domain):
                         self.domains[ip] = [domain['domain']]
                 except socket.gaierror:
                     continue
+
+    def threatcrowd(self):
+        print('\nthreatcrowd子域名查询')
+        url = 'https://www.threatcrowd.org/searchApi/v2/domain/report/?domain=' + self.target
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+        r = requests.get(url, headers=headers)
+        data = json.loads(r.text)
+        print(data)
+        self.get_ip(data['subdomains'])
+
+    def virustotal(self):
+        print('\nvirustotal子域名查询')
+        url = 'https://www.virustotal.com/vtapi/v2/domain/report'
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+        params = {'apikey': '', 'domain': self.target}
+        r = requests.get(url, params=params, headers=headers)
+        self.get_ip(r.json()['subdomains'])
 
     def yahoo(self):
         print('\nyahoo子域名查询')
@@ -461,8 +474,8 @@ class AllDomain(SearchDomain, BruteDomain):
         super().__init__(target, id)
 
     def run(self):
-        super().run_search()
-        # super().run_brute()
+        # super().run_search()
+        super().run_brute()
         # Database().insert_subdomain(self.domains, self.title, self.appname, self.id)
 
 
