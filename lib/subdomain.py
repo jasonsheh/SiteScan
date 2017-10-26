@@ -8,10 +8,12 @@ from urllib.parse import urlparse
 import sys
 import requests
 import threading
-import queue
 import time
 import socket
 import re
+import gevent
+from gevent.queue import Queue
+from gevent import monkey
 
 '''
 from database.database import Database
@@ -25,10 +27,11 @@ class Domain(object):
     def __init__(self, target, id=''):
         self.target = target
         self.id = id
-        self.q = queue.Queue(0)
         self.ip = []
         self.dns_ip = ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204',
                        '220.250.64.225']
+        self.queue = Queue()
+        self.thread_num = 100
         self.c_count = {}
         self.domain = []
         self.domains = {}
@@ -91,28 +94,15 @@ class BruteDomain(Domain):
             pass
         except dns.resolver.NoAnswer:
             pass
-
-        threads = []
-        for i in range(int(self.thread_num)):
-            t = threading.Thread(target=self._brute)
-            threads.append(t)
-        for item in threads:
-            item.start()
-        for item in threads:
-            item.join()
+        threads = [gevent.spawn(self._brute, d) for d in range(self.thread_num)]
+        gevent.joinall(threads)
 
         '''
         print('\n二级子域名爆破...')
         self.domain = list(set([x for x in self.domains.keys()]))
         self.sub_domain_dict()
-        threads = []
-        for i in range(int(self.thread_num) * 2):
-            t = threading.Thread(target=self.sub_brute)
-            threads.append(t)
-        for item in threads:
-            item.start()
-        for item in threads:
-            item.join()
+        threads = [gevent.spawn(self.sub_brute, d) for d in range(self.thread_num)]
+        gevent.joinall(threads)
         
         print('\nc段扫描...')
         self.c_check()
@@ -185,31 +175,33 @@ class SearchDomain(Domain):
         super().__init__(target, id)
 
     def run_search(self):
-        # self.ilink()
-        # self.chaxunla()
+        self.ilink()
+        self.chaxunla()
         # self.threatcrowd()
         self.virustotal()
-        # self.yahoo()
-        # self.baidu()
-        # self.bing()
-        # self.so360()
+        self.yahoo()
+        self.baidu()
+        self.bing()
+        self.so360()
+
+        self.remove_spread_record()
         # self.appname = FingerPrint([x for x in self.domains.keys()]).run()
-        print(self.domains)
+        # print(self.domains)
         return self.domains
 
     def get_ip(self, domains):
         for domain in domains:
             try:
                 ip = socket.gethostbyname(domain)
-                if ip in self.domains.keys() and domain not in self.domains[ip]:
-                    self.domains[ip].append(domain)
+                if domain in self.domains.keys() and ip not in self.domains[domain]:
+                    self.domains[domain].append(ip)
                 else:
-                    self.domains[ip] = [domain]
+                    self.domains[domain] = [ip]
             except socket.gaierror:
                 continue
 
     def ilink(self):
-        print('\nilink子域名查询')
+        print('ilink子域名查询')
         url = 'http://i.links.cn/subdomain/'
         data = {'domain': self.target, 'b2': '1', 'b3': '1', 'b4': '1'}
         try:
@@ -221,47 +213,46 @@ class SearchDomain(Domain):
             self.domains = {}
 
     def chaxunla(self):
-        print('\nchaxunla子域名查询')
+        print('chaxunla子域名查询')
         url = 'http://api.chaxun.la/toolsAPI/getdomain/'
         data = {'k': 'www.' + self.target, 'action': 'moreson'}
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
         r = requests.post(url, data=data, headers=headers)
         url = json.loads(r.text)
         if url['status'] == 0:
-            print('域名流量太小或者域名错误')
+            print('\t域名流量太小或者域名错误')
         elif url['status'] == 3:
-            print('请求次数过多')
+            print('\t请求次数过多')
         else:
             list = url['data']
             for domain in list:
                 try:
                     ip = socket.gethostbyname(domain['domain'])
-                    if ip in self.domains.keys() and domain not in self.domains[ip]:
-                        self.domains[ip].append(domain['domain'])
+                    if domain['domain'] in self.domains.keys() and ip not in self.domains[domain['domain']]:
+                        self.domains[domain['domain']].append(ip)
                     else:
-                        self.domains[ip] = [domain['domain']]
+                        self.domains[domain['domain']] = [ip]
                 except socket.gaierror:
                     continue
 
     def threatcrowd(self):
-        print('\nthreatcrowd子域名查询')
-        url = 'https://www.threatcrowd.org/searchApi/v2/domain/report/?domain=' + self.target
+        print(' threatcrowd子域名查询')
+        url = 'http://www.threatcrowd.org/searchApi/v2/domain/report/?domain=' + self.target
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
         r = requests.get(url, headers=headers)
         data = json.loads(r.text)
-        print(data)
         self.get_ip(data['subdomains'])
 
     def virustotal(self):
-        print('\nvirustotal子域名查询')
-        url = 'https://www.virustotal.com/vtapi/v2/domain/report'
+        print('virustotal子域名查询')
+        url = 'http://www.virustotal.com/vtapi/v2/domain/report'
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
         params = {'apikey': '', 'domain': self.target}
         r = requests.get(url, params=params, headers=headers)
         self.get_ip(r.json()['subdomains'])
 
     def yahoo(self):
-        print('\nyahoo子域名查询')
+        print('yahoo子域名查询')
         domains = []
         total_page = 30
         url = 'https://search.yahoo.com/search?p = site:' + self.target + '&pz=10&b='
@@ -288,7 +279,7 @@ class SearchDomain(Domain):
         self.get_ip(domains)
 
     def baidu(self):
-        print('\nbaidu子域名查询')
+        print('baidu子域名查询')
         domains = []
         total_page = 30
         url = 'http://www.baidu.com/s?wd=site:'+self.target+'&pn='
@@ -315,7 +306,7 @@ class SearchDomain(Domain):
         self.get_ip(domains)
 
     def bing(self):
-        print('\nbing子域名查询')
+        print('bing子域名查询')
         domains = []
         total_page = 30
         url = 'https://cn.bing.com/search?q=site:' + self.target + '&first='
@@ -347,7 +338,7 @@ class SearchDomain(Domain):
         self.get_ip(domains)
 
     def so360(self):
-        print('\n360搜索子域名查询')
+        print('360搜索子域名查询')
         domains = []
         total_page = 10
         url = 'https://www.so.com/s?q=site:' + self.target + '&pn='
@@ -375,6 +366,19 @@ class SearchDomain(Domain):
             domains.remove(remove)
 
         self.get_ip(domains)
+
+    def remove_spread_record(self):
+        need_to_be_removed = []
+        for domain in self.domains.keys():
+            if len(domain.replace(self.target, '').split('.')) > 2:
+                _domain = 'this_subdomain_will_never_exist'+'.'+domain.split('.', 1)[1]
+                try:
+                    socket.gethostbyname(_domain)
+                    need_to_be_removed.append(domain)
+                except socket.gaierror:
+                    continue
+        for domain in need_to_be_removed:
+            self.domains.pop(domain)
 
     @staticmethod
     def same_ip(ip):
@@ -428,56 +432,21 @@ class SearchDomain(Domain):
                     _ip = ip + '.' + str(x)
                     self.q.put(_ip)
 
-    def enqueue_title(self):
-        for url in sorted(self.domains.keys()):
-            self.q.put(url)
-
-    def get_title(self):
-        while not self.q.empty():
-            url = self.q.get()
-            try:
-                r = requests.get('http://' + url, timeout=3, headers={'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'})
-                if not r.text:
-                    self.title[url] = ''
-                    continue
-                if not r.encoding:
-                    if re.findall('[charset]=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S):
-                        r.encoding = re.findall('charset=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S)[0]
-                    elif re.findall('encoding=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S):
-                        r.encoding = re.findall('encoding=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S)[0]
-                    else:
-                        self.title[url] = ''
-                        continue
-                if re.findall('<title>(.*?)</title>', r.text, re.I | re.S) and r.encoding.split(',')[0] in ['utf-8', 'gb2312', 'GBK']:
-                    self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].strip()
-                elif re.findall('<title>(.*?)</title>', r.text, re.I | re.S):
-                    self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].encode(r.encoding.split(',')[0]).decode('utf-8').strip()
-                else:
-                    self.title[url] = ''
-                # print(url, self.title[url])
-            except UnicodeDecodeError:
-                self.title[url] = ''
-                continue
-            except requests.exceptions.ReadTimeout:
-                self.title[url] = ''
-                continue
-            except requests.exceptions.ConnectionError:
-                self.title[url] = ''
-                continue
-            except requests.exceptions.TooManyRedirects:
-                self.title[url] = ''
-                continue
-
 
 class AllDomain(SearchDomain, BruteDomain):
     def __init__(self, target, id=''):
         super().__init__(target, id)
 
     def run(self):
-        # super().run_search()
+        t1 = time.time()
+        super().run_search()
         super().run_brute()
+        super().run_title()
+        t2 = time.time()
+        total_time = str(t2 - t1)
+        super().output(total_time)
         # Database().insert_subdomain(self.domains, self.title, self.appname, self.id)
 
 
 if __name__ == '__main__':
-    AllDomain('www.jit.edu.cn').run()
+    AllDomain('www.qq.com').run()
