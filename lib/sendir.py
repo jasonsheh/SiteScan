@@ -61,7 +61,7 @@ class Sendir:
         _targets = []
         for target in self.targets:
             try:
-                for not_exist in ['', '/', '.config', '.jsp', '.asp', '.aspx', '.php', '.html']:
+                for not_exist in ['', '/', '.config', '.sql', '.inc', '.bak', '.jsp', '.asp', '.aspx', '.php', '.html']:
                     url = target + '/this_page_will_never_exists' + not_exist
                     r = requests.get(url, timeout=6, allow_redirects=False)
                     # print(url, r.status_code)
@@ -113,8 +113,7 @@ class Sendir:
 
 def main():
     s = Sendir(targets=['http://apollo.yirendai.com/'])
-    s.init()
-    s.error_page()
+    s.run()
 
 if __name__ == '__main__':
     main()

@@ -165,8 +165,6 @@
             <table class="table table-striped">
               <thead>
                 <tr>
-                  <th>Id</th>
-                  <th>IP</th>
                   <th>Port</th>
                   <th>State</th>
                   <th>Name</th>
@@ -175,17 +173,22 @@
                 </tr>
               </thead>
               {% for port in ports %}
+                <tbody>
+                <tr>
+                    <td>{{ port.ip }}</td>
+                </tr>
+                </tbody>
+                {% for detail in port.detail %}
               <tbody>
                 <tr>
-                  <td>{{ port.id }}</td>
-                  <td>{{ port.ip }}</td>
-                  <td>{{ port.port }}</td>
-                  <td>{{ port.state }}</td>
-                  <td>{{ port.name }}</td>
-                  <td>{{ port.service }}</td>
-                  <td>{{ port.version }}</td>
+                  <td>{{ detail.port }}</td>
+                  <td>{{ detail.state }}</td>
+                  <td>{{ detail.name }}</td>
+                  <td>{{ detail.service }}</td>
+                  <td>{{ detail.version }}</td>
                 </tr>
               </tbody>
+                {% endfor %}
               {% endfor %}
             </table>
           </div>
