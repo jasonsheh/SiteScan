@@ -14,6 +14,7 @@ import re
 import gevent
 from gevent.queue import Queue
 from gevent import monkey
+monkey.patch_all()
 
 '''
 from database.database import Database
@@ -52,17 +53,69 @@ class Domain(object):
             self.target = self.target[4:]
         self.target = self.target.strip('/')
 
-    def output(self):
+    def output(self, total_time):
         for url, ips in sorted(self.domains.items()):
             print(url + ':\t' + self.title[url])
             for ip in ips:
                 print('\t' + ip)
+
+        print(total_time)
+
+    def run_title(self):
+        print('\n网站标题扫描')
+        self.enqueue_title()
+        threads = [gevent.spawn(self.get_title) for _ in range(self.thread_num)]
+        gevent.joinall(threads)
+
+    def enqueue_title(self):
+        for url in sorted(self.domains.keys()):
+            self.queue.put_nowait(url)
+
+    def get_title(self):
+        while not self.queue.empty():
+            url = self.queue.get()
+            try:
+                r = requests.get('http://' + url, timeout=3, headers={
+                    'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'})
+                if not r.text:
+                    self.title[url] = ''
+                    continue
+                if not r.encoding:
+                    if re.findall('charset=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S):
+                        r.encoding = re.findall('charset=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S)[0]
+                    elif re.findall('encoding=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S):
+                        r.encoding = re.findall('encoding=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S)[0]
+                    else:
+                        self.title[url] = ''
+                        continue
+                if re.findall('<title>(.*?)</title>', r.text, re.I | re.S) and r.encoding.split(',')[0] in [
+                    'utf-8', 'gb2312', 'GBK', 'gbk2312']:
+                    self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].strip()
+                elif re.findall('<title>(.*?)</title>', r.text, re.I | re.S):
+                    self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].encode(
+                        r.encoding.split(',')[0]).decode('utf-8').strip()
+                else:
+                    self.title[url] = ''
+                    # print(url, self.title[url])
+            except UnicodeDecodeError:
+                self.title[url] = ''
+                continue
+            except requests.exceptions.ReadTimeout:
+                self.title[url] = ''
+                continue
+            except requests.exceptions.ConnectionError:
+                self.title[url] = ''
+                continue
+            except requests.exceptions.TooManyRedirects:
+                self.title[url] = ''
+                continue
 
 
 class BruteDomain(Domain):
     def __init__(self, target, id=''):
         super().__init__(target, id)
         self.thread_num = 100
+        self.dns = ['223.5.5.5', '223.6.6.6', '119.29.29.29', '182.254.116.116']
 
     def run_brute(self):
         self.brute()
@@ -71,19 +124,16 @@ class BruteDomain(Domain):
     def domain_dict(self):
         with open(user_path + '/dict/domain.txt', 'r') as dirt:
             for i in dirt:
-                self.q.put(i.strip())
+                self.queue.put_nowait(i.strip())
 
     def sub_domain_dict(self):
         with open(user_path + '/dict/sub_domain.txt', 'r') as dirt:
             for i in dirt:
-                self.q.put(i.strip())
+                self.queue.put_nowait(i.strip())
 
     def brute(self):
-        t1 = time.time()
-
         print('\n子域名爆破...')
         self.domain_dict()
-
         try:
             url = 'this_subdomain_will_never_exist' + '.' + self.target
             answers = dns.resolver.query(url)
@@ -118,42 +168,36 @@ class BruteDomain(Domain):
         t2 = time.time()
         print('\nTotal time: ' + str(t2 - t1) + '\n')
         
-
-        print('\n网站标题扫描')
-        self.enqueue_title()
-        threads = []
-        for i in range(int(self.thread_num)):
-            t = threading.Thread(target=self.get_title)
-            threads.append(t)
-        for item in threads:
-            item.start()
-        for item in threads:
-            item.join()
         '''
 
-        t3 = time.time()
-        print('\nTotal time: ' + str(t3 - t1) + '\n')
-
-    def _brute(self):
-        while not self.q.empty():
-            sub = self.q.get()
+    def _brute(self, d):
+        while not self.queue.empty():
+            sub = self.queue.get()
             domain = sub + '.' + self.target
+            resolvers = dns.resolver.Resolver(configure=False)
+            resolvers.nameservers = [self.dns[d % len(self.dns)]]
             try:
-                answers = dns.resolver.query(domain)
+                answers = resolvers.query(domain)
                 ips = [answer.address for answer in answers]
                 for ip in ips:
                     if ip not in self.dns_ip:
-                        if ip in self.domains.keys() and domain not in self.domains[ip]:
-                            self.domains[ip].append(domain)
+                        if domain in self.domains.keys() and ip not in self.domains[domain]:
+                            self.domains[domain].append(ip)
                         else:
-                            self.domains[ip] = [domain]
-                        print(domain)
-            except:
+                            self.domains[domain] = [ip]
+                        sys.stdout.write('\r'+str(len(self.domains.keys())))
+                        sys.stdout.flush()
+            except dns.resolver.NXDOMAIN:
+                pass
+            except dns.resolver.NoAnswer:
+                pass
+            except Exception as e:
+                print(e)
                 continue
 
     def sub_brute(self):
-        while not self.q.empty():
-            sub = self.q.get()
+        while not self.queue.empty():
+            sub = sself.queue.get()
             for target in self.domain:
                 domain = sub + '.' + target
                 try:
@@ -161,10 +205,10 @@ class BruteDomain(Domain):
                     ips = [answer.address for answer in answers]
                     for ip in ips:
                         if ip not in self.dns_ip:
-                            if ip in self.domains.keys() and domain not in self.domains[ip]:
-                                self.domains[ip].append(domain)
+                            if domain in self.domains.keys() and ip not in self.domains[domain]:
+                                self.domains[domain].append(ip)
                             else:
-                                self.domains[ip] = [domain]
+                                self.domains[domain] = [ip]
                     print(domain)
                 except:
                     continue
@@ -236,18 +280,18 @@ class SearchDomain(Domain):
                     continue
 
     def threatcrowd(self):
-        print(' threatcrowd子域名查询')
-        url = 'http://www.threatcrowd.org/searchApi/v2/domain/report/?domain=' + self.target
+        print('threatcrowd子域名查询')
+        url = 'https://www.threatcrowd.org/searchApi/v2/domain/report/'
+        params = {'domain': self.target}
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
-        r = requests.get(url, headers=headers)
-        data = json.loads(r.text)
-        self.get_ip(data['subdomains'])
+        r = requests.get(url, params=params, headers=headers)
+        self.get_ip(r.json()['subdomains'])
 
     def virustotal(self):
         print('virustotal子域名查询')
         url = 'http://www.virustotal.com/vtapi/v2/domain/report'
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
-        params = {'apikey': '', 'domain': self.target}
+        params = {'apikey': '842f3920e6c5b8f15c3ab1d4b3b09b6ae2327936ccca66416e44d42d9753cda5', 'domain': self.target}
         r = requests.get(url, params=params, headers=headers)
         self.get_ip(r.json()['subdomains'])
 
@@ -449,4 +493,4 @@ class AllDomain(SearchDomain, BruteDomain):
 
 
 if __name__ == '__main__':
-    AllDomain('www.qq.com').run()
+    AllDomain('www.jit.edu.cn').run()
