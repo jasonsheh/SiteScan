@@ -32,12 +32,13 @@ class Domain(object):
         self.dns_ip = ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204',
                        '220.250.64.225']
         self.queue = Queue()
-        self.thread_num = 100
+        self.thread_num = 60
         self.c_count = {}
         self.domain = []
         self.domains = {}
         self.title = {}
         self.appname = {}
+        self.removed_domains = []
         self.init()
 
     def init(self):
@@ -58,7 +59,6 @@ class Domain(object):
             print(url + ':\t' + self.title[url])
             for ip in ips:
                 print('\t' + ip)
-
         print(total_time)
 
     def run_title(self):
@@ -81,19 +81,26 @@ class Domain(object):
                     self.title[url] = ''
                     continue
                 if not r.encoding:
-                    if re.findall('charset=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S):
-                        r.encoding = re.findall('charset=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S)[0]
+                    if re.findall('charset=[\'|\"]?(.*?)[\'|\"]', r.text, re.I | re.S):
+                        r.encoding = re.findall('charset=[\'|\"]?(.*?)[\'|\"]', r.text, re.I | re.S)[0]
                     elif re.findall('encoding=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S):
-                        r.encoding = re.findall('encoding=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S)[0]
+                        r.encoding = re.findall('encoding=[\'|\"]?(.*?)[\'|\"]', r.text, re.I | re.S)[0]
                     else:
                         self.title[url] = ''
                         continue
-                if re.findall('<title>(.*?)</title>', r.text, re.I | re.S) and r.encoding.split(',')[0] in [
-                    'utf-8', 'gb2312', 'GBK', 'gbk2312']:
-                    self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].strip()
-                elif re.findall('<title>(.*?)</title>', r.text, re.I | re.S):
-                    self.title[url] = re.findall('<title>(.*?)</title>', r.text, re.I | re.S)[0].encode(
-                        r.encoding.split(',')[0]).decode('utf-8').strip()
+                if r.encoding == 'ISO-8859-1' and re.findall('<title.*?>(.*?)</title>', r.text, re.I | re.S):
+                    if re.findall('charset=[\'|\"]?(.*?)[\'|\"]', r.text, re.I | re.S):
+                        encoding = re.findall('charset=[\'|\"]?(.*?)[\'|\"]', r.text, re.I | re.S)[0]
+                    elif re.findall('encoding=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S):
+                        encoding = re.findall('encoding=[\'|\"]?(.*?)[\'|\"]', r.text, re.I | re.S)[0]
+                    else:
+                        encoding = 'utf-8'
+                    self.title[url] = re.findall('<title.*?>(.*?)</title>', r.text, re.I | re.S)[0].encode("iso-8859-1").decode(encoding)
+                elif re.findall('<title.*?>(.*?)</title>', r.text, re.I | re.S) and r.encoding.split(',')[0] in [
+                    'utf-8', 'gb2312', 'GB2312', 'GBK', 'gbk2312']:
+                    self.title[url] = re.findall('<title.*?>(.*?)</title>', r.text, re.I | re.S)[0].strip()
+                elif re.findall('<title.*?>(.*?)</title>', r.text, re.I | re.S):
+                    self.title[url] = re.findall('<title.*?>(.*?)</title>', r.text, re.I | re.S)[0].encode(r.encoding.split(',')[0]).decode('utf-8').strip()
                 else:
                     self.title[url] = ''
                     # print(url, self.title[url])
@@ -108,6 +115,40 @@ class Domain(object):
                 continue
             except requests.exceptions.TooManyRedirects:
                 self.title[url] = ''
+                continue
+
+    def run_clean(self):
+        self.enqueue_domain()
+        threads = [gevent.spawn(self.remove_error_domain) for _ in range(self.thread_num)]
+        gevent.joinall(threads)
+
+        for domain in self.removed_domains:
+            self.domains.pop(domain)
+
+    def enqueue_domain(self):
+        for domain in [x for x in self.domains.keys()]:
+            self.queue.put_nowait(domain)
+
+    def remove_error_domain(self):
+        while not self.queue.empty():
+            domain = self.queue.get()
+            try:
+                r = requests.get('http://' + domain, timeout=4, allow_redirects=False)
+                if r.status_code not in [400, 403, 500]:
+                    continue
+            except requests.exceptions.ConnectTimeout:
+                self.removed_domains.append(domain)
+                continue
+            except requests.exceptions.ConnectionError:
+                self.removed_domains.append(domain)
+                continue
+            except requests.exceptions.TooManyRedirects:
+                self.removed_domains.append(domain)
+                continue
+            except requests.exceptions.ReadTimeout:
+                self.removed_domains.append(domain)
+                continue
+            except:
                 continue
 
 
@@ -153,6 +194,7 @@ class BruteDomain(Domain):
         self.sub_domain_dict()
         threads = [gevent.spawn(self.sub_brute, d) for d in range(self.thread_num)]
         gevent.joinall(threads)
+
         
         print('\nc段扫描...')
         self.c_check()
@@ -195,13 +237,15 @@ class BruteDomain(Domain):
                 print(e)
                 continue
 
-    def sub_brute(self):
+    def sub_brute(self, d):
         while not self.queue.empty():
-            sub = sself.queue.get()
+            sub = self.queue.get()
+            resolvers = dns.resolver.Resolver(configure=False)
+            resolvers.nameservers = [self.dns[d % len(self.dns)]]
             for target in self.domain:
                 domain = sub + '.' + target
                 try:
-                    answers = dns.resolver.query(domain)
+                    answers = resolvers.query(domain)
                     ips = [answer.address for answer in answers]
                     for ip in ips:
                         if ip not in self.dns_ip:
@@ -209,9 +253,17 @@ class BruteDomain(Domain):
                                 self.domains[domain].append(ip)
                             else:
                                 self.domains[domain] = [ip]
-                    print(domain)
-                except:
-                    continue
+                    sys.stdout.write('\r' + str(len(self.domains.keys())))
+                    sys.stdout.flush()
+                except dns.resolver.NXDOMAIN:
+                    pass
+                except dns.resolver.NoAnswer:
+                    pass
+                except dns.name.EmptyLabel:
+                    pass
+                except Exception as e:
+                    print(e)
+                    pass
 
 
 class SearchDomain(Domain):
@@ -483,12 +535,15 @@ class AllDomain(SearchDomain, BruteDomain):
 
     def run(self):
         t1 = time.time()
-        super().run_search()
+        # super().run_search()
         super().run_brute()
         super().run_title()
+        super().run_clean()
+
         t2 = time.time()
         total_time = str(t2 - t1)
         super().output(total_time)
+        return self.domains
         # Database().insert_subdomain(self.domains, self.title, self.appname, self.id)
 
 
