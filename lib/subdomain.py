@@ -31,6 +31,7 @@ class Domain(object):
         self.ip = []
         self.dns_ip = ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204',
                        '220.250.64.225']
+        self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
         self.queue = Queue()
         self.thread_num = 60
         self.c_count = {}
@@ -75,8 +76,7 @@ class Domain(object):
         while not self.queue.empty():
             url = self.queue.get()
             try:
-                r = requests.get('http://' + url, timeout=3, headers={
-                    'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'})
+                r = requests.get('http://' + url, timeout=3)
                 if not r.text:
                     self.title[url] = ''
                     continue
@@ -88,22 +88,28 @@ class Domain(object):
                     else:
                         self.title[url] = ''
                         continue
-                if r.encoding == 'ISO-8859-1' and re.findall('<title.*?>(.*?)</title>', r.text, re.I | re.S):
+                if r.encoding == 'ISO-8859-1' and re.findall('<title.*?>(.*?)</title.*?>', r.text, re.I | re.S):
                     if re.findall('charset=[\'|\"]?(.*?)[\'|\"]', r.text, re.I | re.S):
                         encoding = re.findall('charset=[\'|\"]?(.*?)[\'|\"]', r.text, re.I | re.S)[0]
                     elif re.findall('encoding=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S):
                         encoding = re.findall('encoding=[\'|\"]?(.*?)[\'|\"]', r.text, re.I | re.S)[0]
                     else:
                         encoding = 'utf-8'
-                    self.title[url] = re.findall('<title.*?>(.*?)</title>', r.text, re.I | re.S)[0].encode("iso-8859-1").decode(encoding)
-                elif re.findall('<title.*?>(.*?)</title>', r.text, re.I | re.S) and r.encoding.split(',')[0] in [
-                    'utf-8', 'gb2312', 'GB2312', 'GBK', 'gbk2312']:
-                    self.title[url] = re.findall('<title.*?>(.*?)</title>', r.text, re.I | re.S)[0].strip()
-                elif re.findall('<title.*?>(.*?)</title>', r.text, re.I | re.S):
-                    self.title[url] = re.findall('<title.*?>(.*?)</title>', r.text, re.I | re.S)[0].encode(r.encoding.split(',')[0]).decode('utf-8').strip()
+                    self.title[url] = re.findall('<title.*?>(.*?)</title.*?>', r.text, re.I | re.S)[0].encode("iso-8859-1").decode(encoding).encode('utf-8').decode('utf-8')
+                elif re.findall('<title.*?>(.*?)</title.*?>', r.text, re.I | re.S) and r.encoding in [
+                    'utf-8', 'gb2312', 'GB2312', 'GBK', 'gbk2312', 'gbk']:
+                    self.title[url] = re.findall('<title.*?>(.*?)</title.*?>', r.text, re.I | re.S)[0].strip()
+                elif re.findall('<title.*?>(.*?)</title.*?>', r.text, re.I | re.S):
+                    self.title[url] = re.findall('<title.*?>(.*?)</title.*?>', r.text, re.I | re.S)[0].encode(r.encoding).decode('utf-8').strip()
                 else:
                     self.title[url] = ''
                     # print(url, self.title[url])
+            except AttributeError:
+                print(url)
+                continue
+            except LookupError:
+                self.title[url] = ''
+                continue
             except UnicodeDecodeError:
                 self.title[url] = ''
                 continue
@@ -253,7 +259,7 @@ class BruteDomain(Domain):
                                 self.domains[domain].append(ip)
                             else:
                                 self.domains[domain] = [ip]
-                    sys.stdout.write('\r' + str(len(self.domains.keys())))
+                    sys.stdout.write('\r子域名数: ' + str(len(self.domains.keys())))
                     sys.stdout.flush()
                 except dns.resolver.NXDOMAIN:
                     pass

@@ -4,10 +4,10 @@
 
 from database.database import Database
 
-from lib.subdomain import Domain
+from lib.subdomain import AllDomain
+from lib.sendir import SenDir
 from lib.crawler import Crawler
 from lib.port import Port
-from lib.sendir import Sendir
 from lib.vul import Vul
 
 import requests
@@ -27,40 +27,14 @@ def site_scan(domain):
     if domain.endswith('/'):
         domain = domain[:-1]
 
-    id = Database().insert_task(domain)
+    # id = Database().insert_task(domain)
+    domains = AllDomain(domain).run()
 
-    domains = Domain(domain, id).run()
-
-    # , [y for x in self.domains.values() for y in x]
-
-    real_domains = []
-    for domain in [x for x in domains.keys()]:
-        try:
-            r = requests.get('http://'+domain, timeout=4, allow_redirects=False)
-            if r.status_code not in [400, 403, 500]:
-                real_domains.append(domain)
-        except:
-            continue
-        '''
-        except requests.exceptions.ConnectTimeout:
-            removed_domains.append(domain)
-            continue
-        except requests.exceptions.ConnectionError:
-            removed_domains.append(domain)
-            continue
-        except requests.exceptions.TooManyRedirects:
-            removed_domains.append(domain)
-            continue
-        except requests.exceptions.ReadTimeout:
-            removed_domains.append(domain)
-            continue
-        '''
-
-    Sendir(real_domains, id).run()
-
-    Port(domains, id).run()
+    SenDir(domains).run()
 
     '''
+    Port(domains, id).run()
+
     print('漏洞扫描')
     for domain in domains:
         url = Crawler(domain).scan()

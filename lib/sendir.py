@@ -5,47 +5,56 @@
 import sys
 import requests
 import threading
-import queue
 import time
+import gevent
+from gevent.queue import Queue
+from gevent import monkey
+monkey.patch_all()
 
+'''
 from database.database import Database
 from setting import user_path
+'''
+sys.path.append('C:\Code\SiteScan')
+from setting import user_path
 
-class Sendir:
+
+class SenDir:
     def __init__(self, targets, id=''):
         self.targets = targets
         self.id = id
-        self.q = queue.Queue(0)
-        self.thread_num = 5
+        self.queue = Queue()
+        self.thread_num = 100
         self.sensitive = {}
+        self.count = 0
         self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
 
-    def init(self):
-        self.targets = list(set(self.targets))
-        targets = []
-        for target in self.targets:
-            if not target.startswith('http://') and not target.startswith('https://'):
-                target = 'http://' + target
-            if target.endswith('/'):
-                target = target[0:-1]
-            targets.append(target)
-        self.targets = targets
+    def output(self):
+        for directory, status in sorted(self.sensitive.items()):
+            print(directory + ':\t' + status)
 
-    def dirt(self):
+    def enqueue_dir(self):
+        with open(user_path+'/dict/dir.txt', 'r') as file:
+            for eachline in file:
+                self.queue.put_nowait(eachline.strip())
+
+    def directory_brute(self):
         '''
         对网站进行敏感目录检测
         :return:
         '''
-        while not self.q.empty():
-            _dir = self.q.get()
+        while not self.queue.empty():
+            _dir = self.queue.get()
             for target in self.targets:
                 try:
                     url = target + _dir
-                    r = requests.get(url, timeout=4, allow_redirects=False)
+                    self.count += 1
+                    sys.stdout.write('\r目录扫描数: ' + str(self.count))
+                    sys.stdout.flush()
+                    r = requests.get('http://' + target + _dir, allow_redirects=False)
 
                     if r.status_code in [200, 403]:
                         self.sensitive[url] = r.status_code
-                        print(url+'\t'+str(r.status_code))
                 except requests.exceptions.ReadTimeout:
                     continue
                 except requests.exceptions.ConnectionError:
@@ -58,22 +67,23 @@ class Sendir:
         判断有无错误界面，有则把该网站删除列表
         :return:
         '''
-        _targets = []
+        need_be_removed = []
         for target in self.targets:
             try:
-                for not_exist in ['', '/', '.config', '.sql', '.inc', '.bak', '.jsp', '.asp', '.aspx', '.php', '.html']:
-                    url = target + '/this_page_will_never_exists' + not_exist
-                    r = requests.get(url, timeout=6, allow_redirects=False)
-                    # print(url, r.status_code)
-                    if r.status_code in [200, 403]:
-                        _targets.append(target)
-                        break
-
                 url = target + '/.this_page_will_never_exists_lalala'
-                r = requests.get(url, timeout=6, allow_redirects=False)
+                r = requests.get('http://' + url, timeout=3, allow_redirects=False)
                 # print(url, r.status_code)
                 if r.status_code in [200, 403]:
-                    _targets.append(target)
+                    need_be_removed.append(target)
+                    continue
+
+                for not_exist in ['', '/', '.config', '.sql', '.inc', '.bak', '.jsp', '.asp', '.aspx', '.php', '.html']:
+                    url = target + '/this_page_will_never_exists' + not_exist
+                    r = requests.get('http://' + url, timeout=3, allow_redirects=False)
+                    # print(url, r.status_code)
+                    if r.status_code in [200, 403]:
+                        need_be_removed.append(target)
+                        break
 
             except requests.exceptions.ConnectTimeout:
                 continue
@@ -84,36 +94,26 @@ class Sendir:
             except requests.exceptions.ReadTimeout:
                 continue
 
-        _targets = list(set(_targets))
-        for target in _targets:
-            self.targets.remove(target)
+        for removed in list(set(need_be_removed)):
+            self.targets.pop(removed)
 
     def run(self):
-        self.init()
-        self.error_page()
         print('\n# 检测敏感目录...')
+        self.error_page()
+        self.enqueue_dir()
 
-        # 文件入队列
-        with open(user_path+'/dict/dir.txt', 'r') as file:
-            for eachline in file:
-                self.q.put(eachline.strip())
+        threads = [gevent.spawn(self.directory_brute) for _ in range(self.thread_num)]
+        gevent.joinall(threads)
 
-        threads = []
-        for i in range(int(self.thread_num)):
-            t = threading.Thread(target=self.dirt)
-            threads.append(t)
-        for item in threads:
-            item.start()
-        for item in threads:
-            item.join()
+        self.output()
 
-        Database().insert_sendir(self.sensitive, self.id)
+        # Database().insert_sendir(self.sensitive, self.id)
         return self.sensitive
 
 
 def main():
-    s = Sendir(targets=['http://apollo.yirendai.com/'])
-    s.run()
+    SenDir(targets=[]).run()
+
 
 if __name__ == '__main__':
     main()
