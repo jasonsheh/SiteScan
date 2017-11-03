@@ -5,8 +5,8 @@
 import sqlite3
 import re
 import requests
-
-from database.database import Database
+import sys
+sys.path.append('C:\Code\SiteScan')
 
 from setting import user_path
 
@@ -22,14 +22,11 @@ class FingerPrint:
         self.rules = self.cursor.fetchall()
 
     def init(self):
-        if self.target.startswith('http://www.'):
-            self.target = self.target[11:]
-        elif self.target.startswith('https://www.'):
-            self.target = self.target[12:]
-        elif self.target.startswith('http://'):
+        if self.target.startswith('http://'):
             self.target = self.target[7:]
         elif self.target.startswith('https://'):
             self.target = self.target[8:]
+        self.target = self.target.strip('/')
 
     def scan(self):
         finger_print = ''
@@ -38,22 +35,22 @@ class FingerPrint:
             r = requests.get('http://' + self.target, timeout=3)
             for item in self.rules:
                 app = item[1]
-                rule = item[2].split(', ')
+                rules = item[2].split(', ')
                 # print(app, rule)
-                for _rule in rule:
-                    _rule = _rule.split(':', 1)
-                    place = _rule[0]
-                    __rule = _rule[1]
+                for rule in rules:
+                    rule = rule.split(':', 1)
+                    place = rule[0]
+                    _rule = rule[1]
                     if place in ['body']:
-                        if -1 != r.text.find(__rule):
+                        if -1 != r.text.find(_rule):
                             finger_print += app+' '
                             break
                     elif place in ['title']:
-                        if re.search('<title>.*?'+__rule+'.*?</title>', r.text):
+                        if re.search('<title>.*?'+_rule+'.*?</title>', r.text):
                             finger_print += app+' '
                             break
                     elif place in ['header', 'server']:
-                        if -1 != str(r.headers).find(__rule):
+                        if -1 != str(r.headers).find(_rule):
                             finger_print += app+' '
                             break
             self.result[self.target] = finger_print
@@ -72,5 +69,6 @@ class FingerPrint:
             # Database().insert_finger(self.target, self.result[self.target])
         return self.result
 
+
 if __name__ == '__main__':
-    FingerPrint(urls=['http://v57.demo.dedecms.com/']).run()
+    FingerPrint(urls=['http://www.jit.edu.cn/']).run()

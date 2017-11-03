@@ -23,6 +23,8 @@ from lib.fingerprint import FingerPrint
 sys.path.append('C:\Code\SiteScan')
 from setting import user_path
 
+from lib.fingerprint import FingerPrint
+
 
 class Domain(object):
     def __init__(self, target, id=''):
@@ -57,7 +59,7 @@ class Domain(object):
 
     def output(self, total_time):
         for url, ips in sorted(self.domains.items()):
-            print(url + ':\t' + self.title[url])
+            print(url + ':\t' + self.title[url] + '\t' + self.appname[url])
             for ip in ips:
                 print('\t' + ip)
         print(total_time)
@@ -287,7 +289,6 @@ class SearchDomain(Domain):
         self.so360()
 
         self.remove_spread_record()
-        # self.appname = FingerPrint([x for x in self.domains.keys()]).run()
         # print(self.domains)
         return self.domains
 
@@ -545,6 +546,7 @@ class AllDomain(SearchDomain, BruteDomain):
         super().run_brute()
         super().run_title()
         super().run_clean()
+        self.appname = FingerPrint([x for x in self.domains.keys()]).run()
 
         t2 = time.time()
         total_time = str(t2 - t1)
