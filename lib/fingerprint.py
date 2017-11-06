@@ -16,6 +16,7 @@ class FingerPrint:
         self.conn = sqlite3.connect(user_path + '/db/Rules.db')
         self.cursor = self.conn.cursor()
         self.targets = urls
+        self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
         self.result = {}
         sql = 'select * from application'
         self.cursor.execute(sql)
@@ -32,7 +33,7 @@ class FingerPrint:
         finger_print = ''
         self.init()
         try:
-            r = requests.get('http://' + self.target, timeout=3)
+            r = requests.get('http://' + self.target, timeout=3, headers=self.headers)
             for item in self.rules:
                 app = item[1]
                 rules = item[2].split(', ')
@@ -50,7 +51,10 @@ class FingerPrint:
                             finger_print += app+' '
                             break
                     elif place in ['header', 'server']:
-                        if -1 != str(r.headers).find(_rule):
+                        header = ''
+                        for key, value in r.headers.items():
+                            header += key + ': ' + value + ' '
+                        if re.search(re.escape(_rule), header, re.I):
                             finger_print += app+' '
                             break
             self.result[self.target] = finger_print
@@ -71,4 +75,9 @@ class FingerPrint:
 
 
 if __name__ == '__main__':
-    FingerPrint(urls=['http://www.jit.edu.cn/']).run()
+    result = FingerPrint(urls=['http://www.freebuf.com/', 'http://www.52pojie.cn', 'http://bbs.ichunqiu.com', 'http://octfive.cn', 'http://demo.typecho.cc/']).run()
+    for site, fingerprint in result.items():
+        print(site)
+        fingerprint.split(' ')
+        for fp in fingerprint.split(' '):
+            print(fp)
