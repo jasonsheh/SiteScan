@@ -75,9 +75,9 @@ class FingerPrint:
 
 
 if __name__ == '__main__':
-    result = FingerPrint(urls=['http://www.freebuf.com/', 'http://www.52pojie.cn', 'http://bbs.ichunqiu.com', 'http://octfive.cn', 'http://demo.typecho.cc/']).run()
+    result = FingerPrint(urls=['http://www.freebuf.com/', 'http://www.52pojie.cn', 'http://bbs.ichunqiu.com',
+                               'http://www.zoomeye.org', 'http://octfive.cn', 'http://demo.typecho.cc/', 'http://znyywlw.jit.edu.cn']).run()
     for site, fingerprint in result.items():
         print(site)
-        fingerprint.split(' ')
         for fp in fingerprint.split(' '):
             print(fp)

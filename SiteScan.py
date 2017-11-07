@@ -15,6 +15,8 @@ def main():
                         help="domain name")
     parser.add_argument('-s', '--sub', default="true",
                         help='whether get all sub domains')
+    parser.add_argument("-i", "--install",
+                        help="install SiteScan")
     args = parser.parse_args()
 
     print(''' ____  _ _       ____''')
@@ -32,6 +34,7 @@ def main():
     except KeyboardInterrupt:
         print('用户中断')
         sys.exit(0)
+
 
 if __name__ == '__main__':
     main()

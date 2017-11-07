@@ -59,7 +59,7 @@ class Domain(object):
 
     def output(self, total_time):
         for url, ips in sorted(self.domains.items()):
-            print(url + ':\t' + self.title[url] + '\t' + self.appname[url])
+            print(url + ':\t' + self.title[url] + ' ' + self.appname[url])
             for ip in ips:
                 print('\t' + ip)
         print(total_time)

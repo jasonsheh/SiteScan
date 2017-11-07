@@ -30,7 +30,7 @@ def site_scan(domain):
     # id = Database().insert_task(domain)
     domains = AllDomain(domain).run()
 
-    SenDir(domains).run()
+    # SenDir(domains).run()
 
     '''
     Port(domains, id).run()

@@ -31,7 +31,7 @@ class SenDir:
 
     def output(self):
         for directory, status in sorted(self.sensitive.items()):
-            print(directory + ':\t' + status)
+            print(directory + ':\t' + str(status))
 
     def enqueue_dir(self):
         with open(user_path+'/dict/dir.txt', 'r') as file:

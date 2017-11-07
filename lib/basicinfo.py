@@ -44,6 +44,6 @@ class Info:
         self.get_server()
         return self.ip, self.server
 
+
 if __name__ == '__main__':
-    s = Info('http://znyywlw.jit.edu.cn')
-    s.run()
+    Info('http://znyywlw.jit.edu.cn').run()
