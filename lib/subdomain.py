@@ -64,6 +64,13 @@ class Domain(object):
                 print('\t' + ip)
         print(total_time)
 
+    def save2file(self):
+        with open(self.target+'.txt', 'w', encoding='utf-8') as file:
+            for url, ips in sorted(self.domains.items()):
+                file.writelines(url + ':\t' + self.title[url] + ' ' + self.appname[url])
+                for ip in ips:
+                    file.writelines('\t' + ip)
+
     def run_title(self):
         print('\n网站标题扫描')
         self.enqueue_title()
@@ -124,9 +131,13 @@ class Domain(object):
             except requests.exceptions.TooManyRedirects:
                 self.title[url] = ''
                 continue
+            except requests.exceptions.ChunkedEncodingError:
+                self.title[url] = ''
+                continue
 
     def run_clean(self):
         self.enqueue_domain()
+        self.removed_domains = []
         threads = [gevent.spawn(self.remove_error_domain) for _ in range(self.thread_num)]
         gevent.joinall(threads)
 
@@ -164,7 +175,7 @@ class BruteDomain(Domain):
     def __init__(self, target, id=''):
         super().__init__(target, id)
         self.thread_num = 100
-        self.dns = ['223.5.5.5', '223.6.6.6', '119.29.29.29', '182.254.116.116']
+        self.dns = ['223.5.5.5', '223.6.6.6', '119.29.29.29', '182.254.116.116', '114.114.114.114']
 
     def run_brute(self):
         self.brute()
@@ -179,6 +190,33 @@ class BruteDomain(Domain):
         with open(user_path + '/dict/sub_domain.txt', 'r') as dirt:
             for i in dirt:
                 self.queue.put_nowait(i.strip())
+
+    def sub_domian(self):
+        for domain in self.domain:
+            self.queue.put_nowait(domain)
+
+    def remove_error_subdomain(self, d):
+        while not self.queue.empty():
+            domain = self.queue.get()
+            domain = 'this_subdomain_will_never_exist' + '.' + domain
+            resolvers = dns.resolver.Resolver(configure=False)
+            resolvers.nameservers = [self.dns[d % len(self.dns)]]
+            resolvers.timeout = 10.0
+            try:
+                answers = dns.resolver.query(domain)
+                ips = [answer.address for answer in answers]
+                for ip in ips:
+                    if ip in self.dns_ip:
+                        continue
+                    self.removed_domains.append(domain)
+            except dns.resolver.NXDOMAIN:
+                pass
+            except dns.resolver.NoAnswer:
+                pass
+            except dns.exception.Timeout:
+                pass
+            except:
+                pass
 
     def brute(self):
         print('\n子域名爆破...')
@@ -196,13 +234,18 @@ class BruteDomain(Domain):
         threads = [gevent.spawn(self._brute, d) for d in range(self.thread_num)]
         gevent.joinall(threads)
 
-        '''
         print('\n二级子域名爆破...')
+
+        threads = [gevent.spawn(self.remove_error_subdomain, d) for d in range(int(self.thread_num / 2))]
+        gevent.joinall(threads)
+        for domain in self.removed_domains:
+            self.domain.remove(domain)
+
         self.domain = list(set([x for x in self.domains.keys()]))
         self.sub_domain_dict()
-        threads = [gevent.spawn(self.sub_brute, d) for d in range(self.thread_num)]
+        threads = [gevent.spawn(self.sub_brute, d) for d in range(self.thread_num * 2)]
         gevent.joinall(threads)
-
+        '''
         
         print('\nc段扫描...')
         self.c_check()
@@ -226,6 +269,7 @@ class BruteDomain(Domain):
             domain = sub + '.' + self.target
             resolvers = dns.resolver.Resolver(configure=False)
             resolvers.nameservers = [self.dns[d % len(self.dns)]]
+            resolvers.lifetime = resolvers.timeout = 10.0
             try:
                 answers = resolvers.query(domain)
                 ips = [answer.address for answer in answers]
@@ -235,12 +279,16 @@ class BruteDomain(Domain):
                             self.domains[domain].append(ip)
                         else:
                             self.domains[domain] = [ip]
-                        sys.stdout.write('\r'+str(len(self.domains.keys())))
+                        sys.stdout.write('\r子域名数:'+str(len(self.domains.keys())))
                         sys.stdout.flush()
             except dns.resolver.NXDOMAIN:
-                pass
+                continue
             except dns.resolver.NoAnswer:
-                pass
+                continue
+            except dns.name.EmptyLabel:
+                continue
+            except dns.exception.Timeout:
+                continue
             except Exception as e:
                 print(e)
                 continue
@@ -250,9 +298,14 @@ class BruteDomain(Domain):
             sub = self.queue.get()
             resolvers = dns.resolver.Resolver(configure=False)
             resolvers.nameservers = [self.dns[d % len(self.dns)]]
+            resolvers.timeout = 10.0
+            if self.queue.qsize() == 0:
+                print(0)
             for target in self.domain:
                 domain = sub + '.' + target
                 try:
+                    sys.stdout.write('\r子域名数: '+str(len(self.domains.keys()))+'剩余爆破数: '+str(self.queue.qsize()))
+                    sys.stdout.flush()
                     answers = resolvers.query(domain)
                     ips = [answer.address for answer in answers]
                     for ip in ips:
@@ -261,17 +314,14 @@ class BruteDomain(Domain):
                                 self.domains[domain].append(ip)
                             else:
                                 self.domains[domain] = [ip]
-                    sys.stdout.write('\r子域名数: ' + str(len(self.domains.keys())))
-                    sys.stdout.flush()
                 except dns.resolver.NXDOMAIN:
-                    pass
+                    continue
                 except dns.resolver.NoAnswer:
-                    pass
+                    continue
                 except dns.name.EmptyLabel:
-                    pass
-                except Exception as e:
-                    print(e)
-                    pass
+                    continue
+                except dns.exception.Timeout:
+                    continue
 
 
 class SearchDomain(Domain):
@@ -280,7 +330,7 @@ class SearchDomain(Domain):
 
     def run_search(self):
         self.ilink()
-        self.chaxunla()
+        # self.chaxunla()
         # self.threatcrowd()
         self.virustotal()
         self.yahoo()
@@ -321,6 +371,7 @@ class SearchDomain(Domain):
         data = {'k': 'www.' + self.target, 'action': 'moreson'}
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
         r = requests.post(url, data=data, headers=headers)
+        print(r.text)
         url = json.loads(r.text)
         if url['status'] == 0:
             print('\t域名流量太小或者域名错误')
@@ -419,7 +470,6 @@ class SearchDomain(Domain):
             r = requests.get(url + str(page*10), headers=headers)
             domains += re.findall(pattern, r.text)
         domains = list(set(domains))
-        removed = []
         for domain in domains:
             domains[domains.index(domain)] = domain.replace('<strong>', '')
 
@@ -430,11 +480,11 @@ class SearchDomain(Domain):
             elif '/' in domain:
                 domains[domains.index(domain)] = domain.split('/')[0]
                 continue
-
+        removed = []
+        domains = list(set(domains))
         for domain in domains:
             if not domain.endswith(self.target):
                 removed.append(domain)
-        domains = list(set(domains))
         for remove in removed:
             domains.remove(remove)
 
@@ -542,7 +592,7 @@ class AllDomain(SearchDomain, BruteDomain):
 
     def run(self):
         t1 = time.time()
-        # super().run_search()
+        super().run_search()
         super().run_brute()
         super().run_title()
         super().run_clean()
@@ -551,6 +601,7 @@ class AllDomain(SearchDomain, BruteDomain):
         t2 = time.time()
         total_time = str(t2 - t1)
         super().output(total_time)
+        super().save2file()
         return self.domains
         # Database().insert_subdomain(self.domains, self.title, self.appname, self.id)
 
