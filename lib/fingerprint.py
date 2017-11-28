@@ -57,6 +57,18 @@ class FingerPrint:
                         if re.search(re.escape(_rule), header, re.I):
                             finger_print += app+' '
                             break
+                    '''
+                    elif place in ['fullheader', 'fullbody']:
+                        if -1 != r.text.find(_rule):
+                            finger_print += app+' '
+                            break
+                        header = ''
+                        for key, value in r.headers.items():
+                            header += key + ': ' + value + ' '
+                        if re.search(re.escape(_rule), header, re.I):
+                            finger_print += app+' '
+                            break
+                    '''
             self.result[self.target] = finger_print
 
         except requests.exceptions.ConnectionError:
@@ -65,6 +77,10 @@ class FingerPrint:
             self.result[self.target] = ''
         except requests.exceptions.TooManyRedirects:
             self.result[self.target] = ''
+        except Exception as e:
+            self.result[self.target] = ''
+            print(self.target)
+            print(e)
 
     def run(self):
         print('服务指纹识别')

@@ -67,9 +67,9 @@ class Domain(object):
     def save2file(self):
         with open(self.target+'.txt', 'w', encoding='utf-8') as file:
             for url, ips in sorted(self.domains.items()):
-                file.writelines(url + ':\t' + self.title[url] + ' ' + self.appname[url])
+                file.writelines(url + ':\t' + self.title[url] + ' ' + self.appname[url] + '\n')
                 for ip in ips:
-                    file.writelines('\t' + ip)
+                    file.writelines('\t' + ip + '\n')
 
     def run_title(self):
         print('\n网站标题扫描')
@@ -134,6 +134,9 @@ class Domain(object):
             except requests.exceptions.ChunkedEncodingError:
                 self.title[url] = ''
                 continue
+            except Exception as e:
+                self.title[url] = ''
+                print(url+'\t'+e)
 
     def run_clean(self):
         self.enqueue_domain()
@@ -189,7 +192,8 @@ class BruteDomain(Domain):
     def sub_domain_dict(self):
         with open(user_path + '/dict/sub_domain.txt', 'r') as dirt:
             for i in dirt:
-                self.queue.put_nowait(i.strip())
+                for domain in self.domain:
+                    self.queue.put_nowait(i.strip()+'.'+domain)
 
     def sub_domian(self):
         for domain in self.domain:
@@ -234,18 +238,19 @@ class BruteDomain(Domain):
         threads = [gevent.spawn(self._brute, d) for d in range(self.thread_num)]
         gevent.joinall(threads)
 
+        '''
         print('\n二级子域名爆破...')
+        self.domain = list(set([x for x in self.domains.keys()]))
 
         threads = [gevent.spawn(self.remove_error_subdomain, d) for d in range(int(self.thread_num / 2))]
         gevent.joinall(threads)
         for domain in self.removed_domains:
             self.domain.remove(domain)
 
-        self.domain = list(set([x for x in self.domains.keys()]))
         self.sub_domain_dict()
         threads = [gevent.spawn(self.sub_brute, d) for d in range(self.thread_num * 2)]
         gevent.joinall(threads)
-        '''
+
         
         print('\nc段扫描...')
         self.c_check()
@@ -295,33 +300,29 @@ class BruteDomain(Domain):
 
     def sub_brute(self, d):
         while not self.queue.empty():
-            sub = self.queue.get()
+            domain = self.queue.get()
             resolvers = dns.resolver.Resolver(configure=False)
             resolvers.nameservers = [self.dns[d % len(self.dns)]]
             resolvers.timeout = 10.0
-            if self.queue.qsize() == 0:
-                print(0)
-            for target in self.domain:
-                domain = sub + '.' + target
-                try:
-                    sys.stdout.write('\r子域名数: '+str(len(self.domains.keys()))+'剩余爆破数: '+str(self.queue.qsize()))
-                    sys.stdout.flush()
-                    answers = resolvers.query(domain)
-                    ips = [answer.address for answer in answers]
-                    for ip in ips:
-                        if ip not in self.dns_ip:
-                            if domain in self.domains.keys() and ip not in self.domains[domain]:
-                                self.domains[domain].append(ip)
-                            else:
-                                self.domains[domain] = [ip]
-                except dns.resolver.NXDOMAIN:
-                    continue
-                except dns.resolver.NoAnswer:
-                    continue
-                except dns.name.EmptyLabel:
-                    continue
-                except dns.exception.Timeout:
-                    continue
+            try:
+                sys.stdout.write('\r子域名数: '+str(len(self.domains.keys()))+'剩余爆破数: '+str(self.queue.qsize()))
+                sys.stdout.flush()
+                answers = resolvers.query(domain)
+                ips = [answer.address for answer in answers]
+                for ip in ips:
+                    if ip not in self.dns_ip:
+                        if domain in self.domains.keys() and ip not in self.domains[domain]:
+                            self.domains[domain].append(ip)
+                        else:
+                            self.domains[domain] = [ip]
+            except dns.resolver.NXDOMAIN:
+                continue
+            except dns.resolver.NoAnswer:
+                continue
+            except dns.name.EmptyLabel:
+                continue
+            except dns.exception.Timeout:
+                continue
 
 
 class SearchDomain(Domain):
