@@ -512,10 +512,10 @@ class SearchDomain(Domain):
                 domains[domains.index(domain)] = domain.split('/')[0]
                 continue
 
+        domains = list(set(domains))
         for domain in domains:
             if not domain.endswith(self.target):
                 removed.append(domain)
-        domains = list(set(domains))
         for remove in removed:
             domains.remove(remove)
 
