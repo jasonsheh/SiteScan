@@ -29,7 +29,11 @@ run `celery -A cel worker -l info --config=celeryconfig`
 run `python3 ./web.py` to open the web interface
 
 ***
-## Example
+
+## console
+![menu](https://raw.githubusercontent.com/jasonsheh/SiteScan/master/doc/menu.png)
+
+## Web
 
 ![subdomain](https://raw.githubusercontent.com/jasonsheh/SiteScan/master/doc/subdomain.png)
 
