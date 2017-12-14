@@ -8,20 +8,33 @@ from urllib.parse import urlparse
 import threading
 import queue
 import time
+from selenium import webdriver
+
 import sys
-# from selenium import webdriver
+sys.path.append('C:\Code\SiteScan')
 
 
 class Crawler:
     def __init__(self, target):
         self.target = target
-        self.url_set = []
-        self.urls = []
+        self.url_set = []  # 存放所有链接
+        self.urls = []  # 存放不重复规则链接
         self.sitemap = []
         self.q = queue.Queue(0)
         self.url_rule = []
         self.thread_num = 4
         self.header = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'}
+
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--window-size=1920x1080")
+        # 禁用图片
+        chrome_prefs = {}
+        chrome_prefs["profile.default_content_settings"] = {"images": 2}
+        chrome_options.experimental_options["prefs"] = chrome_prefs
+
+        self.driver = webdriver.Chrome(chrome_options=chrome_options)
+
         # self.cap = webdriver.DesiredCapabilities.PHANTOMJS
         # self.cap["phantomjs.page.settings.loadImages"] = False  # 禁止加载图片
 
@@ -33,24 +46,22 @@ class Crawler:
 
     def dynamic_conn(self, url):
         """
-        动态
-        连接,返回所有链接
+        动态连接,返回所有链接
         :param url:
         :return:
         """
         res = []
-        driver = webdriver.PhantomJS(desired_capabilities=self.cap)
-        driver.get(url)
+        self.driver.get(url)
         time.sleep(4)
         try:
-            buttons = driver.find_elements_by_xpath("//*[@type='button'@onclick]")
+            buttons = self.driver.find_elements_by_xpath("//*[@type='button'@onclick]")
             for button in buttons:
                 button.click()
         except:
             pass
 
         try:
-            forms = driver.find_elements_by_xpath("//form[@method='post']")
+            forms = self.driver.find_elements_by_xpath("//form[@method='post']")
             for form in forms:
                 action = form.get_attribute('action')
                 texts = form.find_elements_by_xpath("//input[@type='text']")
@@ -66,17 +77,17 @@ class Crawler:
             pass
 
         try:
-            frames = driver.find_elements_by_xpath("//iframe[@src]")
+            frames = self.driver.find_elements_by_xpath("//iframe[@src]")
             for frame in frames:
                 res.append(frame.get_attribute("src"))
         except:
             pass
 
-        a = driver.find_elements_by_tag_name('a')
+        a = self.driver.find_elements_by_tag_name('a')
         for _a in a:
             res.append(_a.get_attribute("href"))
 
-        driver.quit()
+        self.driver.quit()
         return res
 
     def static_conn(self, url):
@@ -89,34 +100,29 @@ class Crawler:
 
     def get_url(self, res):
         """
-        提取页面中可爬取的链接
+        提取结果链接中可爬取的链接
         :param res:
         :return:
         """
-
         res = list(set(res))
         new_url = []
         if res:
             for url in res:  # 添加url处理规则
                 if not url:
                     continue
+                url = url.strip('/').strip('.')
                 if url.startswith(' '):
-                    url = url[1:]
-                if url.startswith('..'):
-                    url = url[2:]
-                if url.startswith('.'):
                     url = url[1:]
 
                 if (url.startswith('http://') or url.startswith('https://')) and not url.startswith(self.target):
+                    # 其他网站的链接
                     continue
-                if url.startswith('ftp://'):
-                    continue
-                if url.startswith('mailto:'):
+                if url.startswith('ftp://') or url.startswith('mailto:'):
+                    # 非web服务
                     continue
                 if re.search('\.(css|jpg|JPG|png|pdf|js|gif|xls|doc|docx|rar|ico|ppt)$', url) or re.search('javascript:', url):
+                    # 无用文件类型
                     continue
-                if url.startswith('/'):
-                    url = url[1:]
                 if not url.startswith('http:') and not url.startswith('https:'):
                     url = self.target + url
                 if url.startswith(self.target):
@@ -176,7 +182,6 @@ class Crawler:
                 continue
             self.filter(res)
 
-    # almost done need improved
     def scan(self):
         self.init()
         try:
@@ -192,9 +197,6 @@ class Crawler:
             return self.url_set
 
         res = self.get_url(res)
-        if not res:
-            res = self.static_conn(self.target + '/index.html')
-            res = self.get_url(res)
 
         self.filter(res)
 
@@ -211,19 +213,19 @@ class Crawler:
         if self.url_set:
             print('\n# 扫描链接总数:' + str(len(self.url_set)))
 
-        '''
-            self.urls.sort()
-            for url in self.urls:
-                print(url)
-        '''
-
-        # print(len(self.urls))
-
+        for url in self.url_set:
+            print(self.url)
         return self.urls
 
+    def test(self):
+        self.init()
+        t1 = time.time()
+        self.driver.get(self.target)
+        t2 = time.time()
+        print(t2-t1)
+        self.driver.get_screenshot_as_file(r'C:\Code\SiteScan\result\test.png')
+        self.driver.close()
 
-def main():
-    Crawler(target='http://it.jit.edu.cn/').scan()
 
 if __name__ == '__main__':
-    main()
+    Crawler(target='http://www.jit.edu.cn').scan()

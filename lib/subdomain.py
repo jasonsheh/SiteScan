@@ -20,9 +20,7 @@ monkey.patch_all()
 from database.database import Database
 from lib.fingerprint import FingerPrint
 '''
-sys.path.append('C:\Code\SiteScan')
 from setting import user_path
-
 from lib.fingerprint import FingerPrint
 
 
@@ -65,7 +63,7 @@ class Domain(object):
         print(total_time)
 
     def save2file(self):
-        with open(self.target+'.txt', 'w', encoding='utf-8') as file:
+        with open('./result/'+self.target+'.txt', 'w', encoding='utf-8') as file:
             for url, ips in sorted(self.domains.items()):
                 file.writelines(url + ':\t' + self.title[url] + ' ' + self.appname[url] + '\n')
                 for ip in ips:
@@ -400,10 +398,9 @@ class SearchDomain(Domain):
 
     def virustotal(self):
         print('virustotal子域名查询')
-        url = 'http://www.virustotal.com/vtapi/v2/domain/report'
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
-        params = {'apikey': '842f3920e6c5b8f15c3ab1d4b3b09b6ae2327936ccca66416e44d42d9753cda5', 'domain': self.target}
-        r = requests.get(url, params=params, headers=headers)
+        url = 'https://www.virustotal.com/vtapi/v2/domain/report'
+        params = {'apikey': '', 'domain': self.target}
+        r = requests.get(url, params=params)
         self.get_ip(r.json()['subdomains'])
 
     def yahoo(self):

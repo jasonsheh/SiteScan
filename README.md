@@ -31,7 +31,7 @@ run `python3 ./web.py` to open the web interface
 ***
 
 ## console
-![menu](https://raw.githubusercontent.com/jasonsheh/SiteScan/master/doc/menu.png)
+![menu](https://raw.githubusercontent.com/jasonsheh/SiteScan/master/doc/console.png)
 
 ## Web
 
