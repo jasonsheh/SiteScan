@@ -4,16 +4,29 @@
 
 import requests
 import re
+from selenium import webdriver
 
 
 class Xss:
     def __init__(self, targets):
         self.targets = targets
         self.target = ''
+
+        self.chrome_options = webdriver.ChromeOptions()
+        self.chrome_options.add_argument("--headless")
+        self.chrome_options.add_argument("--window-size=1920x1080")
+        self.chrome_options.add_argument("--disable-xss-auditor")
+        # 禁用图片
+        chrome_prefs = {}
+        chrome_prefs["profile.default_content_settings"] = {"images": 2}
+        self.chrome_options.experimental_options["prefs"] = chrome_prefs
+
+        self.driver = webdriver.Chrome(chrome_options=self.chrome_options)
+
         self.header = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'}
-        self.payload = ['"/><img src=# onerror=alert(1);>',
-                        "><body onload=alert(1)>",
-                        "/></script><ScRiPt>alert(1);<ScRiPt><!--"]
+        self.payloads = ['\'"/><img src=# onerror=alert(1);>',
+                         "\'\"><body onload=alert(1)>",
+                         "/></script><ScRiPt>alert(1);<ScRiPt><!--"]
 
     def init(self):
         if not self.target.startswith('http://') and not self.target.startswith('https://'):
@@ -21,7 +34,28 @@ class Xss:
         if not self.target.endswith('/'):
             self.target += '/'
 
-    def _scan(self):
+    def reflect_xss(self):
+        # http://demo.aisec.cn/demo/aisec/js_link.php?id=2&msg=abc
+        for params in self.target.split('&'):
+            for payload in self.payloads:
+                target = self.target.replace(params, params+payload)
+                r = requests.get(target, headers=self.header, timeout=2)
+                if payload in r.text:
+                    if self.check(target):
+                        print('可能存在xss漏洞\t'+target)
+
+    def check(self, url):
+        driver = webdriver.Chrome(chrome_options=self.chrome_options)
+        driver.get(url)
+        try:
+            alert = driver.switch_to.alert
+            if alert.text == '1':
+                return True
+        except:
+            pass
+        return False
+
+    def scan(self):
         try:
             r = requests.get(self.target, headers=self.header, timeout=2)
             # print('get')
@@ -36,7 +70,7 @@ class Xss:
         pattern = re.compile('<input.*?type="text".*?name=[\'|\"](.*?)[\'|\"].*?')
         names = re.findall(pattern, r.text)
         for name in names:
-            for payload in self.payload:
+            for payload in self.payloads:
                 try:
                     r = requests.post(self.target, data={name: payload}, timeout=2)
                     if payload in r.text:
@@ -50,22 +84,10 @@ class Xss:
                 return False
 
     def run(self):
-        results = []
-        # self.get_xss()
-        for target in self.targets:
-            self.target = target
+        for self.target in self.targets:
             self.init()
-            result = self._scan()
-            if result:
-                print('可能存在漏洞; ' + result)
-                results += result
-        return results
+            self.reflect_xss()
 
-
-def main():
-    target = ['http://xss-quiz.int21h.jp/']
-    s = Xss(target)
-    s.run()
 
 if __name__ == '__main__':
-    main()
+    Xss(['http://demo.aisec.cn/demo/aisec/js_link.php?id=2&msg=abc']).run()

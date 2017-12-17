@@ -25,15 +25,16 @@ class Crawler:
         self.thread_num = 4
         self.header = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'}
 
-        chrome_options = webdriver.ChromeOptions()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--window-size=1920x1080")
+        self.chrome_options = webdriver.ChromeOptions()
+        self.chrome_options.add_argument("--headless")
+        self.chrome_options.add_argument("--window-size=1920x1080")
+        self.chrome_options.add_argument("--disable-xss-auditor")
         # 禁用图片
         chrome_prefs = {}
         chrome_prefs["profile.default_content_settings"] = {"images": 2}
-        chrome_options.experimental_options["prefs"] = chrome_prefs
+        self.chrome_options.experimental_options["prefs"] = chrome_prefs
 
-        self.driver = webdriver.Chrome(chrome_options=chrome_options)
+        self.driver = webdriver.Chrome(chrome_options=self.chrome_options)
 
         # self.cap = webdriver.DesiredCapabilities.PHANTOMJS
         # self.cap["phantomjs.page.settings.loadImages"] = False  # 禁止加载图片
@@ -51,8 +52,8 @@ class Crawler:
         :return:
         """
         res = []
-        self.driver.get(url)
-        time.sleep(4)
+        driver = webdriver.Chrome(chrome_options=self.chrome_options)
+        driver.get(url)
         try:
             buttons = self.driver.find_elements_by_xpath("//*[@type='button'@onclick]")
             for button in buttons:
@@ -83,11 +84,11 @@ class Crawler:
         except:
             pass
 
-        a = self.driver.find_elements_by_tag_name('a')
+        a = driver.find_elements_by_tag_name('a')
         for _a in a:
             res.append(_a.get_attribute("href"))
 
-        self.driver.quit()
+        driver.quit()
         return res
 
     def static_conn(self, url):
@@ -97,6 +98,19 @@ class Crawler:
             return []
         pattern = re.compile(r'href="(.*?)"')
         return re.findall(pattern, r.text)
+
+    def init_crawl(self):
+        try:
+            res = self.static_conn(self.target)
+            # self.target = r.url
+        except requests.exceptions.ConnectionError:
+            return self.url_set
+        except requests.exceptions.ReadTimeout:
+            return self.url_set
+        except requests.exceptions.ChunkedEncodingError:
+            return self.url_set
+        res = self.get_url(res)
+        self.filter(res)
 
     def get_url(self, res):
         """
@@ -110,6 +124,8 @@ class Crawler:
             for url in res:  # 添加url处理规则
                 if not url:
                     continue
+                if url.startswith('//'):
+                    url = 'http:' + url
                 url = url.strip('/').strip('.')
                 if url.startswith(' '):
                     url = url[1:]
@@ -123,6 +139,8 @@ class Crawler:
                 if re.search('\.(css|jpg|JPG|png|pdf|js|gif|xls|doc|docx|rar|ico|ppt)$', url) or re.search('javascript:', url):
                     # 无用文件类型
                     continue
+                if url.startswith(self.target.split('//')[1]):
+                    url = self.target.split('//')[0] + url
                 if not url.startswith('http:') and not url.startswith('https:'):
                     url = self.target + url
                 if url.startswith(self.target):
@@ -174,6 +192,9 @@ class Crawler:
 
     def crawler(self):
         while not self.q.empty():
+            sys.stdout.write('\r链接数: ' + str(len(self.url_set)) + '队列剩余: ' + str(self.q.qsize()))
+            sys.stdout.flush()
+
             url = self.q.get()
 
             new_res = self.static_conn(url)
@@ -182,23 +203,15 @@ class Crawler:
                 continue
             self.filter(res)
 
+    def output(self):
+        print('\n# 扫描链接总数:' + str(len(self.url_set)))
+
+        for url in self.urls:
+            print(url)
+
     def scan(self):
         self.init()
-        try:
-            r = requests.get(self.target, headers=self.header)
-            pattern = re.compile(r'href="(.*?)"')
-            res = re.findall(pattern, r.text)
-            self.target = r.url
-        except requests.exceptions.ConnectionError:
-            return self.url_set
-        except requests.exceptions.ReadTimeout:
-            return self.url_set
-        except requests.exceptions.ChunkedEncodingError:
-            return self.url_set
-
-        res = self.get_url(res)
-
-        self.filter(res)
+        self.init_crawl()
 
         threads = []
         for i in range(int(self.thread_num)):
@@ -206,26 +219,22 @@ class Crawler:
             threads.append(t)
         for item in threads:
             item.start()
-
         for item in threads:
             item.join()
 
-        if self.url_set:
-            print('\n# 扫描链接总数:' + str(len(self.url_set)))
+        self.output()
 
-        for url in self.url_set:
-            print(self.url)
         return self.urls
 
     def test(self):
         self.init()
-        t1 = time.time()
         self.driver.get(self.target)
-        t2 = time.time()
-        print(t2-t1)
         self.driver.get_screenshot_as_file(r'C:\Code\SiteScan\result\test.png')
         self.driver.close()
 
 
 if __name__ == '__main__':
-    Crawler(target='http://www.jit.edu.cn').scan()
+    t1 = time.time()
+    Crawler(target='https://zby.ly.com').scan()
+    t2 = time.time()
+    print(t2 - t1)
