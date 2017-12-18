@@ -2,20 +2,26 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
-from lib.factory import site_scan
+from lib.factory import init
+from lib.factory import info_collect
+from lib.factory import vul_scan
 
 import sys
 import argparse
 import time
 
+sys.path.append('C:\Code\SiteScan')
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--domain",
-                        help="domain name")
-    parser.add_argument('-s', '--sub', default="true",
+                        help="collect info related to this domain")
+    parser.add_argument('-s', "--scan",
+                        help='find vulnerabilities related to this domain')
+    parser.add_argument('--sub', default="true",
                         help='whether get all sub domains')
-    parser.add_argument("-i", "--install",
+    parser.add_argument("--install",
                         help="install SiteScan")
     args = parser.parse_args()
 
@@ -28,7 +34,10 @@ def main():
     t1 = time.time()
 
     try:
-        site_scan(args.domain)
+        if args.domain:
+            info_collect(init(args.domain))
+        if args.scan:
+            vul_scan(args.scan)
         t2 = time.time()
         print('\nTotal time: ' + str(t2 - t1))
     except KeyboardInterrupt:

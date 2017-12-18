@@ -4,10 +4,10 @@
 
 import requests
 import re
-from urllib.parse import urlparse
 import threading
 import queue
 import time
+from urllib.parse import urlparse
 from selenium import webdriver
 
 import sys
@@ -15,8 +15,9 @@ sys.path.append('C:\Code\SiteScan')
 
 
 class Crawler:
-    def __init__(self, target):
+    def __init__(self, target, dynamic=0):
         self.target = target
+        self.dynamic = dynamic
         self.url_set = []  # 存放所有链接
         self.urls = []  # 存放不重复规则链接
         self.sitemap = []
@@ -27,6 +28,7 @@ class Crawler:
 
         self.chrome_options = webdriver.ChromeOptions()
         self.chrome_options.add_argument("--headless")
+        self.chrome_options.add_argument("--disable-gpu")
         self.chrome_options.add_argument("--window-size=1920x1080")
         self.chrome_options.add_argument("--disable-xss-auditor")
         # 禁用图片
@@ -34,35 +36,30 @@ class Crawler:
         chrome_prefs["profile.default_content_settings"] = {"images": 2}
         self.chrome_options.experimental_options["prefs"] = chrome_prefs
 
-        self.driver = webdriver.Chrome(chrome_options=self.chrome_options)
-
-        # self.cap = webdriver.DesiredCapabilities.PHANTOMJS
-        # self.cap["phantomjs.page.settings.loadImages"] = False  # 禁止加载图片
-
     def init(self):
         if not self.target.startswith('http://') and not self.target.startswith('https://'):
             self.target = 'http://' + self.target
         if not self.target.endswith('/'):
             self.target += '/'
 
-    def dynamic_conn(self, url):
+    def dynamic_conn(self, url, driver):
         """
         动态连接,返回所有链接
-        :param url:
+        :param url
+        :param driver:
         :return:
         """
         res = []
-        driver = webdriver.Chrome(chrome_options=self.chrome_options)
         driver.get(url)
         try:
-            buttons = self.driver.find_elements_by_xpath("//*[@type='button'@onclick]")
+            buttons = driver.find_elements_by_xpath("//*[@type='button'@onclick]")
             for button in buttons:
                 button.click()
         except:
             pass
 
         try:
-            forms = self.driver.find_elements_by_xpath("//form[@method='post']")
+            forms = driver.find_elements_by_xpath("//form[@method]")
             for form in forms:
                 action = form.get_attribute('action')
                 texts = form.find_elements_by_xpath("//input[@type='text']")
@@ -78,7 +75,7 @@ class Crawler:
             pass
 
         try:
-            frames = self.driver.find_elements_by_xpath("//iframe[@src]")
+            frames = driver.find_elements_by_xpath("//iframe[@src]")
             for frame in frames:
                 res.append(frame.get_attribute("src"))
         except:
@@ -88,7 +85,6 @@ class Crawler:
         for _a in a:
             res.append(_a.get_attribute("href"))
 
-        driver.quit()
         return res
 
     def static_conn(self, url):
@@ -101,7 +97,12 @@ class Crawler:
 
     def init_crawl(self):
         try:
-            res = self.static_conn(self.target)
+            if self.dynamic:
+                driver = webdriver.Chrome(chrome_options=self.chrome_options)
+                res = self.dynamic_conn(self.target, driver)
+                driver.close()
+            else:
+                res = self.static_conn(self.target)
             # self.target = r.url
         except requests.exceptions.ConnectionError:
             return self.url_set
@@ -190,13 +191,25 @@ class Crawler:
         list(set(self.sitemap))
         list(set(self.urls))
 
-    def crawler(self):
+    def dynamic_crawler(self):
+        driver = webdriver.Chrome(chrome_options=self.chrome_options)
         while not self.q.empty():
             sys.stdout.write('\r链接数: ' + str(len(self.url_set)) + '队列剩余: ' + str(self.q.qsize()))
             sys.stdout.flush()
-
             url = self.q.get()
 
+            new_res = self.dynamic_conn(url, driver)
+            res = self.get_url(new_res)
+            if not res:
+                continue
+            self.filter(res)
+        driver.close()
+
+    def static_crawler(self):
+        while not self.q.empty():
+            sys.stdout.write('\r链接数: ' + str(len(self.url_set)) + '队列剩余: ' + str(self.q.qsize()))
+            sys.stdout.flush()
+            url = self.q.get()
             new_res = self.static_conn(url)
             res = self.get_url(new_res)
             if not res:
@@ -206,7 +219,7 @@ class Crawler:
     def output(self):
         print('\n# 扫描链接总数:' + str(len(self.url_set)))
 
-        for url in self.urls:
+        for url in sorted(self.urls):
             print(url)
 
     def scan(self):
@@ -214,9 +227,14 @@ class Crawler:
         self.init_crawl()
 
         threads = []
-        for i in range(int(self.thread_num)):
-            t = threading.Thread(target=self.crawler)
-            threads.append(t)
+        if self.dynamic:
+            for i in range(int(self.thread_num)):
+                t = threading.Thread(target=self.dynamic_crawler)
+                threads.append(t)
+        else:
+            for i in range(int(self.thread_num)):
+                t = threading.Thread(target=self.static_crawler)
+                threads.append(t)
         for item in threads:
             item.start()
         for item in threads:
@@ -228,13 +246,15 @@ class Crawler:
 
     def test(self):
         self.init()
-        self.driver.get(self.target)
-        self.driver.get_screenshot_as_file(r'C:\Code\SiteScan\result\test.png')
-        self.driver.close()
+        driver = webdriver.Chrome(chrome_options=self.chrome_options)
+        driver.get('http://www.baidu.com')
+        driver.get('http://www.jit.edu.cn')
+        # driver.get_screenshot_as_file(r'C:\Code\SiteScan\result\test.png')
+        driver.close()
 
 
 if __name__ == '__main__':
     t1 = time.time()
-    Crawler(target='https://zby.ly.com').scan()
+    Crawler(target='http://opac.jit.edu.cn', dynamic=1).scan()
     t2 = time.time()
     print(t2 - t1)

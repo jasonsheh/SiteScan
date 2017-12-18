@@ -8,12 +8,13 @@ from lib.subdomain import AllDomain
 from lib.sendir import SenDir
 from lib.crawler import Crawler
 from lib.port import Port
-from lib.vul import Vul
+
+from lib.vuls.xss import Xss
 
 import requests
 
 
-def site_scan(domain):
+def init(domain):
     if domain.startswith('http://www.'):
         domain = domain[11:]
     if domain.startswith('https://www.'):
@@ -26,10 +27,12 @@ def site_scan(domain):
         domain = domain[4:]
     if domain.endswith('/'):
         domain = domain[:-1]
+    return domain
 
+
+def info_collect(domain):
     # id = Database().insert_task(domain)
     domains = AllDomain(domain).run()
-
     # SenDir(domains).run()
 
     '''
@@ -40,3 +43,8 @@ def site_scan(domain):
         url = Crawler(domain).scan()
         Vul(url, id).run()
     '''
+
+
+def vul_scan(domain):
+    urls = Crawler(target=domain).scan()
+    Xss(targets=urls).scan()
