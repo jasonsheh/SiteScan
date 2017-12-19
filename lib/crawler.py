@@ -29,6 +29,8 @@ class Crawler:
         self.chrome_options = webdriver.ChromeOptions()
         self.chrome_options.add_argument("--headless")
         self.chrome_options.add_argument("--disable-gpu")
+        # self.chrome_options.add_argument("--disable-logging")
+        self.chrome_options.add_argument("--log-level=3")
         self.chrome_options.add_argument("--window-size=1920x1080")
         self.chrome_options.add_argument("--disable-xss-auditor")
         # 禁用图片
@@ -90,9 +92,10 @@ class Crawler:
     def static_conn(self, url):
         try:
             r = requests.get(url, headers=self.header)
+            print(url)
         except requests.exceptions.ChunkedEncodingError:
             return []
-        pattern = re.compile(r'href="(.*?)"')
+        pattern = re.compile(r'href=[\'|\"](.*?)[\'|\"]')
         return re.findall(pattern, r.text)
 
     def init_crawl(self):
@@ -100,7 +103,7 @@ class Crawler:
             if self.dynamic:
                 driver = webdriver.Chrome(chrome_options=self.chrome_options)
                 res = self.dynamic_conn(self.target, driver)
-                driver.close()
+                driver.quit()
             else:
                 res = self.static_conn(self.target)
             # self.target = r.url
@@ -197,18 +200,17 @@ class Crawler:
             sys.stdout.write('\r链接数: ' + str(len(self.url_set)) + '队列剩余: ' + str(self.q.qsize()))
             sys.stdout.flush()
             url = self.q.get()
-
             new_res = self.dynamic_conn(url, driver)
             res = self.get_url(new_res)
             if not res:
                 continue
             self.filter(res)
-        driver.close()
+        driver.quit()
 
     def static_crawler(self):
         while not self.q.empty():
-            sys.stdout.write('\r链接数: ' + str(len(self.url_set)) + '队列剩余: ' + str(self.q.qsize()))
-            sys.stdout.flush()
+            # sys.stdout.write('\r链接数: ' + str(len(self.url_set)) + '队列剩余: ' + str(self.q.qsize()))
+            # sys.stdout.flush()
             url = self.q.get()
             new_res = self.static_conn(url)
             res = self.get_url(new_res)
@@ -224,6 +226,8 @@ class Crawler:
 
     def scan(self):
         self.init()
+        print('链接爬取')
+        t1 = time.time()
         self.init_crawl()
 
         threads = []
@@ -240,6 +244,8 @@ class Crawler:
         for item in threads:
             item.join()
 
+        t2 = time.time()
+        print('\n爬取链接总时间: ', t2-t1)
         self.output()
 
         return self.urls
@@ -250,11 +256,9 @@ class Crawler:
         driver.get('http://www.baidu.com')
         driver.get('http://www.jit.edu.cn')
         # driver.get_screenshot_as_file(r'C:\Code\SiteScan\result\test.png')
-        driver.close()
+        driver.quit()
 
 
 if __name__ == '__main__':
-    t1 = time.time()
-    Crawler(target='http://opac.jit.edu.cn', dynamic=1).scan()
-    t2 = time.time()
-    print(t2 - t1)
+    Crawler(target='http://jr.tuniu.com', dynamic=1).scan()
+
