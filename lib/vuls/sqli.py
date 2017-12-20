@@ -7,7 +7,7 @@ import requests
 import re
 
 
-class Sql:
+class Sqli:
     def __init__(self, targets):
         self.targets = targets
         self.target = ''
@@ -96,10 +96,10 @@ class Sql:
             print('不存在注入'+str(e))
             return False
 
-    def run(self):
+    def scan(self):
+        print('sql注入检测')
         results = []
-        for target in self.targets:
-            self.target = target
+        for self.target in self.targets:
             self.init()
             result = self._scan()
             if result:
@@ -107,5 +107,6 @@ class Sql:
                 results.append(result)
         return results
 
+
 if __name__ == '__main__':
-    Sql(['http://nhez.nh.edu.sh.cn/xwgf/show.php?id=4479']).run()
+    Sqli(['http://nhez.nh.edu.sh.cn/xwgf/show.php?id=4479']).scan()

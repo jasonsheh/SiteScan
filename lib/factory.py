@@ -10,6 +10,7 @@ from lib.crawler import Crawler
 from lib.port import Port
 
 from lib.vuls.xss import Xss
+from lib.vuls.sqli import Sqli
 
 import requests
 
@@ -41,10 +42,10 @@ def info_collect(domain):
     print('漏洞扫描')
     for domain in domains:
         url = Crawler(domain).scan()
-        Vul(url, id).run()
     '''
 
 
 def vul_scan(domain):
-    urls = Crawler(target=domain).scan()
+    urls = Crawler(target=domain, dynamic=1).scan()
     Xss(targets=urls).scan()
+    Sqli(targets=urls).scan()
