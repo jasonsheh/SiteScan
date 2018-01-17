@@ -30,6 +30,7 @@ class SenDir:
         self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
 
     def output(self):
+        print('\n')
         for directory, status in sorted(self.sensitive.items()):
             print(directory + ':\t' + str(status))
 
@@ -111,9 +112,5 @@ class SenDir:
         return self.sensitive
 
 
-def main():
-    SenDir(targets=[]).run()
-
-
 if __name__ == '__main__':
-    main()
+    SenDir(targets=[]).run()

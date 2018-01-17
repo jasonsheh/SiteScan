@@ -399,14 +399,14 @@ class SearchDomain(Domain):
     def virustotal(self):
         print('virustotal子域名查询')
         url = 'https://www.virustotal.com/vtapi/v2/domain/report'
-        params = {'apikey': '', 'domain': self.target}
+        params = {'apikey': '842f3920e6c5b8f15c3ab1d4b3b09b6ae2327936ccca66416e44d42d9753cda5', 'domain': self.target}
         r = requests.get(url, params=params)
         self.get_ip(r.json()['subdomains'])
 
     def yahoo(self):
         print('yahoo子域名查询')
         domains = []
-        total_page = 30
+        total_page = 20
         url = 'https://search.yahoo.com/search?p = site:' + self.target + '&pz=10&b='
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
         pattern = re.compile('<span class=" fz-ms fw-m fc-12th wr-bw lh-17">(.*?)</b>')
