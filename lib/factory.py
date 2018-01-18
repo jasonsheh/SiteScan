@@ -2,17 +2,15 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
-from database.database import Database
+from lib.info.subdomain import AllDomain
+from lib.info.sendir import SenDir
 
-from lib.subdomain import AllDomain
-from lib.sendir import SenDir
 from lib.crawler import Crawler
-from lib.port import Port
 
 from lib.vuls.xss import Xss
 from lib.vuls.sqli import Sqli
 
-import requests
+from lib.git.gitscan import GitScan
 
 
 def init(domain):
@@ -34,18 +32,14 @@ def init(domain):
 def info_collect(domain):
     # id = Database().insert_task(domain)
     domains = AllDomain(domain).run()
-    # SenDir(domains).run()
-
-    '''
-    Port(domains, id).run()
-
-    print('漏洞扫描')
-    for domain in domains:
-        url = Crawler(domain).scan()
-    '''
+    SenDir(domains).run()
 
 
 def vul_scan(domain):
-    urls = Crawler(target=domain, dynamic=1).scan()
+    urls = Crawler(target=domain, dynamic=1).run()
     Xss(targets=urls).scan()
     Sqli(targets=urls).scan()
+
+
+def git_scan(keyword):
+    GitScan(keyword)

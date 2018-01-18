@@ -7,6 +7,7 @@
 #### requirement
 + celery
 + redis
++ chromedriver
 +
 
 change the path in setting.py to your own path
