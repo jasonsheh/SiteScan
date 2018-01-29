@@ -92,7 +92,6 @@ class Crawler:
     def static_conn(self, url):
         try:
             r = requests.get(url, headers=self.header)
-            print(url)
         except requests.exceptions.ChunkedEncodingError:
             return []
         pattern = re.compile(r'href=[\'|\"](.*?)[\'|\"]')
@@ -209,8 +208,8 @@ class Crawler:
 
     def static_crawler(self):
         while not self.q.empty():
-            # sys.stdout.write('\r链接数: ' + str(len(self.url_set)) + '队列剩余: ' + str(self.q.qsize()))
-            # sys.stdout.flush()
+            sys.stdout.write('\r链接数: ' + str(len(self.url_set)) + '队列剩余: ' + str(self.q.qsize()))
+            sys.stdout.flush()
             url = self.q.get()
             new_res = self.static_conn(url)
             res = self.get_url(new_res)
@@ -224,7 +223,7 @@ class Crawler:
         for url in sorted(self.urls):
             print(url)
 
-    def scan(self):
+    def run(self):
         self.init()
         print('链接爬取')
         t1 = time.time()
@@ -260,5 +259,5 @@ class Crawler:
 
 
 if __name__ == '__main__':
-    Crawler(target='http://jr.tuniu.com', dynamic=1).scan()
+    Crawler(target='http://jr.tuniu.com', dynamic=1).run()
 

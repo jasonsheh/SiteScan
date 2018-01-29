@@ -8,10 +8,9 @@ import sys
 sys.path.append(user_path)
 
 from lib.crawler import Crawler
-from lib.sendir import Sendir
+from lib.info.sendir import SenDir
 from lib.port import Port
-from lib.subdomain import Domain
-from lib.vul import Vul
+from lib.info.subdomain import AllDomain
 
 from database.database import Database
 
@@ -21,28 +20,22 @@ cel = Celery('cel', broker='redis://localhost:6379')
 
 @cel.task()
 def crawl_scan(domain):
-    Crawler(domain).scan()
+    Crawler(domain, dynamic=1).run()
 
 
 @cel.task()
 def port_scan(ip):
-    Port().scan(ip)
+    Port(list(ip)).scan()
 
 
 @cel.task()
 def domain_scan(domain):
-    Domain(domain).run()
+    AllDomain(domain).run()
 
 
 @cel.task()
 def sendir_scan(domain):
-    Sendir(domain).run()
-
-
-@cel.task()
-def vul_scan(domain):
-    url = Crawler(domain).scan()
-    Vul(url).run()
+    SenDir(list(domain)).run()
 
 
 @cel.task()
@@ -57,9 +50,8 @@ def site_scan(domain):
         domain = domain[8:]
 
     id = Database().insert_task(domain)
-    domains, ips = Domain(domain, id).run()
+    domains, ips = AllDomain(domain, id).run()
     for domain in domains:
-        url = Crawler(domain).scan()
-        Vul(url, id).run()
-    Sendir(domains, id).run()
-    Port(id).run(ips)
+        url = Crawler(domain).run()
+    SenDir(domains, id).run()
+    Port(id).scan()

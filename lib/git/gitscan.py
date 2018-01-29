@@ -18,7 +18,7 @@ class GitScan:
         self.keyword = keyword
         self.search_page = 5
         self.hash_list = []
-        self.useless_ext = ['css', 'htm', 'html', 'pac', 'csv', 'txt', 'csv.dat', 'rules', 'md']
+        self.useless_ext = ['css', 'htm', 'html', 'pac', 'csv', 'txt', 'csv.dat', 'rules', 'md', 'svg']
         self.useful_ext = ['properties']
         self.keywords = ['pwd', 'smtp password', 'admin password']
         self.fuzz_list = ['fuzz', 'dict', 'hack', 'whitelist']
@@ -82,10 +82,11 @@ class GitScan:
                             print(index, content.html_url)
                             for code in codes:
                                 print('\t', code)
-                except GithubException.GithubException:
+                except GithubException:
                     time.sleep(5)
+                    continue
                 time.sleep(3)
 
 
 if __name__ == '__main__':
-    GitScan('weibo').test()
+    GitScan('smartisan').test()

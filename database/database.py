@@ -1,15 +1,17 @@
 #!/usr/bin/python
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
+"""
+对数据库进行的一系列操作
 
+
+"""
 import sqlite3
-
-from setting import user_path
 
 
 class Database:
     def __init__(self):
-        self.conn = sqlite3.connect(user_path + '/db/SiteScan.db')
+        self.conn = sqlite3.connect('./db/SiteScan.db')
         self.cursor = self.conn.cursor()
 
     def create_database(self):
@@ -20,14 +22,15 @@ class Database:
         self.create_finger()
         self.create_vul()
 
+    # 创建任务数据库
     def create_task(self):
         self.cursor.execute('create table task('
                             'id integer primary key,'
                             'name varchar(64) '
                             ')')
-
         print("create task successfully")
 
+    # 插入任务
     def insert_task(self, name):
         sql = "insert into task (name) values (?)"
         self.cursor.execute(sql, (name, ))
@@ -364,7 +367,7 @@ class Database:
         self.cursor.close()
         self.conn.close()
 
+
 if __name__ == '__main__':
-    d = Database()
-    d.create_database()
+    Database().create_database()
     # d.insert_subdomain({"te'st.com": '127.0.0.1'}, {"te'st.com": 'test'}, {"te'st.com": 'test'})

@@ -4,10 +4,8 @@
 
 import json
 import dns.resolver
-from urllib.parse import urlparse
 import sys
 import requests
-import threading
 import time
 import socket
 import re
@@ -21,7 +19,7 @@ from database.database import Database
 from lib.fingerprint import FingerPrint
 '''
 from setting import user_path
-from lib.fingerprint import FingerPrint
+from lib.info.fingerprint import FingerPrint
 
 
 class Domain(object):

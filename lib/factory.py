@@ -2,6 +2,10 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
+"""
+对所有脚本进行统一规划管理
+"""
+
 from lib.info.subdomain import AllDomain
 from lib.info.sendir import SenDir
 
@@ -30,12 +34,18 @@ def init(domain):
 
 
 def info_collect(domain):
+    """
+    信息收集
+    """
     # id = Database().insert_task(domain)
     domains = AllDomain(domain).run()
     SenDir(domains).run()
 
 
 def vul_scan(domain):
+    """
+    漏洞扫描
+    """
     urls = Crawler(target=domain, dynamic=1).run()
     Xss(targets=urls).scan()
     Sqli(targets=urls).scan()

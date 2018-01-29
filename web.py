@@ -62,7 +62,6 @@ def detail_domain(mode, id, page=1):
         return render_template('detail.html', id=id, mode=mode, page=page, max_page=vul_number//15+1, sendirs=vuls)
 
 
-
 @app.route('/domain')
 @app.route('/domain/<int:page>')
 def subdomain(page=1):
