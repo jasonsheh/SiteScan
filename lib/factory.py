@@ -7,13 +7,17 @@
 """
 
 from lib.info.subdomain import AllDomain
+from lib.info.getTitle import GetTitle
+from lib.info.fingerprint import FingerPrint
 from lib.info.sendir import SenDir
+from lib.info.save2file import SaveToFile
 
 from lib.crawler import Crawler
 
 from lib.vuls.xss import Xss
 from lib.vuls.sqli import Sqli
 
+from lib.port import Port
 from lib.git.gitscan import GitScan
 
 
@@ -38,8 +42,11 @@ def info_collect(domain):
     信息收集
     """
     # id = Database().insert_task(domain)
-    domains = AllDomain(domain).run()
-    SenDir(domains).run()
+    domains, target = AllDomain(domain).run()
+    title = GetTitle([x for x in domains.keys()]).run()
+    fingerprint = FingerPrint([x for x in domains.keys()]).run()
+    dirs = SenDir([x for x in domains.keys()]).run()
+    SaveToFile(target, domains, title, fingerprint, dirs).save()
 
 
 def vul_scan(domain):

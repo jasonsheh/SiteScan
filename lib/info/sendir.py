@@ -20,24 +20,19 @@ from setting import user_path
 
 
 class SenDir:
-    def __init__(self, targets, id=''):
-        self.targets = targets
+    def __init__(self, domains, id=''):
+        self.domains = domains
         self.id = id
         self.queue = Queue()
-        self.thread_num = 100
+        self.thread_num = 200
         self.sensitive = {}
-        self.count = 0
         self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
-
-    def output(self):
-        print('\n')
-        for directory, status in sorted(self.sensitive.items()):
-            print(directory + ':\t' + str(status))
 
     def enqueue_dir(self):
         with open(user_path+'/dict/dir.txt', 'r') as file:
             for eachline in file:
-                self.queue.put_nowait(eachline.strip())
+                for target in self.domains:
+                    self.queue.put_nowait(target+eachline.strip())
 
     def directory_brute(self):
         '''
@@ -45,23 +40,23 @@ class SenDir:
         :return:
         '''
         while not self.queue.empty():
-            _dir = self.queue.get()
-            for target in self.targets:
-                try:
-                    url = target + _dir
-                    self.count += 1
-                    sys.stdout.write('\r目录扫描数: ' + str(self.count))
-                    sys.stdout.flush()
-                    r = requests.get('http://' + target + _dir, allow_redirects=False)
+            url = self.queue.get()
+            try:
+                sys.stdout.write('\r目录扫描数: ' + str(self.queue.qsize()))
+                sys.stdout.flush()
+                r = requests.get('http://'+url, timeout=3, allow_redirects=False)
 
-                    if r.status_code in [200, 403]:
-                        self.sensitive[url] = r.status_code
-                except requests.exceptions.ReadTimeout:
-                    continue
-                except requests.exceptions.ConnectionError:
-                    continue
-                except requests.exceptions.TooManyRedirects:
-                    continue
+                if r.status_code in [200, 403]:
+                    if url.split('/')[0] not in self.sensitive.keys():
+                        self.sensitive[url.split('/')[0]] = [url + '\t' + str(r.status_code)]
+                    else:
+                        self.sensitive[url.split('/')[0]].append(url + '\t' + str(r.status_code))
+            except requests.exceptions.ReadTimeout:
+                continue
+            except requests.exceptions.ConnectionError:
+                continue
+            except requests.exceptions.TooManyRedirects:
+                continue
 
     def error_page(self):
         '''
@@ -69,10 +64,10 @@ class SenDir:
         :return:
         '''
         need_be_removed = []
-        for target in self.targets:
+        for target in self.domains:
             try:
                 url = target + '/.this_page_will_never_exists_lalala'
-                r = requests.get('http://' + url, timeout=3, allow_redirects=False)
+                r = requests.get('http://' + url, timeout=2, allow_redirects=False)
                 # print(url, r.status_code)
                 if r.status_code in [200, 403]:
                     need_be_removed.append(target)
@@ -81,7 +76,6 @@ class SenDir:
                 for not_exist in ['', '/', '.config', '.sql', '.inc', '.bak', '.jsp', '.asp', '.aspx', '.php', '.html']:
                     url = target + '/this_page_will_never_exists' + not_exist
                     r = requests.get('http://' + url, timeout=3, allow_redirects=False)
-                    # print(url, r.status_code)
                     if r.status_code in [200, 403]:
                         need_be_removed.append(target)
                         break
@@ -96,7 +90,7 @@ class SenDir:
                 continue
 
         for removed in list(set(need_be_removed)):
-            self.targets.pop(removed)
+            self.domains.remove(removed)
 
     def run(self):
         print('\n# 检测敏感目录...')
@@ -105,12 +99,11 @@ class SenDir:
 
         threads = [gevent.spawn(self.directory_brute) for _ in range(self.thread_num)]
         gevent.joinall(threads)
-
-        self.output()
+        # self.output()
 
         # Database().insert_sendir(self.sensitive, self.id)
         return self.sensitive
 
 
 if __name__ == '__main__':
-    SenDir(targets=[]).run()
+    SenDir(['jsclx.jit.edu.cn']).run()

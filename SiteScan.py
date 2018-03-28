@@ -14,13 +14,13 @@ import time
 sys.path.append('C:\Code\SiteScan')
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-d", "--domain",
+parser.add_argument("-i", "--info",
                     help="collect info related to this domain")
 parser.add_argument('-s', "--scan",
                     help='find vulnerabilities related to this domain')
 parser.add_argument('-g', "--git",
                     help='find leaked info form Github')
-parser.add_argument('--sub', default="true",
+parser.add_argument('--sub', default="false",
                     help='whether get all sub domains')
 parser.add_argument("--install",
                     help="install SiteScan")
@@ -33,10 +33,10 @@ print(''' ___) | | ||  __/___) | (_| (_| | | | |''')
 print('''|____/|_|\__\___|____/ \___\__,_|_| |_|''')
 print('\t\t written by Jason_Sheh')
 t1 = time.time()
-
+9
 try:
-    if args.domain:
-        info_collect(init(args.domain))
+    if args.info:
+        info_collect(init(args.info))
     if args.scan:
         vul_scan(args.scan)
     if args.git:

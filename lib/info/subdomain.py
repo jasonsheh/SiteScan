@@ -9,6 +9,8 @@ import requests
 import time
 import socket
 import re
+from multiprocessing import Pool, Process
+import gipc
 import gevent
 from gevent.queue import Queue
 from gevent import monkey
@@ -16,10 +18,8 @@ monkey.patch_all()
 
 '''
 from database.database import Database
-from lib.fingerprint import FingerPrint
 '''
 from setting import user_path
-from lib.info.fingerprint import FingerPrint
 
 
 class Domain(object):
@@ -31,12 +31,10 @@ class Domain(object):
                        '220.250.64.225']
         self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
         self.queue = Queue()
-        self.thread_num = 60
+        self.thread_num = 200
         self.c_count = {}
         self.domain = []
         self.domains = {}
-        self.title = {}
-        self.appname = {}
         self.removed_domains = []
         self.init()
 
@@ -53,88 +51,22 @@ class Domain(object):
             self.target = self.target[4:]
         self.target = self.target.strip('/')
 
-    def output(self, total_time):
-        for url, ips in sorted(self.domains.items()):
-            print(url + ':\t' + self.title[url] + ' ' + self.appname[url])
-            for ip in ips:
-                print('\t' + ip)
-        print(total_time)
+    # def output(self, total_time):
+    #     for url, ips in sorted(self.domains.items()):
+    #         print(url + ':\t' + self.title[url])
+    #         for ip in ips:
+    #             print('\t' + ip)
+    #     print(total_time)
 
-    def save2file(self):
-        with open('./result/'+self.target+'.txt', 'w', encoding='utf-8') as file:
-            for url, ips in sorted(self.domains.items()):
-                file.writelines(url + ':\t' + self.title[url] + ' ' + self.appname[url] + '\n')
-                for ip in ips:
-                    file.writelines('\t' + ip + '\n')
-
-    def run_title(self):
-        print('\n网站标题扫描')
-        self.enqueue_title()
-        threads = [gevent.spawn(self.get_title) for _ in range(self.thread_num)]
-        gevent.joinall(threads)
-
-    def enqueue_title(self):
-        for url in sorted(self.domains.keys()):
-            self.queue.put_nowait(url)
-
-    def get_title(self):
-        while not self.queue.empty():
-            url = self.queue.get()
-            try:
-                r = requests.get('http://' + url, timeout=3)
-                if not r.text:
-                    self.title[url] = ''
-                    continue
-                if not r.encoding:
-                    if re.findall('charset=[\'|\"]?(.*?)[\'|\"]', r.text, re.I | re.S):
-                        r.encoding = re.findall('charset=[\'|\"]?(.*?)[\'|\"]', r.text, re.I | re.S)[0]
-                    elif re.findall('encoding=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S):
-                        r.encoding = re.findall('encoding=[\'|\"]?(.*?)[\'|\"]', r.text, re.I | re.S)[0]
-                    else:
-                        self.title[url] = ''
-                        continue
-                if r.encoding == 'ISO-8859-1' and re.findall('<title.*?>(.*?)</title.*?>', r.text, re.I | re.S):
-                    if re.findall('charset=[\'|\"]?(.*?)[\'|\"]', r.text, re.I | re.S):
-                        encoding = re.findall('charset=[\'|\"]?(.*?)[\'|\"]', r.text, re.I | re.S)[0]
-                    elif re.findall('encoding=[\'|\"]?(.*?)[\'|\"]?', r.text, re.I | re.S):
-                        encoding = re.findall('encoding=[\'|\"]?(.*?)[\'|\"]', r.text, re.I | re.S)[0]
-                    else:
-                        encoding = 'utf-8'
-                    self.title[url] = re.findall('<title.*?>(.*?)</title.*?>', r.text, re.I | re.S)[0].encode("iso-8859-1").decode(encoding).encode('utf-8').decode('utf-8')
-                elif re.findall('<title.*?>(.*?)</title.*?>', r.text, re.I | re.S) and r.encoding in [
-                    'utf-8', 'gb2312', 'GB2312', 'GBK', 'gbk2312', 'gbk']:
-                    self.title[url] = re.findall('<title.*?>(.*?)</title.*?>', r.text, re.I | re.S)[0].strip()
-                elif re.findall('<title.*?>(.*?)</title.*?>', r.text, re.I | re.S):
-                    self.title[url] = re.findall('<title.*?>(.*?)</title.*?>', r.text, re.I | re.S)[0].encode(r.encoding).decode('utf-8').strip()
-                else:
-                    self.title[url] = ''
-                    # print(url, self.title[url])
-            except AttributeError:
-                print(url)
-                continue
-            except LookupError:
-                self.title[url] = ''
-                continue
-            except UnicodeDecodeError:
-                self.title[url] = ''
-                continue
-            except requests.exceptions.ReadTimeout:
-                self.title[url] = ''
-                continue
-            except requests.exceptions.ConnectionError:
-                self.title[url] = ''
-                continue
-            except requests.exceptions.TooManyRedirects:
-                self.title[url] = ''
-                continue
-            except requests.exceptions.ChunkedEncodingError:
-                self.title[url] = ''
-                continue
-            except Exception as e:
-                self.title[url] = ''
-                print(url+'\t'+e)
+    # def save2file(self):
+    #     with open(user_path+'./result/'+self.target+'.txt', 'w', encoding='utf-8') as file:
+    #         for url, ips in sorted(self.domains.items()):
+    #             file.writelines(url + ':\t' + self.title[url] + '\n')
+    #             for ip in ips:
+    #                 file.writelines('\t' + ip + '\n')
 
     def run_clean(self):
+        print('\n清除无法访问子域名')
         self.enqueue_domain()
         self.removed_domains = []
         threads = [gevent.spawn(self.remove_error_domain) for _ in range(self.thread_num)]
@@ -151,8 +83,9 @@ class Domain(object):
         while not self.queue.empty():
             domain = self.queue.get()
             try:
-                r = requests.get('http://' + domain, timeout=4, allow_redirects=False)
-                if r.status_code not in [400, 403, 500]:
+                r = requests.get('http://' + domain, timeout=2, allow_redirects=False)
+                if r.status_code in [400, 403, 500]:
+                    self.removed_domains.append(domain)
                     continue
             except requests.exceptions.ConnectTimeout:
                 self.removed_domains.append(domain)
@@ -173,12 +106,10 @@ class Domain(object):
 class BruteDomain(Domain):
     def __init__(self, target, id=''):
         super().__init__(target, id)
-        self.thread_num = 100
-        self.dns = ['223.5.5.5', '223.6.6.6', '119.29.29.29', '182.254.116.116', '114.114.114.114']
-
-    def run_brute(self):
-        self.brute()
-        # self.output()
+        self.thread_num = 200
+        self.process_num = 4
+        self.dns = ['223.5.5.5', '223.6.6.6', '119.29.29.29', '182.254.116.116', '114.114.114.114', '114.114.115.115',
+                    '123.125.81.6', '114.114.114.119', '114.114.115.119', '180.76.76.76']
 
     def domain_dict(self):
         with open(user_path + '/dict/domain.txt', 'r') as dirt:
@@ -201,7 +132,7 @@ class BruteDomain(Domain):
             domain = 'this_subdomain_will_never_exist' + '.' + domain
             resolvers = dns.resolver.Resolver(configure=False)
             resolvers.nameservers = [self.dns[d % len(self.dns)]]
-            resolvers.timeout = 10.0
+            resolvers.timeout = 4.0
             try:
                 answers = dns.resolver.query(domain)
                 ips = [answer.address for answer in answers]
@@ -218,36 +149,25 @@ class BruteDomain(Domain):
             except:
                 pass
 
-    def brute(self):
+    def run_brute(self):
         print('\n子域名爆破...')
         self.domain_dict()
-        try:
-            url = 'this_subdomain_will_never_exist' + '.' + self.target
-            answers = dns.resolver.query(url)
-            ips = [answer.address for answer in answers]
-            for ip in ips:
-                self.dns_ip.append(ip)
-        except dns.resolver.NXDOMAIN:
-            pass
-        except dns.resolver.NoAnswer:
-            pass
-        threads = [gevent.spawn(self._brute, d) for d in range(self.thread_num)]
-        gevent.joinall(threads)
+        self.add_local_error_dns()
+        self._brute()
 
-        '''
-        print('\n二级子域名爆破...')
+        # 第一次移除错误域名
         self.domain = list(set([x for x in self.domains.keys()]))
-
         threads = [gevent.spawn(self.remove_error_subdomain, d) for d in range(int(self.thread_num / 2))]
         gevent.joinall(threads)
         for domain in self.removed_domains:
             self.domain.remove(domain)
 
+        print('\n二级子域名爆破...')
         self.sub_domain_dict()
-        threads = [gevent.spawn(self.sub_brute, d) for d in range(self.thread_num * 2)]
+        threads = [gevent.spawn(self.sub_brute, d) for d in range(self.thread_num)]
         gevent.joinall(threads)
 
-        
+        '''
         print('\nc段扫描...')
         self.c_check()
         threads = []
@@ -261,16 +181,53 @@ class BruteDomain(Domain):
 
         t2 = time.time()
         print('\nTotal time: ' + str(t2 - t1) + '\n')
-        
         '''
 
-    def _brute(self, d):
+    def add_local_error_dns(self):
+        try:
+            url = 'this_subdomain_will_never_exist' + '.' + self.target
+            answers = dns.resolver.query(url)
+            ips = [answer.address for answer in answers]
+            for ip in ips:
+                self.dns_ip.append(ip)
+        except dns.resolver.NXDOMAIN:
+            pass
+        except dns.resolver.NoAnswer:
+            pass
+
+    def _multiprocess_brute(self):
+        print('多进程测试')
+        p = Pool(self.thread_num)
+        for _ in [gevent.spawn(self.gevent_brute, d) for d in range(self.thread_num)]:
+            p.apply_async(_)
+        p.join()
+
+    def multiprocess_brute(self):
+        all_process = []
+        for _ in range(self.process_num):
+            p = Process(target=self._multiprocess_brute)
+            all_process.append(p)
+            p.start()
+        for p in all_process:
+            p.join()
+
+    def gipc_brute(self):
+        print('gipc多进程测试')
+        for _ in range(self.process_num):
+            g = gipc.start_process(self._brute)
+            g.join()
+
+    def _brute(self):
+        threads = [gevent.spawn(self.gevent_brute, d) for d in range(self.thread_num)]
+        gevent.joinall(threads)
+
+    def gevent_brute(self, d):
         while not self.queue.empty():
             sub = self.queue.get()
             domain = sub + '.' + self.target
             resolvers = dns.resolver.Resolver(configure=False)
             resolvers.nameservers = [self.dns[d % len(self.dns)]]
-            resolvers.lifetime = resolvers.timeout = 10.0
+            resolvers.lifetime = resolvers.timeout = 4.0
             try:
                 answers = resolvers.query(domain)
                 ips = [answer.address for answer in answers]
@@ -295,11 +252,16 @@ class BruteDomain(Domain):
                 continue
 
     def sub_brute(self, d):
+        """
+        多线程2级子域名扫描
+        :param d:
+        :return:
+        """
         while not self.queue.empty():
             domain = self.queue.get()
             resolvers = dns.resolver.Resolver(configure=False)
             resolvers.nameservers = [self.dns[d % len(self.dns)]]
-            resolvers.timeout = 10.0
+            resolvers.timeout = 4.0
             try:
                 sys.stdout.write('\r子域名数: '+str(len(self.domains.keys()))+'剩余爆破数: '+str(self.queue.qsize()))
                 sys.stdout.flush()
@@ -318,6 +280,8 @@ class BruteDomain(Domain):
             except dns.name.EmptyLabel:
                 continue
             except dns.exception.Timeout:
+                continue
+            except dns.resolver.NoNameservers:
                 continue
 
 
@@ -458,7 +422,7 @@ class SearchDomain(Domain):
     def bing(self):
         print('bing子域名查询')
         domains = []
-        total_page = 30
+        total_page = 25
         url = 'https://cn.bing.com/search?q=site:' + self.target + '&first='
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
         pattern = re.compile('<cite>(.*?)</strong>')
@@ -590,17 +554,15 @@ class AllDomain(SearchDomain, BruteDomain):
         t1 = time.time()
         super().run_search()
         super().run_brute()
-        super().run_title()
         super().run_clean()
-        self.appname = FingerPrint([x for x in self.domains.keys()]).run()
 
         t2 = time.time()
         total_time = str(t2 - t1)
-        super().output(total_time)
-        super().save2file()
-        return self.domains
+        # super().output(total_time)
+        # super().save2file()
+        return self.domains, self.target
         # Database().insert_subdomain(self.domains, self.title, self.appname, self.id)
 
 
 if __name__ == '__main__':
-    AllDomain('www.jit.edu.cn').run()
+    AllDomain('jit.edu.cn').run()
