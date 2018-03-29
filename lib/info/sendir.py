@@ -34,6 +34,11 @@ class SenDir:
                 for target in self.domains:
                     self.queue.put_nowait(target+eachline.strip())
 
+    def enqueue_error_page(self):
+        for target in self.domains:
+            url = target + '/.this_page_will_never_exists_lalala'
+            self.queue.put_nowait(url)
+
     def directory_brute(self):
         '''
         对网站进行敏感目录检测
@@ -63,21 +68,20 @@ class SenDir:
         判断有无错误界面，有则把该网站删除列表
         :return:
         '''
-        need_be_removed = []
-        for target in self.domains:
+        while not self.queue.empty():
+            url = self.queue.get()
             try:
-                url = target + '/.this_page_will_never_exists_lalala'
                 r = requests.get('http://' + url, timeout=2, allow_redirects=False)
                 # print(url, r.status_code)
                 if r.status_code in [200, 403]:
-                    need_be_removed.append(target)
+                    self.domains.remove(url.split('/')[0])
                     continue
 
                 for not_exist in ['', '/', '.config', '.sql', '.inc', '.bak', '.jsp', '.asp', '.aspx', '.php', '.html']:
-                    url = target + '/this_page_will_never_exists' + not_exist
+                    url = url + '/this_page_will_never_exists' + not_exist
                     r = requests.get('http://' + url, timeout=3, allow_redirects=False)
                     if r.status_code in [200, 403]:
-                        need_be_removed.append(target)
+                        self.domains.remove(url.split('/')[0])
                         break
 
             except requests.exceptions.ConnectTimeout:
@@ -89,14 +93,13 @@ class SenDir:
             except requests.exceptions.ReadTimeout:
                 continue
 
-        for removed in list(set(need_be_removed)):
-            self.domains.remove(removed)
-
     def run(self):
         print('\n# 检测敏感目录...')
-        self.error_page()
-        self.enqueue_dir()
+        self.enqueue_error_page()
+        threads = [gevent.spawn(self.error_page) for _ in range(self.thread_num)]
+        gevent.joinall(threads)
 
+        self.enqueue_dir()
         threads = [gevent.spawn(self.directory_brute) for _ in range(self.thread_num)]
         gevent.joinall(threads)
         # self.output()
