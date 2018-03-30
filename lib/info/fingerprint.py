@@ -4,7 +4,9 @@
 
 import sqlite3
 import re
-import requests
+import asyncio
+from asyncio import Queue
+import aiohttp
 import sys
 sys.path.append('C:\Code\SiteScan')
 
@@ -16,24 +18,23 @@ class FingerPrint:
         self.conn = sqlite3.connect(user_path + '/db/Rules.db')
         self.cursor = self.conn.cursor()
         self.targets = urls
+        self.loop = asyncio.get_event_loop()
+        self.queue = Queue(loop=self.loop)
+        self.thread_num = 100
         self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
         self.result = {}
         sql = 'select * from application'
         self.cursor.execute(sql)
         self.rules = self.cursor.fetchall()
 
-    def init(self):
-        if self.target.startswith('http://'):
-            self.target = self.target[7:]
-        elif self.target.startswith('https://'):
-            self.target = self.target[8:]
-        self.target = self.target.strip('/')
+    async def scan(self):
+        while not self.queue.empty():
+            finger_print = ''
+            target = await self.queue.get()
+            async with aiohttp.request('GET', 'http://' + target, headers=self.headers) as r:
+                text = await r.text()
+                headers = r.headers
 
-    def scan(self):
-        finger_print = ''
-        self.init()
-        try:
-            r = requests.get('http://' + self.target, timeout=3, headers=self.headers)
             for item in self.rules:
                 app = item[1]
                 rules = item[2].split(', ')
@@ -43,16 +44,16 @@ class FingerPrint:
                     place = rule[0]
                     _rule = rule[1]
                     if place in ['body']:
-                        if -1 != r.text.find(_rule):
+                        if -1 != text.find(_rule):
                             finger_print += app+' '
                             break
                     elif place in ['title']:
-                        if re.search('<title>.*?'+_rule+'.*?</title>', r.text):
+                        if re.search('<title>.*?'+_rule+'.*?</title>', text):
                             finger_print += app+' '
                             break
                     elif place in ['header', 'server']:
                         header = ''
-                        for key, value in r.headers.items():
+                        for key, value in headers.items():
                             header += key + ': ' + value + ' '
                         if re.search(re.escape(_rule), header, re.I):
                             finger_print += app+' '
@@ -69,30 +70,25 @@ class FingerPrint:
                             finger_print += app+' '
                             break
                     '''
-            self.result[self.target] = finger_print
-
-        except requests.exceptions.ConnectionError:
-            self.result[self.target] = ''
-        except requests.exceptions.ReadTimeout:
-            self.result[self.target] = ''
-        except requests.exceptions.TooManyRedirects:
-            self.result[self.target] = ''
-        except Exception as e:
-            self.result[self.target] = ''
-            print(self.target)
-            print(e)
+            self.result[target] = finger_print
 
     def run(self):
         print('服务指纹识别')
-        for self.target in self.targets:
-            self.scan()
-            # Database().insert_finger(self.target, self.result[self.target])
+        self.enqueue_url()
+        tasks = [self.scan() for _ in range(self.thread_num)]
+        self.loop.run_until_complete(asyncio.wait(tasks))
+        self.loop.close()
+
         return self.result
+
+    def enqueue_url(self):
+        for target in self.targets:
+            self.queue.put_nowait(target)
 
 
 if __name__ == '__main__':
-    result = FingerPrint(urls=['http://www.freebuf.com/', 'http://www.52pojie.cn', 'http://bbs.ichunqiu.com',
-                               'http://www.zoomeye.org', 'http://octfive.cn', 'http://demo.typecho.cc/', 'http://znyywlw.jit.edu.cn']).run()
+    result = FingerPrint(urls=['www.freebuf.com/', 'www.52pojie.cn', 'bbs.ichunqiu.com',
+                               'www.zoomeye.org', 'octfive.cn', 'demo.typecho.cc/', 'znyywlw.jit.edu.cn']).run()
     for site, fingerprint in result.items():
         print(site)
         for fp in fingerprint.split(' '):
