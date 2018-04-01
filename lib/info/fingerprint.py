@@ -18,6 +18,7 @@ class FingerPrint:
         self.conn = sqlite3.connect(user_path + '/db/Rules.db')
         self.cursor = self.conn.cursor()
         self.targets = urls
+        asyncio.set_event_loop(asyncio.new_event_loop())
         self.loop = asyncio.get_event_loop()
         self.queue = Queue(loop=self.loop)
         self.thread_num = 100
@@ -29,51 +30,57 @@ class FingerPrint:
 
     async def scan(self):
         while not self.queue.empty():
-            finger_print = ''
             target = await self.queue.get()
-            async with aiohttp.request('GET', 'http://' + target, headers=self.headers) as r:
-                text = await r.text()
-                headers = r.headers
+            try:
+                async with aiohttp.request('GET', 'http://' + target, headers=self.headers) as r:
+                    text = await r.text()
+                    headers = r.headers
+            except:
+                continue
+            await self.get_fingerprint(target, text, headers)
 
-            for item in self.rules:
-                app = item[1]
-                rules = item[2].split(', ')
-                # print(app, rule)
-                for rule in rules:
-                    rule = rule.split(':', 1)
-                    place = rule[0]
-                    _rule = rule[1]
-                    if place in ['body']:
-                        if -1 != text.find(_rule):
-                            finger_print += app+' '
-                            break
-                    elif place in ['title']:
-                        if re.search('<title>.*?'+_rule+'.*?</title>', text):
-                            finger_print += app+' '
-                            break
-                    elif place in ['header', 'server']:
-                        header = ''
-                        for key, value in headers.items():
-                            header += key + ': ' + value + ' '
-                        if re.search(re.escape(_rule), header, re.I):
-                            finger_print += app+' '
-                            break
-                    '''
-                    elif place in ['fullheader', 'fullbody']:
-                        if -1 != r.text.find(_rule):
-                            finger_print += app+' '
-                            break
-                        header = ''
-                        for key, value in r.headers.items():
-                            header += key + ': ' + value + ' '
-                        if re.search(re.escape(_rule), header, re.I):
-                            finger_print += app+' '
-                            break
-                    '''
-            self.result[target] = finger_print
+    async def get_fingerprint(self, target, text, headers):
+        finger_print = ''
+        for item in self.rules:
+            app = item[1]
+            rules = item[2].split(', ')
+            # print(app, rule)
+            for rule in rules:
+                rule = rule.split(':', 1)
+                place = rule[0]
+                _rule = rule[1]
+                if place in ['body']:
+                    if -1 != text.find(_rule):
+                        finger_print += app + ' '
+                        break
+                elif place in ['title']:
+                    if re.search('<title>.*?' + _rule + '.*?</title>', text):
+                        finger_print += app + ' '
+                        break
+                elif place in ['header', 'server']:
+                    header = ''
+                    for key, value in headers.items():
+                        header += key + ': ' + value + ' '
+                    if re.search(re.escape(_rule), header, re.I):
+                        finger_print += app + ' '
+                        break
+                '''
+                elif place in ['fullheader', 'fullbody']:
+                    if -1 != r.text.find(_rule):
+                        finger_print += app+' '
+                        break
+                    header = ''
+                    for key, value in r.headers.items():
+                        header += key + ': ' + value + ' '
+                    if re.search(re.escape(_rule), header, re.I):
+                        finger_print += app+' '
+                        break
+                '''
+        self.result[target] = finger_print
 
     def run(self):
         print('服务指纹识别')
+        self.conn.close()
         self.enqueue_url()
         tasks = [self.scan() for _ in range(self.thread_num)]
         self.loop.run_until_complete(asyncio.wait(tasks))

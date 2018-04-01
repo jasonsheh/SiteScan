@@ -17,9 +17,9 @@ class SaveToFile:
         with open(user_path+'./result/'+self.target+'.txt', 'w', encoding='utf-8') as file:
             for url, ips in sorted(self.domains.items()):
                 file.writelines('\n{}\t{}\n'.format(url, ips))
-                if self.fingerprint[url]:
+                if url in self.fingerprint.keys():
                     file.writelines('\t' + self.fingerprint[url] + '\n')
-                if self.title[url]:
+                if url in self.title.keys():
                     file.writelines('\t'+self.title[url]+'\n')
 
                 if url in self.dirs.keys():

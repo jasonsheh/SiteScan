@@ -13,6 +13,7 @@ class GetTitle:
         self.domains = domains
         self.loop = asyncio.get_event_loop()
         self.queue = Queue(loop=self.loop)
+        self.session = aiohttp.ClientSession(loop=self.loop)
         self.thread_num = 100
         self.title = {}
 
@@ -21,9 +22,13 @@ class GetTitle:
         self.enqueue_title()
         tasks = [self.async_get_title() for _ in range(self.thread_num)]
         self.loop.run_until_complete(asyncio.wait(tasks))
+        self.loop.run_until_complete(asyncio.wait([self.close()]))
         self.loop.close()
 
         return self.title
+
+    async def close(self):
+        await self.session.close()
 
     def enqueue_title(self):
         for url in self.domains:
@@ -37,7 +42,7 @@ class GetTitle:
 
     async def _get_title(self, url):
         try:
-            async with aiohttp.request('GET', 'http://' + url) as r:
+            async with self.session.get('http://' + url) as r:
                 text = await r.text()
                 encoding = r.get_encoding()
             if not text:
@@ -65,14 +70,17 @@ class GetTitle:
                 'utf-8', 'gb2312', 'GB2312', 'GBK', 'gbk2312', 'gbk']:
                 self.title[url] = re.findall('<title.*?>(.*?)</title.*?>', text, re.I | re.S)[0].strip()
                 return True
-            elif re.findall('<title.*?>(.*?)</title.*?>', r.text, re.I | re.S):
+            elif re.findall('<title.*?>(.*?)</title.*?>', text, re.I | re.S):
                 self.title[url] = re.findall('<title.*?>(.*?)</title.*?>', text, re.I | re.S)[0].encode(
-                    r.encoding).decode('utf-8').strip()
+                    encoding).decode('utf-8').strip()
                 return True
             else:
                 self.title[url] = ''
                 return True
                 # print(url, self.title[url])
+        except aiohttp.client_exceptions.ClientConnectorSSLError:
+            self.title[url] = ''
+            return False
         except AttributeError:
             print(url)
             return False
@@ -82,11 +90,8 @@ class GetTitle:
         except UnicodeDecodeError:
             self.title[url] = ''
             return False
-        except Exception as e:
-            self.title[url] = ''
-            print(url + '\t' + e)
 
 
 if __name__ == '__main__':
-    title = GetTitle(['octfive.cn']).run()
+    title = GetTitle(['hky.njxzc.edu.cn', 'bwc.njxzc.edu.cn', 'email.njxzc.edu.cn']).run()
     print(title)

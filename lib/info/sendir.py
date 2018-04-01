@@ -20,7 +20,9 @@ class SenDir:
     def __init__(self, domains, id=''):
         self.domains = domains
         self.id = id
+        asyncio.set_event_loop(asyncio.new_event_loop())
         self.loop = asyncio.get_event_loop()
+        self.session = aiohttp.ClientSession(loop=self.loop)
         self.queue = Queue(loop=self.loop)
         self.thread_num = 200
         self.sensitive = {}
@@ -44,10 +46,17 @@ class SenDir:
         '''
         while not self.queue.empty():
             url = await self.queue.get()
-            sys.stdout.write('\r目录扫描数: ' + str(self.queue.qsize()))
+            sys.stdout.write('\r目录扫描剩余数: ' + str(self.queue.qsize()))
             sys.stdout.flush()
-            async with aiohttp.request('GET', 'http://' + url) as r:
-                status_code = r.status
+            try:
+                async with self.session.get('http://' + url, timeout=3) as r:
+                    status_code = r.status
+            except aiohttp.client_exceptions.ClientOSError:
+                continue
+            except aiohttp.client_exceptions.ServerDisconnectedError:
+                continue
+            except asyncio.TimeoutError:
+                continue
             if status_code in [200, 403]:
                 if url.split('/')[0] not in self.sensitive.keys():
                     self.sensitive[url.split('/')[0]] = [url + '\t' + str(status_code)]
@@ -61,29 +70,57 @@ class SenDir:
         '''
         while not self.queue.empty():
             url = await self.queue.get()
-            async with aiohttp.request('GET', 'http://' + url) as r:
-                status_code = r.status
+            sys.stdout.write('\r错误页面剩余数: ' + str(self.queue.qsize()))
+            sys.stdout.flush()
+            try:
+                async with self.session.get('http://' + url, timeout=3) as r:
+                    status_code = r.status
+            except aiohttp.client_exceptions.ClientOSError:
+                self.domains.remove(url.split('/')[0])
+                continue
+            except aiohttp.client_exceptions.ServerDisconnectedError:
+                self.domains.remove(url.split('/')[0])
+                continue
+            except asyncio.TimeoutError:
+                continue
+
             if status_code in [200, 403]:
                 self.domains.remove(url.split('/')[0])
                 continue
 
             for not_exist in ['', '/', '.config', '.sql', '.inc', '.bak', '.jsp', '.asp', '.aspx', '.php', '.html']:
                 url = url + '/this_page_will_never_exists' + not_exist
-                async with aiohttp.request('GET', 'http://' + url) as r:
-                    status_code = r.status
+                try:
+                    async with self.session.get('http://' + url, timeout=3) as r:
+                        status_code = r.status
+                except aiohttp.client_exceptions.ClientOSError:
+                    self.domains.remove(url.split('/')[0])
+                    break
+                except aiohttp.client_exceptions.ServerDisconnectedError:
+                    self.domains.remove(url.split('/')[0])
+                    break
+                except asyncio.TimeoutError:
+                    self.domains.remove(url.split('/')[0])
+                    break
                 if status_code in [200, 403]:
                     self.domains.remove(url.split('/')[0])
                     break
 
+    async def close(self):
+        await self.session.close()
+
     def run(self):
-        print('\n# 检测敏感目录...')
+        print('移除错误页面...')
         self.enqueue_error_page()
         tasks = [self.error_page() for _ in range(self.thread_num)]
         self.loop.run_until_complete(asyncio.wait(tasks))
 
+        print('\n检测敏感目录...')
         self.enqueue_dir()
         tasks = [self.directory_brute() for _ in range(self.thread_num)]
         self.loop.run_until_complete(asyncio.wait(tasks))
+
+        self.loop.run_until_complete(asyncio.wait([self.close()]))
         self.loop.close()
 
         # Database().insert_sendir(self.sensitive, self.id)
@@ -91,4 +128,4 @@ class SenDir:
 
 
 if __name__ == '__main__':
-    SenDir(['jsclx.jit.edu.cn']).run()
+    SenDir(['green.jit.edu.cn', 'www.jit.edu.cn']).run()
