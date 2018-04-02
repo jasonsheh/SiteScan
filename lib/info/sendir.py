@@ -57,6 +57,8 @@ class SenDir:
                 continue
             except asyncio.TimeoutError:
                 continue
+            except AttributeError:
+                continue
             if status_code in [200, 403]:
                 if url.split('/')[0] not in self.sensitive.keys():
                     self.sensitive[url.split('/')[0]] = [url + '\t' + str(status_code)]

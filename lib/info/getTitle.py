@@ -78,6 +78,9 @@ class GetTitle:
                 self.title[url] = ''
                 return True
                 # print(url, self.title[url])
+        except aiohttp.client_exceptions.ClientConnectorError:
+            self.title[url] = ''
+            return False
         except aiohttp.client_exceptions.ClientConnectorSSLError:
             self.title[url] = ''
             return False
@@ -93,5 +96,5 @@ class GetTitle:
 
 
 if __name__ == '__main__':
-    title = GetTitle(['hky.njxzc.edu.cn', 'bwc.njxzc.edu.cn', 'email.njxzc.edu.cn']).run()
+    title = GetTitle(['logadmin.flight.qunar.com']).run()
     print(title)

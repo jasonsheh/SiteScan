@@ -9,6 +9,8 @@ import requests
 import time
 import socket
 import re
+import asyncio
+import aiohttp
 from multiprocessing import Pool, Process
 import gipc
 import gevent
@@ -100,6 +102,7 @@ class Domain(object):
                 self.removed_domains.append(domain)
                 continue
             except:
+                self.removed_domains.append(domain)
                 continue
 
 
@@ -355,8 +358,11 @@ class SearchDomain(Domain):
         url = 'https://www.threatcrowd.org/searchApi/v2/domain/report/'
         params = {'domain': self.target}
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
-        r = requests.get(url, params=params, headers=headers)
-        self.get_ip(r.json()['subdomains'])
+        try:
+            r = requests.get(url, params=params, headers=headers)
+            self.get_ip(r.json()['subdomains'])
+        except requests.exceptions.ConnectionError:
+            pass
 
     def virustotal(self):
         print('virustotal子域名查询')

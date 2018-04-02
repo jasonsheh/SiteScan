@@ -33,7 +33,7 @@ print(''' ___) | | ||  __/___) | (_| (_| | | | |''')
 print('''|____/|_|\__\___|____/ \___\__,_|_| |_|''')
 print('\t\t written by Jason_Sheh')
 t1 = time.time()
-9
+
 try:
     if args.info:
         info_collect(init(args.info))
