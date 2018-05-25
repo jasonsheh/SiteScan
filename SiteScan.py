@@ -2,22 +2,29 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
-from lib.factory import init
+from lib.factory import init_domain
 from lib.factory import info_collect
 from lib.factory import vul_scan
+from lib.factory import service_scan
+from lib.factory import all_scan
 from lib.factory import git_scan
 
 import sys
 import argparse
 import time
 
-sys.path.append('C:\Code\SiteScan')
+from setting import user_path
+sys.path.append(user_path)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--info",
                     help="collect info related to this domain")
 parser.add_argument('-s', "--scan",
                     help='find vulnerabilities related to this domain')
+parser.add_argument('-p', "--port",
+                    help='find port-related vulnerabilities on this ip')
+parser.add_argument('-a', "--all",
+                    help='auto scan all related website')
 parser.add_argument('-g', "--git",
                     help='find leaked info form Github')
 parser.add_argument('--sub', default="false",
@@ -36,13 +43,18 @@ t1 = time.time()
 
 try:
     if args.info:
-        info_collect(init(args.info))
+        info_collect(init_domain(args.info))
     if args.scan:
-        vul_scan(args.scan)
+        vul_scan(init_domain(args.scan))
+    if args.port:
+        service_scan(args.port)
+    if args.all:
+        all_scan(args.all)
     if args.git:
         git_scan(args.git)
     t2 = time.time()
     print('\nTotal time: ' + str(t2 - t1))
+    sys.exit(0)
 except KeyboardInterrupt:
     print('用户中断')
     sys.exit(0)
