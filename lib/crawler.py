@@ -6,26 +6,32 @@ import requests
 import re
 import threading
 import queue
-import time
 from urllib.parse import urlparse
 from selenium import webdriver
+
+from utils.timer import timer
+
+from typing import List, Dict
 
 import sys
 sys.path.append('C:\Code\SiteScan')
 
 
 class Crawler:
-    def __init__(self, target, dynamic=0):
+    def __init__(self, target: str, dynamic: bool) -> None:
         self.target = target
         self.dynamic = dynamic
-        self.url_set = []  # 存放所有链接
-        self.urls = []  # 存放不重复规则链接
-        self.sitemap = []
+        self.url_set: List[str] = []  # 存放所有链接
+        self.urls: List[str] = []  # 存放不重复规则链接
+        self.sitemap: List[str] = []
         self.q = queue.Queue(0)
-        self.url_rule = []
-        self.thread_num = 4
-        self.header = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'}
+        self.url_rule: List[str] = []
+        self.thread_num: int = 5
+        self.non_html_protocol: List[str] = ['ftp://', 'mailto:', 'javascript:']
+        self.static_file_type: List[str] = ['css', 'jpg', 'JPG', 'png', 'pdf', 'js', 'gif', 'xls', 'xlsx', 'doc', 'docx', 'rar', 'ico', 'ppt']
+        self.header: Dict = {'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100101 Firefox/22.0'}
 
+        # 对chrome进行配置
         self.chrome_options = webdriver.ChromeOptions()
         self.chrome_options.add_argument("--headless")
         self.chrome_options.add_argument("--disable-gpu")
@@ -39,25 +45,28 @@ class Crawler:
         self.chrome_options.experimental_options["prefs"] = chrome_prefs
 
     def init(self):
+        """
+        http(s)://self.target/
+        :return:
+        """
         if not self.target.startswith('http://') and not self.target.startswith('https://'):
             self.target = 'http://' + self.target
         if not self.target.endswith('/'):
             self.target += '/'
 
-    def dynamic_conn(self, url, driver):
+    def dynamic_conn(self, url, driver) -> List[str]:
         """
         动态连接,返回所有链接
-        :param url
-        :param driver:
-        :return:
         """
         res = []
         driver.get(url)
         try:
+            # 点击所有按钮
             buttons = driver.find_elements_by_xpath("//*[@type='button'@onclick]")
             for button in buttons:
                 button.click()
-        except:
+        except Exception as e:
+            print(e)
             pass
 
         try:
@@ -73,19 +82,24 @@ class Crawler:
                     _url += text.get_attribute("name")+'='+text.get_attribute("value")+'&'
 
                 res.append(_url[:-1])
-        except:
+        except Exception as e:
+            print(e)
             pass
 
         try:
             frames = driver.find_elements_by_xpath("//iframe[@src]")
             for frame in frames:
                 res.append(frame.get_attribute("src"))
-        except:
+        except Exception as e:
+            print(e)
             pass
 
-        a = driver.find_elements_by_tag_name('a')
-        for _a in a:
-            res.append(_a.get_attribute("href"))
+        try:
+            a = driver.find_elements_by_tag_name('a')
+            res += [_.get_attribute("href") for _ in a]
+        except Exception as e:
+            print(e)
+            pass
 
         return res
 
@@ -93,6 +107,9 @@ class Crawler:
         try:
             r = requests.get(url, headers=self.header)
         except requests.exceptions.ChunkedEncodingError:
+            return []
+        except Exception as e:
+            print(e)
             return []
         pattern = re.compile(r'href=[\'|\"](.*?)[\'|\"]')
         return re.findall(pattern, r.text)
@@ -105,7 +122,6 @@ class Crawler:
                 driver.quit()
             else:
                 res = self.static_conn(self.target)
-            # self.target = r.url
         except requests.exceptions.ConnectionError:
             return self.url_set
         except requests.exceptions.ReadTimeout:
@@ -123,36 +139,40 @@ class Crawler:
         """
         res = list(set(res))
         new_url = []
-        if res:
-            for url in res:  # 添加url处理规则
-                if not url:
-                    continue
-                if url.startswith('//'):
-                    url = 'http:' + url
-                url = url.strip('/').strip('.')
-                if url.startswith(' '):
-                    url = url[1:]
-
-                if (url.startswith('http://') or url.startswith('https://')) and not url.startswith(self.target):
-                    # 其他网站的链接
-                    continue
-                if url.startswith('ftp://') or url.startswith('mailto:'):
-                    # 非web服务
-                    continue
-                if re.search('\.(css|jpg|JPG|png|pdf|js|gif|xls|doc|docx|rar|ico|ppt)$', url) or re.search('javascript:', url):
-                    # 无用文件类型
-                    continue
-                if url.startswith(self.target.split('//')[1]):
-                    url = self.target.split('//')[0] + url
-                if not url.startswith('http:') and not url.startswith('https:'):
-                    url = self.target + url
-                if url.startswith(self.target):
-                    new_url.append(url)
-                # print(url)
-            new_url = list(set(new_url))
-            return new_url
-        else:
+        if not res:
             return []
+        for url in res:  # 添加url处理规则
+            if not url:
+                continue
+            if url.startswith('//'):
+                url = 'http:' + url
+            url = url.strip('/').strip('.').strip()
+            if (url.startswith('http://') or url.startswith('https://')) and not url.startswith(self.target):
+                # 其他网站的链接
+                continue
+
+            static = False
+            for _ in self.non_html_protocol:
+                if url.startswith(_):
+                    static = True
+            if static:
+                continue
+
+            static = False
+            for _ in self.static_file_type:
+                if url.endswith(_):
+                    static = True
+            if static:
+                continue
+
+            if url.startswith(self.target.split('//')[1]):
+                url = self.target.split('//')[0] + url
+            if not url.startswith('http:') and not url.startswith('https:'):
+                url = self.target + url
+            if url.startswith(self.target):
+                new_url.append(url)
+            # print(url)
+        return list(set(new_url))
 
     def filter(self, res):
         """
@@ -196,7 +216,7 @@ class Crawler:
     def dynamic_crawler(self):
         driver = webdriver.Chrome(chrome_options=self.chrome_options)
         while not self.q.empty():
-            sys.stdout.write('\r链接数: ' + str(len(self.url_set)) + '队列剩余: ' + str(self.q.qsize()))
+            sys.stdout.write('\r链接数:{}, 队列剩余:{}'.format(len(self.url_set), self.q.qsize()))
             sys.stdout.flush()
             url = self.q.get()
             new_res = self.dynamic_conn(url, driver)
@@ -208,7 +228,7 @@ class Crawler:
 
     def static_crawler(self):
         while not self.q.empty():
-            sys.stdout.write('\r链接数: ' + str(len(self.url_set)) + '队列剩余: ' + str(self.q.qsize()))
+            sys.stdout.write('\r链接数:{}, 队列剩余:{}'.format(len(self.url_set), self.q.qsize()))
             sys.stdout.flush()
             url = self.q.get()
             new_res = self.static_conn(url)
@@ -218,24 +238,22 @@ class Crawler:
             self.filter(res)
 
     def output(self):
-        print('\n# 扫描链接总数:' + str(len(self.url_set)))
-
+        print('\n# 扫描链接总数:{}'.format(len(self.url_set)))
         for url in sorted(self.urls):
             print(url)
 
+    @timer
     def run(self):
         self.init()
-        print('链接爬取')
-        t1 = time.time()
         self.init_crawl()
 
         threads = []
         if self.dynamic:
-            for i in range(int(self.thread_num)):
+            for i in range(self.thread_num):
                 t = threading.Thread(target=self.dynamic_crawler)
                 threads.append(t)
         else:
-            for i in range(int(self.thread_num)):
+            for i in range(self.thread_num*2):
                 t = threading.Thread(target=self.static_crawler)
                 threads.append(t)
         for item in threads:
@@ -243,8 +261,6 @@ class Crawler:
         for item in threads:
             item.join()
 
-        t2 = time.time()
-        print('\n爬取链接总时间: ', t2-t1)
         self.output()
 
         return self.urls
@@ -259,5 +275,5 @@ class Crawler:
 
 
 if __name__ == '__main__':
-    Crawler(target='http://jr.tuniu.com', dynamic=1).run()
+    Crawler(target='http://it.jit.edu.cn/', dynamic=False).run()
 

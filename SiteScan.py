@@ -9,9 +9,10 @@ from lib.factory import service_scan
 from lib.factory import all_scan
 from lib.factory import git_scan
 
+from utils.timer import timer
+
 import sys
 import argparse
-import time
 
 from setting import user_path
 sys.path.append(user_path)
@@ -39,23 +40,25 @@ print('''\___ \| | __/ _ \___ \ / __/ _` | '_  \ ''')
 print(''' ___) | | ||  __/___) | (_| (_| | | | |''')
 print('''|____/|_|\__\___|____/ \___\__,_|_| |_|''')
 print('\t\t written by Jason_Sheh')
-t1 = time.time()
 
-try:
-    if args.info:
-        info_collect(init_domain(args.info))
-    if args.scan:
-        vul_scan(init_domain(args.scan))
-    if args.port:
-        service_scan(args.port)
-    if args.all:
-        all_scan(args.all)
-    if args.git:
-        git_scan(args.git)
-    t2 = time.time()
-    print('\nTotal time: ' + str(t2 - t1))
-    sys.exit(0)
-except KeyboardInterrupt:
-    print('用户中断')
-    sys.exit(0)
 
+@timer
+def main():
+    try:
+        if args.info:
+            info_collect(init_domain(args.info))
+        if args.scan:
+            vul_scan(init_domain(args.scan))
+        if args.port:
+            service_scan(args.port)
+        if args.all:
+            all_scan(args.all)
+        if args.git:
+            git_scan(args.git)
+    except KeyboardInterrupt:
+        print('用户中断')
+        sys.exit(0)
+
+
+if __name__ == '__main__':
+    main()
