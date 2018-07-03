@@ -130,10 +130,3 @@ def add_task():
         elif request.form.get('sitescan'):
             site_scan.delay(request.form['sendir'])
             return redirect('/index')
-
-
-if __name__ == '__main__':
-    try:
-        app.run()
-    except KeyboardInterrupt:
-        sys.exit()
