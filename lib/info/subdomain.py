@@ -2,7 +2,6 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
-import json
 import dns.resolver
 import sys
 import requests
@@ -11,119 +10,55 @@ import socket
 import re
 import asyncio
 import aiohttp
-from multiprocessing import Pool, Process
-import gipc
 import gevent
 from gevent.queue import Queue
 from gevent import monkey
 monkey.patch_all()
 
-'''
-from database.database import Database
-'''
-from setting import user_path
+from typing import List, Dict
+from utils.timer import timer
+from setting import user_path, user_agent
 
 
 class Domain(object):
-    def __init__(self, target, id=''):
-        self.target = target
-        self.id = id
-        self.ip = []
-        self.dns_ip = ['1.1.1.1', '127.0.0.1', '0.0.0.0', '202.102.110.203', '202.102.110.204',
-                       '220.250.64.225']
-        self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+    def __init__(self, target, info_id=0):
+        self.info_id: int = info_id
+        self.target: str = target
+        self.thread_num: int = 200
+        self.ip: List = []
+        self.error_ip: List = []
+        self.headers: Dict = {'User-Agent': user_agent}
+        self.removed_prefix: List = ['http://www.', 'https://www.', 'https://', 'https://', 'www.']
         self.queue = Queue()
-        self.thread_num = 200
         self.c_count = {}
         self.domain = []
         self.domains = {}
         self.removed_domains = []
-        self.init()
 
-    def init(self):
-        if self.target.startswith('http://www.'):
-            self.target = self.target[11:]
-        elif self.target.startswith('https://www.'):
-            self.target = self.target[12:]
-        elif self.target.startswith('http://'):
-            self.target = self.target[7:]
-        elif self.target.startswith('https://'):
-            self.target = self.target[8:]
-        elif self.target.startswith('www.'):
-            self.target = self.target[4:]
-        self.target = self.target.strip('/')
-
-    # def output(self, total_time):
-    #     for url, ips in sorted(self.domains.items()):
-    #         print(url + ':\t' + self.title[url])
-    #         for ip in ips:
-    #             print('\t' + ip)
-    #     print(total_time)
-
-    # def save2file(self):
-    #     with open(user_path+'./result/'+self.target+'.txt', 'w', encoding='utf-8') as file:
-    #         for url, ips in sorted(self.domains.items()):
-    #             file.writelines(url + ':\t' + self.title[url] + '\n')
-    #             for ip in ips:
-    #                 file.writelines('\t' + ip + '\n')
-
-    def run_clean(self):
-        print('\n清除无法访问子域名')
-        self.enqueue_domain()
-        self.removed_domains = []
-        threads = [gevent.spawn(self.remove_error_domain) for _ in range(self.thread_num)]
-        gevent.joinall(threads)
-
-        for domain in self.removed_domains:
-            self.domains.pop(domain)
-
-    def enqueue_domain(self):
-        for domain in [x for x in self.domains.keys()]:
-            self.queue.put_nowait(domain)
-
-    def remove_error_domain(self):
-        while not self.queue.empty():
-            domain = self.queue.get()
-            try:
-                r = requests.get('http://' + domain, timeout=2, allow_redirects=False)
-                if r.status_code in [400, 403, 500]:
-                    self.removed_domains.append(domain)
-                    continue
-            except requests.exceptions.ConnectTimeout:
-                self.removed_domains.append(domain)
-                continue
-            except requests.exceptions.ConnectionError:
-                self.removed_domains.append(domain)
-                continue
-            except requests.exceptions.TooManyRedirects:
-                self.removed_domains.append(domain)
-                continue
-            except requests.exceptions.ReadTimeout:
-                self.removed_domains.append(domain)
-                continue
-            except:
-                self.removed_domains.append(domain)
-                continue
+    def output(self):
+        for url, ips in sorted(self.domains.items()):
+            print(url)
+            for ip in ips:
+                print('\t' + ip)
 
 
 class BruteDomain(Domain):
-    def __init__(self, target, id=''):
-        super().__init__(target, id)
-        self.thread_num = 200
+    def __init__(self, target, info_id=0):
+        super().__init__(target, info_id)
         self.process_num = 4
-        self.dns = ['223.5.5.5', '223.6.6.6', '119.29.29.29', '182.254.116.116', '114.114.114.114', '114.114.115.115',
-                    '123.125.81.6', '114.114.114.119', '114.114.115.119', '180.76.76.76']
+        self.dns = ['119.29.29.29', '119.28.28.28', '223.5.5.5', '223.6.6.6', '182.254.116.116', '114.114.114.114',
+                    '114.114.115.115', '114.114.114.119', '114.114.115.119', '180.76.76.76']
 
     def domain_dict(self):
-        with open(user_path + '/dict/domain.txt', 'r') as dirt:
-            for i in dirt:
+        with open(user_path + '/dict/domain.txt', 'r') as dicts:
+            for i in dicts:
                 self.queue.put_nowait(i.strip())
 
     def sub_domain_dict(self):
-        with open(user_path + '/dict/sub_domain.txt', 'r') as dirt:
-            for i in dirt:
+        with open(user_path + '/dict/sub_domain.txt', 'r') as dicts:
+            for i in dicts:
                 for domain in self.domain:
-                    self.queue.put_nowait(i.strip()+'.'+domain)
+                    self.queue.put_nowait('{}.{}'.format(i.strip(), domain))
 
     def sub_domian(self):
         for domain in self.domain:
@@ -131,8 +66,7 @@ class BruteDomain(Domain):
 
     def remove_error_subdomain(self, d):
         while not self.queue.empty():
-            domain = self.queue.get()
-            domain = 'this_subdomain_will_never_exist' + '.' + domain
+            domain = 'this_subdomain_will_never_exist.{}'.format(self.queue.get())
             resolvers = dns.resolver.Resolver(configure=False)
             resolvers.nameservers = [self.dns[d % len(self.dns)]]
             resolvers.timeout = 4.0
@@ -140,7 +74,7 @@ class BruteDomain(Domain):
                 answers = dns.resolver.query(domain)
                 ips = [answer.address for answer in answers]
                 for ip in ips:
-                    if ip in self.dns_ip:
+                    if ip in self.error_ip:
                         continue
                     self.removed_domains.append(domain)
             except dns.resolver.NXDOMAIN:
@@ -148,8 +82,6 @@ class BruteDomain(Domain):
             except dns.resolver.NoAnswer:
                 pass
             except dns.exception.Timeout:
-                pass
-            except:
                 pass
 
     def run_brute(self):
@@ -188,37 +120,17 @@ class BruteDomain(Domain):
 
     def add_local_error_dns(self):
         try:
-            url = 'this_subdomain_will_never_exist' + '.' + self.target
+            url = 'this_subdomain_will_never_exist.{}'.format(self.target)
             answers = dns.resolver.query(url)
             ips = [answer.address for answer in answers]
             for ip in ips:
-                self.dns_ip.append(ip)
+                self.error_ip.append(ip)
         except dns.resolver.NXDOMAIN:
             pass
         except dns.resolver.NoAnswer:
             pass
-
-    def _multiprocess_brute(self):
-        print('多进程测试')
-        p = Pool(self.thread_num)
-        for _ in [gevent.spawn(self.gevent_brute, d) for d in range(self.thread_num)]:
-            p.apply_async(_)
-        p.join()
-
-    def multiprocess_brute(self):
-        all_process = []
-        for _ in range(self.process_num):
-            p = Process(target=self._multiprocess_brute)
-            all_process.append(p)
-            p.start()
-        for p in all_process:
-            p.join()
-
-    def gipc_brute(self):
-        print('gipc多进程测试')
-        for _ in range(self.process_num):
-            g = gipc.start_process(self._brute)
-            g.join()
+        except dns.exception.Timeout:
+            pass
 
     def _brute(self):
         threads = [gevent.spawn(self.gevent_brute, d) for d in range(self.thread_num)]
@@ -235,7 +147,7 @@ class BruteDomain(Domain):
                 answers = resolvers.query(domain)
                 ips = [answer.address for answer in answers]
                 for ip in ips:
-                    if ip not in self.dns_ip:
+                    if ip not in self.error_ip:
                         if domain in self.domains.keys() and ip not in self.domains[domain]:
                             self.domains[domain].append(ip)
                         else:
@@ -271,7 +183,7 @@ class BruteDomain(Domain):
                 answers = resolvers.query(domain)
                 ips = [answer.address for answer in answers]
                 for ip in ips:
-                    if ip not in self.dns_ip:
+                    if ip not in self.error_ip:
                         if domain in self.domains.keys() and ip not in self.domains[domain]:
                             self.domains[domain].append(ip)
                         else:
@@ -289,78 +201,57 @@ class BruteDomain(Domain):
 
 
 class SearchDomain(Domain):
-    def __init__(self, target, id=''):
-        super().__init__(target, id)
+    # 从搜索引擎或api中获取子域名
+    def __init__(self, target, info_id=''):
+        super().__init__(target, info_id)
+        self.search_depth: int = 15
 
     def run_search(self):
         self.ilink()
-        # self.chaxunla()
-        # self.threatcrowd()
+        self.crt_sh()
         self.virustotal()
-        self.yahoo()
         self.baidu()
         self.bing()
         self.so360()
 
         self.remove_spread_record()
-        # print(self.domains)
+        # for test
+        print(self.domains)
         return self.domains
 
     def get_ip(self, domains):
         for domain in domains:
             try:
-                ip = socket.gethostbyname(domain)
-                if domain in self.domains.keys() and ip not in self.domains[domain]:
-                    self.domains[domain].append(ip)
-                else:
+                if domain not in self.domains.keys():
+                    ip = socket.gethostbyname(domain)
                     self.domains[domain] = [ip]
+                else:
+                    continue
             except socket.gaierror:
                 continue
 
     def ilink(self):
         print('ilink子域名查询')
-        url = 'http://i.links.cn/subdomain/'
-        data = {'domain': self.target, 'b2': '1', 'b3': '1', 'b4': '1'}
+        url: str = 'http://i.links.cn/subdomain/'
+        data: Dict = {'domain': self.target, 'b2': '1', 'b3': '1', 'b4': '1'}
         try:
-            r = requests.post(url, data=data)
+            r = requests.post(url, data=data, headers=self.headers)
             pattern = re.compile('<div class=domain><input.*?value="http://(.*?)">')
             domains = re.findall(pattern, r.text)
             self.get_ip(domains)
         except requests.exceptions.ConnectionError:
             self.domains = {}
 
-    def chaxunla(self):
-        print('chaxunla子域名查询')
-        url = 'http://api.chaxun.la/toolsAPI/getdomain/'
-        data = {'k': 'www.' + self.target, 'action': 'moreson'}
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
-        r = requests.post(url, data=data, headers=headers)
-        print(r.text)
-        url = json.loads(r.text)
-        if url['status'] == 0:
-            print('\t域名流量太小或者域名错误')
-        elif url['status'] == 3:
-            print('\t请求次数过多')
-        else:
-            list = url['data']
-            for domain in list:
-                try:
-                    ip = socket.gethostbyname(domain['domain'])
-                    if domain['domain'] in self.domains.keys() and ip not in self.domains[domain['domain']]:
-                        self.domains[domain['domain']].append(ip)
-                    else:
-                        self.domains[domain['domain']] = [ip]
-                except socket.gaierror:
-                    continue
-
-    def threatcrowd(self):
-        print('threatcrowd子域名查询')
-        url = 'https://www.threatcrowd.org/searchApi/v2/domain/report/'
-        params = {'domain': self.target}
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+    def crt_sh(self):
+        print('crt.sh子域名查询')
+        url = 'https://crt.sh/?q=%.{}'.format(self.target)
         try:
-            r = requests.get(url, params=params, headers=headers)
-            self.get_ip(r.json()['subdomains'])
+            r = requests.get(url)
+            pattern = re.compile("<TD>(.*?"+self.target+")</TD>")
+            text = r.text.replace('*.', '')
+            domains = re.findall(pattern, text)
+            domains = list(set(domains))
+            self.get_ip(domains)
         except requests.exceptions.ConnectionError:
             pass
 
@@ -371,119 +262,45 @@ class SearchDomain(Domain):
         r = requests.get(url, params=params)
         self.get_ip(r.json()['subdomains'])
 
-    def yahoo(self):
-        print('yahoo子域名查询')
-        domains = []
-        total_page = 20
-        url = 'https://search.yahoo.com/search?p = site:' + self.target + '&pz=10&b='
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
-        pattern = re.compile('<span class=" fz-ms fw-m fc-12th wr-bw lh-17">(.*?)</b>')
-        for page in range(1, total_page):
-            r = requests.get(url + str(page+1), headers=headers)
-            domains += re.findall(pattern, r.text)
-        domains = list(set(domains))
-        removed = []
-        for domain in domains:
-            domains[domains.index(domain)] = domain.replace('<b>', '')
-
-        for domain in domains:
-            if '/' in domain:
-                domains[domains.index(domain)] = domain.split('/')[0]
-                continue
-            if not domain.endswith(self.target):
-                removed.append(domain)
-        domains = list(set(domains))
-        for remove in removed:
-            domains.remove(remove)
-
-        self.get_ip(domains)
-
     def baidu(self):
-        print('baidu子域名查询')
+        print('Baidu子域名查询')
         domains = []
-        total_page = 30
-        url = 'http://www.baidu.com/s?wd=site:'+self.target+'&pn='
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+        url = 'http://www.baidu.com/s?wd=site:{}&pn='.format(self.target)
         pattern = re.compile('<a.*?class="c-showurl".*?>(.*?)/&nbsp;</a>')
-        for page in range(1, total_page):
-            r = requests.get(url+str(page), headers=headers)
+        for page in range(1, self.search_depth):
+            r = requests.get(url+str(page), headers=self.headers)
             domains += re.findall(pattern, r.text)
-        domains = list(set(domains))
-        removed = []
-        for domain in domains:
-            if domain.startswith('https://'):
-                domains[domains.index(domain)] = domain.replace('https://', '')
-                continue
-            elif '/' in domain:
-                domains[domains.index(domain)] = domain.split('/')[0]
-                continue
-            if not domain.endswith(self.target):
-                removed.append(domain)
-        domains = list(set(domains))
-        for remove in removed:
-            domains.remove(remove)
 
+        domains = self.remove_irrelevant_domain(domains)
         self.get_ip(domains)
 
     def bing(self):
-        print('bing子域名查询')
+        print('Bing子域名查询')
         domains = []
-        total_page = 25
-        url = 'https://cn.bing.com/search?q=site:' + self.target + '&first='
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+        url = 'https://cn.bing.com/search?q=site:{}&first='.format(self.target)
         pattern = re.compile('<cite>(.*?)</strong>')
-        for page in range(0, total_page):
-            r = requests.get(url + str(page*10), headers=headers)
-            domains += re.findall(pattern, r.text)
-        domains = list(set(domains))
+        for page in range(0, self.search_depth):
+            try:
+                r = requests.get(url + str(page*10), headers=self.headers)
+                domains += re.findall(pattern, r.text)
+            except requests.exceptions.ChunkedEncodingError:
+                continue
         for domain in domains:
             domains[domains.index(domain)] = domain.replace('<strong>', '')
 
-        for domain in domains:
-            if domain.startswith('https://'):
-                domains[domains.index(domain)] = domain.replace('https://', '')
-                continue
-            elif '/' in domain:
-                domains[domains.index(domain)] = domain.split('/')[0]
-                continue
-        removed = []
-        domains = list(set(domains))
-        for domain in domains:
-            if not domain.endswith(self.target):
-                removed.append(domain)
-        for remove in removed:
-            domains.remove(remove)
-
+        domains = self.remove_irrelevant_domain(domains)
         self.get_ip(domains)
 
     def so360(self):
         print('360搜索子域名查询')
         domains = []
-        total_page = 10
-        url = 'https://www.so.com/s?q=site:' + self.target + '&pn='
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+        url = 'https://www.so.com/s?q=site:{}&pn='.format(self.target)
         pattern = re.compile('<cite>(.*?)</cite>')
-        for page in range(0, total_page):
-            r = requests.get(url + str(page), headers=headers)
+        for page in range(0, self.search_depth):
+            r = requests.get(url + str(page), headers=self.headers)
             domains += re.findall(pattern, r.text)
-        domains = list(set(domains))
-        removed = []
 
-        for domain in domains:
-            if domain.startswith('https://'):
-                domains[domains.index(domain)] = domain.replace('https://', '')
-                continue
-            elif '/' in domain:
-                domains[domains.index(domain)] = domain.split('/')[0]
-                continue
-
-        domains = list(set(domains))
-        for domain in domains:
-            if not domain.endswith(self.target):
-                removed.append(domain)
-        for remove in removed:
-            domains.remove(remove)
-
+        domains = self.remove_irrelevant_domain(domains)
         self.get_ip(domains)
 
     def remove_spread_record(self):
@@ -499,6 +316,14 @@ class SearchDomain(Domain):
         for domain in need_to_be_removed:
             self.domains.pop(domain)
 
+    def remove_irrelevant_domain(self, domains):
+        _ = []
+        domains = list(set(domains))
+        for domain in domains:
+            if domain.endswith(self.target):
+                _.append(domain)
+        return _
+
     @staticmethod
     def same_ip(ip):
         url = 'http://cn.bing.com/search?q=ip:' + ip
@@ -512,10 +337,10 @@ class SearchDomain(Domain):
         return list(set(host))
 
     def c_duan(self):
-        while not self.q.empty():
-            ip = self.q.get()
+        while not self.queue.empty():
+            ip = self.queue.get()
             try:
-                r = requests.get('http://' + ip, timeout=3)
+                requests.get('http://' + ip, timeout=3)
                 domain = self.same_ip(ip)
                 if domain:
                     for url in domain:
@@ -532,7 +357,7 @@ class SearchDomain(Domain):
                 continue
 
     def c_check(self):
-        for ip in [y for x in self.domains.values() for y in x]:# ips
+        for ip in [y for x in self.domains.values() for y in x]:
             ip = ip.rsplit('.', 1)[0]
 
             if ip not in self.c_count.keys():
@@ -549,25 +374,21 @@ class SearchDomain(Domain):
                 _min = int(min(temp))
                 for x in range(_min, _max):
                     _ip = ip + '.' + str(x)
-                    self.q.put(_ip)
+                    self.queue.put(_ip)
 
 
 class AllDomain(SearchDomain, BruteDomain):
-    def __init__(self, target, id=''):
-        super().__init__(target, id)
+    def __init__(self, target, info_id=0):
+        super().__init__(target, info_id)
 
+    @timer
     def run(self):
-        t1 = time.time()
         super().run_search()
         super().run_brute()
         super().run_clean()
-
-        t2 = time.time()
-        total_time = str(t2 - t1)
-        # super().output(total_time)
-        # super().save2file()
-        return self.domains, self.target
-        # Database().insert_subdomain(self.domains, self.title, self.appname, self.id)
+        super().output()
+        return self.domains
+        # Database().insert_subdomain(self.domains, self.title, self.appname, self.info_id)
 
 
 if __name__ == '__main__':

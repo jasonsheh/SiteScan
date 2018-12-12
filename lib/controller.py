@@ -12,22 +12,20 @@ from lib.info.fingerprint import FingerPrint
 from lib.info.sendir import SenDir
 from lib.info.save2file import SaveToFile
 
-from lib.vuls.xss import Xss
-from lib.vuls.sqli import Sqli
-from lib.vuls.struts2 import Struts2
+from lib.poc.common.xss import Xss
+from lib.poc.common.sqli import Sqli
+from lib.poc.common.struts2 import Struts2
 
-from lib.service.port import PortScan
-from lib.service.Unauthorized import redis_unauthorized
-from lib.service.Unauthorized import mongodb_unauthorized
-from lib.service.Unauthorized import zookeeper_unauthorized
-from lib.service.Unauthorized import elastic_search_unauthorized
-from lib.service.Unauthorized import memcached_unauthorized
+from lib.poc.service.unauth_redis import RedisUnauthorized
+from lib.poc.service.unauth_mogodb import MongodbUnauthorized
+from lib.poc.service.unauth_zookeeper import ZookeeperUnauthorized
+from lib.poc.service.unauth_elastic_search import ElasticSearchUnauthorized
+from lib.poc.service.unauth_memcache import MemcachedUnauthorized
+from lib.poc.service.unauth_hadoop import HadoopUnauthorized
 
-
+from lib.port import PortScan
 from lib.tools.baidu import Baidu
-
 from lib.git.gitscan import GitScan
-
 from lib.crawler import Crawler
 
 
@@ -36,9 +34,7 @@ def init_domain(domain):
     for prefix in removed_prefix:
         if domain.startswith(prefix):
             domain = domain.replace(prefix, '')
-    if domain.endswith('/'):
-        domain = domain[:-1]
-    return domain
+    return domain.strip('/')
 
 
 def info_collect(domain):
@@ -46,11 +42,11 @@ def info_collect(domain):
     信息收集
     """
     # id = Database().insert_task(domain)
-    domains, target = AllDomain(domain).run()
+    domains = AllDomain(domain).run()
     title = GetTitle([x for x in domains.keys()]).run()
     fingerprint = FingerPrint([x for x in domains.keys()]).run()
     dirs = SenDir([x for x in domains.keys()]).run()
-    SaveToFile(target, domains, title, fingerprint, dirs).save()
+    SaveToFile(domain, domains, title, fingerprint, dirs).save()
 
 
 def service_scan(ip):
@@ -60,27 +56,34 @@ def service_scan(ip):
     ports = PortScan([ip]).nmap_scan()
     for ip, port in ports.items():
         if 6379 in port:
-            if redis_unauthorized(ip):
+            if RedisUnauthorized(ip).check():
                 print('redis_unauthorized')
         if 27017 in port:
-            if mongodb_unauthorized(ip):
+            if MongodbUnauthorized(ip).check():
                 print('mongodb_unauthorized')
         if 2181 in port:
-            if zookeeper_unauthorized(ip):
+            if ZookeeperUnauthorized(ip).check():
                 print('zookeeper_unauthorized')
         if 9200 in port:
-            if elastic_search_unauthorized(ip):
+            if ElasticSearchUnauthorized(ip).check():
                 print('elastic_search_unauthorized')
         if 11211 in port:
-            if memcached_unauthorized(ip):
+            if MemcachedUnauthorized(ip).check():
                 print('memcached_unauthorized')
+        if 50070 in port:
+            if HadoopUnauthorized(ip).check():
+                print('hadoop_unauthorized')
+
+
+def poc_scan():
+    pass
 
 
 def vul_scan(domain):
     """
-    漏洞扫描
+    常见漏洞扫描
     """
-    urls = Crawler(target=domain, dynamic=0).run()
+    urls = Crawler(target=domain, dynamic=False).run()
     Xss(targets=urls).scan()
     Sqli(targets=urls).scan()
     Struts2(urls).scan()

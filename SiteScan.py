@@ -2,12 +2,12 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
-from lib.factory import init_domain
-from lib.factory import info_collect
-from lib.factory import vul_scan
-from lib.factory import service_scan
-from lib.factory import all_scan
-from lib.factory import git_scan
+from lib.controller import init_domain
+from lib.controller import info_collect
+from lib.controller import vul_scan
+from lib.controller import service_scan
+from lib.controller import all_scan
+from lib.controller import git_scan
 
 from utils.timer import timer
 
