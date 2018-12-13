@@ -6,7 +6,7 @@
 from flask import Flask, render_template, request, redirect
 from database.database import Database
 from database.rules import Rules
-from lib.cel import port_scan, domain_scan, sendir_scan, site_scan
+from database.srcList import SrcList
 
 app = Flask(__name__)
 
@@ -16,6 +16,7 @@ max_sendir = Database().count('sendir')
 max_fingerprint = Rules().count('application')
 max_task = Database().count('task')
 max_vul = Database().count('vul')
+max_src = SrcList().count()
 
 
 @app.route('/')
@@ -23,16 +24,23 @@ max_vul = Database().count('vul')
 @app.route('/index/<int:page>')
 def index(page=1):
     tasks = Database().select_task(page)
-    return render_template('index.html', page=page, max_page=max_task, tasks=tasks,
+    return render_template('index.html', mode="index", page=page, max_page=max_task//15+1, tasks=tasks,
                            max_domain=max_domain, max_port=max_port,
                            max_sendir=max_sendir, max_fingerprint=max_fingerprint,
                            max_vul=max_vul)
 
 
+@app.route('/setting')
+@app.route('/setting/<int:page>')
+def setting(page=1):
+    src_list = SrcList().select_src_list(page)
+    return render_template('setting.html', mode="setting", page=page, src_list=src_list, max_page=max_src//15+1)
+
+
 @app.route('/detail')
 @app.route('/detail/<int:id>')
-def detail(id=1):
-    task_name = Database().select_task_name(id)
+def detail(id=-1):
+    id, task_name = Database().select_task_name(id)
     domain_number = Database().count_task('subdomain', id)
     port_number = Database().count_task('port', id)
     sendir_number = Database().count_task('sendir', id)
@@ -66,35 +74,35 @@ def detail_domain(mode, id, page=1):
 @app.route('/domain/<int:page>')
 def subdomain(page=1):
     domains = Database().select_subdomain(page)
-    return render_template('domain.html', page=page, max_page=max_domain//15+1, domains=domains)
+    return render_template('domain.html', mode="domain", page=page, max_page=max_domain//15+1, domains=domains)
 
 
 @app.route('/port')
 @app.route('/port/<int:page>')
 def port(page=1):
     ports = Database().select_port(page)
-    return render_template('port.html', page=page, max_page=max_port//15+1, ports=ports)
+    return render_template('port.html', mode="port", page=page, max_page=max_port//15+1, ports=ports)
 
 
 @app.route('/sendir')
 @app.route('/sendir/<int:page>')
 def sendir(page=1):
     sendir = Database().select_sendir(page)
-    return render_template('sendir.html', page=page, max_page=max_sendir//15+1, sendirs=sendir)
+    return render_template('sendir.html', mode="sendir", page=page, max_page=max_sendir//15+1, sendirs=sendir)
 
 
 @app.route('/vul')
 @app.route('/vul/<int:page>')
 def vul(page=1):
     vuls = Database().select_vul(page)
-    return render_template('vul.html', page=page, max_page=max_vul//15+1, sendirs=vuls)
+    return render_template('vul.html', mode="vul", page=page, max_page=max_vul//15+1, sendirs=vuls)
 
 
 @app.route('/fingerprint')
 @app.route('/fingerprint/<int:page>')
 def fingerprint(page=1):
     finger_print = Rules().select_application(page)
-    return render_template('fingerprint.html', page=page, max_page=max_fingerprint//15+1, fingerprints=finger_print)
+    return render_template('fingerprint.html', mode="fingerprint", page=page, max_page=max_fingerprint//15+1, fingerprints=finger_print)
 
 
 @app.route('/add_rule', methods=['POST'])
@@ -108,25 +116,8 @@ def add_rule():
 
 @app.route('/del/<int:id>/<string:mode>')
 def delete(id, mode):
-    Database().delete(id, mode)
+    if mode == 'src':
+        SrcList().delete(id)
+    else:
+        Database().delete(id, mode)
     return redirect(request.referrer)
-
-
-@app.route('/add', methods=['POST'])
-def add_task():
-    if request.method == 'POST':
-        if request.form.get('port'):
-            port_scan.delay(request.form['port'])
-            return redirect('/port/1')
-        elif request.form.get('domain'):
-            domain_scan.delay(request.form['domain'])
-            return redirect('/domain/1')
-        elif request.form.get('sendir'):
-            sendir_scan.delay(request.form['sendir'])
-            return redirect('/sendir/1')
-        elif request.form.get('vul'):
-            sendir_scan.delay(request.form['vul'])
-            return redirect('/vul/1')
-        elif request.form.get('sitescan'):
-            site_scan.delay(request.form['sendir'])
-            return redirect('/index')

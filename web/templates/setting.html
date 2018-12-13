@@ -1,0 +1,47 @@
+{% include 'include/header.html' %}
+
+{% include 'include/navbar.html' %}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+            <h1 class="page-header">监控范围列表</h1>
+
+            <form class="form-inline" role="form" action="/add_vul" method=post>
+                        <span class="form-group-btn">
+                        <button class="btn btn-default" type="submit">Scan it!</button>
+                        </span>
+                <div class="form-group">
+                    <input type="text" class="form-control" placeholder="Add a task ..." name="sitescan" value="">
+                </div><!-- /input-group -->
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>SRC ID</th>
+                        <th>URL</th>
+                    </tr>
+                    </thead>
+                    {% for src in src_list %}
+                    <tbody>
+                    <tr>
+                        <td>{{ src.id }}</td>
+                        <td>{{ src.name }}</td>
+                        <td>{{ src.src_id }}</td>
+                        <td>{{ src.url }}</td>
+                        <td><a class="btn btn-danger btn-xs" href="/del/{{ src.id }}/src" role="button">删除</a></td>
+                    </tr>
+                    </tbody>
+                    {% endfor %}
+                </table>
+                {% include 'include/pagination.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% include 'include/footer.html' %}

@@ -1,0 +1,35 @@
+<nav>
+    <ul class="pagination justify-content-center">
+        {% if page <= 1 %}
+        <li class="page-item disabled">
+            <a class="page-link"><span aria-hidden="true">&larr;</span> 上一页</a>
+        </li>
+        <li class="page-item disabled">
+            <a class="page-link">首页</a>
+        </li>
+        {% else %}
+        <li class="page-item">
+            <a class="page-link" href="/{{ mode }}/{{ page-1 }}"><span aria-hidden="true">&larr;</span> 上一页</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="/{{ mode }}/1">首页</a>
+        </li>
+        {% endif %}
+
+        {% if page == max_task %}
+        <li class="page-item disabled">
+            <a class="page-link">尾页</a>
+        </li>
+        <li class="page-item disabled">
+            <a class="page-link">下一页 <span aria-hidden="true">&rarr;</span></a>
+        </li>
+        {% else %}
+        <li class="page-item">
+            <a class="page-link" href="/{{ mode }}/{{ max_page }}">尾页</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="/{{ mode }}/{{ page+1 }}">下一页 <span aria-hidden="true">&rarr;</span></a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>

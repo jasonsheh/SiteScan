@@ -24,16 +24,18 @@ class Rules:
         self.cursor.execute(sql)
         results = self.cursor.fetchall()
 
-        _results = []
+        results_list = []
         for result in results:
-            _result = {}
-            _result['id'] = result[0]
-            _result['app'] = result[1]
-            _result['rule'] = result[2]
-            _results.append(_result)
+            results_list.append(
+                {
+                    'id': result[0],
+                    'app': result[1],
+                    'rule': result[2]
+                }
+            )
 
         self.clean()
-        return _results
+        return results_list
 
     def count(self, mode):
         self.cursor.execute('select count(*) from %s' % mode)
