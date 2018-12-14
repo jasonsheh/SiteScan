@@ -7,10 +7,10 @@ import re
 import asyncio
 from asyncio import Queue
 import aiohttp
-import sys
-sys.path.append('C:\Code\SiteScan')
 
+import sys
 from setting import user_path
+sys.path.append(user_path)
 
 
 class FingerPrint:
@@ -95,7 +95,7 @@ class FingerPrint:
 
 if __name__ == '__main__':
     result = FingerPrint(urls=['www.freebuf.com/', 'www.52pojie.cn', 'bbs.ichunqiu.com',
-                               'www.zoomeye.org', 'octfive.cn', 'demo.typecho.cc/', 'znyywlw.jit.edu.cn']).run()
+                               'www.zoomeye.org', 'demo.typecho.cc/']).run()
     for site, fingerprint in result.items():
         print(site)
         for fp in fingerprint.split(' '):

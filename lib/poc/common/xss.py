@@ -5,6 +5,8 @@
 import requests
 import re
 from selenium import webdriver
+import sys
+sys.path.append('C:/Code/SiteScan')
 
 
 class Xss:
@@ -92,7 +94,7 @@ class Xss:
                 return False
 
     def scan(self):
-        print('\nxss检测\n')
+        print('xss检测')
         for self.target in self.targets:
             self.init()
             self.reflect_xss()
@@ -100,4 +102,4 @@ class Xss:
 
 
 if __name__ == '__main__':
-    Xss(['http://opac.jit.edu.cn/asord/asord_redr.php?title=/']).scan()
+    Xss(['http://www.zhenye.com/']).scan()

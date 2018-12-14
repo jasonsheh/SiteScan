@@ -3,43 +3,41 @@
 {% include 'include/navbar.html' %}
 
 <div class="container-fluid">
-    <div class="row">
-
-        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-            <h1 class="page-header">FingerPrint</h1>
-            <form class="form-inline" role="form" action="/add_rule" method=post>
+    <div class="container">
+        <h1 class="page-header">FingerPrint</h1>
+        <form class="form-inline" role="form" action="/add_rule" method=post>
                 <span class="form-group-btn">
                     <button class="btn btn-default" type="submit">Add Rule!</button>
                 </span>
-                <div class="form-group">
-                    <input type="text" class="form-control" placeholder=" name ..." name="name" value="">
-                    <input type="text" class="form-control" placeholder=" rule ..." name="rule" value="">
-                </div><!-- /input-group -->
-            </form>
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder=" name ..." name="name" value="">
+                <input type="text" class="form-control" placeholder=" rule ..." name="rule" value="">
+            </div><!-- /input-group -->
+        </form>
 
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th>Id</th>
-                        <th>AppName</th>
-                        <th>Rule</th>
-                    </tr>
-                    </thead>
-                    {% for fingerprint in fingerprints %}
-                    <tbody>
-                    <tr>
-                        <td>{{ fingerprint.id }}</td>
-                        <td>{{ fingerprint.app }}</td>
-                        <td>{{ fingerprint.rule }}</td>
-                    </tr>
-                    </tbody>
-                    {% endfor %}
-                </table>
-            </div>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>AppName</th>
+                    <th>Rule</th>
+                </tr>
+                </thead>
+                {% for fingerprint in fingerprints %}
+                <tbody>
+                <tr>
+                    <td>{{ fingerprint.id }}</td>
+                    <td>{{ fingerprint.app }}</td>
+                    <td>{{ fingerprint.rule }}</td>
+                </tr>
+                </tbody>
+                {% endfor %}
+            </table>
         </div>
-        {% include 'include/pagination.html' %}
     </div>
+    {% include 'include/pagination.html' %}
 </div>
+
 
 {% include 'include/footer.html' %}

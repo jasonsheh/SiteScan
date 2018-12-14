@@ -2,16 +2,16 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 from lib.poc.Base import POC
-import ftplib
+import requests
 
 
-class FtpUnauthorized(POC):
+class HadoopUnauthorized(POC):
     def __init__(self, ip):
         self.ip = ip
 
     def info(self):
         info = {
-            'name': 'FtpUnauthorized',
+            'name': 'HadoopUnauthorized',
             'level': 'high',
             'type': 'unauthorized',
         }
@@ -19,16 +19,14 @@ class FtpUnauthorized(POC):
 
     def check(self):
         try:
-            ftp = ftplib.FTP()
-            ftp.connect(self.ip, 21)
-            ftp.login()
-            ftp.retrlines('LIST')
-            ftp.quit()
-            return True
+            resp = requests.get('http://{}:50070'.format(self.ip))
+            if 'hadoop' in resp.text.lower():
+                return True
+            return False
         except Exception as e:
+            print(e)
             return False
 
 
 if __name__ == '__main__':
-    FtpUnauthorized(ip='115.159.160.21').check()
-
+    HadoopUnauthorized('185.93.31.44').check()

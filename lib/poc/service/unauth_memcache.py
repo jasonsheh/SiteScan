@@ -2,16 +2,16 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 from lib.poc.Base import POC
-import ftplib
+import memcache
 
 
-class FtpUnauthorized(POC):
+class MemcachedUnauthorized(POC):
     def __init__(self, ip):
         self.ip = ip
 
     def info(self):
         info = {
-            'name': 'FtpUnauthorized',
+            'name': 'MemcachedUnauthorized',
             'level': 'high',
             'type': 'unauthorized',
         }
@@ -19,16 +19,12 @@ class FtpUnauthorized(POC):
 
     def check(self):
         try:
-            ftp = ftplib.FTP()
-            ftp.connect(self.ip, 21)
-            ftp.login()
-            ftp.retrlines('LIST')
-            ftp.quit()
+            conn = memcache.Client([str(self.ip)+':11211'])
             return True
         except Exception as e:
+            print(e)
             return False
 
 
 if __name__ == '__main__':
-    FtpUnauthorized(ip='115.159.160.21').check()
-
+    MemcachedUnauthorized('45.32.116.229').check()

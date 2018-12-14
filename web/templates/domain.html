@@ -3,48 +3,45 @@
 {% include 'include/navbar.html' %}
 
 <div class="container-fluid">
-    <div class="row">
-
-        <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-            <h1 class="page-header">Subdomain</h1>
-            <form class="form-inline" role="form" action="/add" method=post>
+    <div class="container">
+        <h1 class="page-header">Subdomain</h1>
+        <form class="form-inline" role="form" action="/add" method=post>
                 <span class="form-group-btn">
                 <button class="btn btn-default" type="submit">Scan it!</button>
                 </span>
-                <div class="form-group">
-                    <input type="text" class="form-control" placeholder="Add a task ..." name="domain" value="">
-                </div><!-- /input-group -->
-            </form>
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder="Add a task ..." name="domain" value="">
+            </div><!-- /input-group -->
+        </form>
 
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                    <tr>
-                        <th>Id</th>
-                        <th>Url</th>
-                        <th>IP</th>
-                        <th>Title</th>
-                        <th>Appname</th>
-                    </tr>
-                    </thead>
-                    {% for domain in domains %}
-                    <tbody>
-                    <tr>
-                        <td>{{ domain.id }}</td>
-                        <td><a href="http://{{ domain.url }}" target="_blank">{{ domain.url }}</a></td>
-                        <td>{{ domain.ip }}</td>
-                        <td>{{ domain.title }}</td>
-                        <td>{{ domain.appname }}</td>
-                        <td><a class="btn btn-danger btn-xs" href="/del/{{domain.id}}/subdomain" role="button">删除</a>
-                        </td>
-                    </tr>
-                    </tbody>
-                    {% endfor %}
-                </table>
-            </div>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Url</th>
+                    <th>IP</th>
+                    <th>Title</th>
+                    <th>Appname</th>
+                </tr>
+                </thead>
+                {% for domain in domains %}
+                <tbody>
+                <tr>
+                    <td>{{ domain.id }}</td>
+                    <td><a href="http://{{ domain.url }}" target="_blank">{{ domain.url }}</a></td>
+                    <td>{{ domain.ip }}</td>
+                    <td>{{ domain.title }}</td>
+                    <td>{{ domain.appname }}</td>
+                    <td><a class="btn btn-danger btn-xs" href="/del/{{domain.id}}/subdomain" role="button">删除</a>
+                    </td>
+                </tr>
+                </tbody>
+                {% endfor %}
+            </table>
         </div>
-        {% include 'include/pagination.html' %}
     </div>
+    {% include 'include/pagination.html' %}
 </div>
 
 {% include 'include/footer.html' %}

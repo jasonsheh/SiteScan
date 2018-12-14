@@ -6,22 +6,22 @@
     <div class="container">
         <ul class="nav nav-tabs">
             <li class="nav-item"><a class="nav-link" href="/detail/{{ id }}">Index</a></li>
-        {% if mode == 'domain' %}
+        {% if _mode == 'domain' %}
             <li class="active"><a class="nav-link" href="/detail/domain/{{ id }}">Subdomain</a></li>
             <li class="nav-item"><a class="nav-link" href="/detail/port/{{ id }}">Port</a></li>
             <li class="nav-item"><a class="nav-link" href="/detail/sendir/{{ id }}">Directory</a></li>
             <li class="nav-item"><a class="nav-link" href="/detail/vul/{{ id }}">Vul</a></li>
-        {% elif mode == 'port' %}
+        {% elif _mode == 'port' %}
             <li class="nav-item"><a class="nav-link" href="/detail/domain/{{ id }}">Subdomain</a></li>
             <li class="active"><a class="nav-link" href="/detail/port/{{ id }}">Port</a></li>
             <li class="nav-item"><a class="nav-link" href="/detail/sendir/{{ id }}">Directory</a></li>
             <li class="nav-item"><a class="nav-link" href="/detail/vul/{{ id }}">Vul</a></li>
-        {% elif mode == 'sendir' %}
+        {% elif _mode == 'sendir' %}
             <li class="nav-item"><a class="nav-link" href="/detail/domain/{{ id }}">Subdomain</a></li>
             <li class="nav-item"><a class="nav-link" href="/detail/port/{{ id }}">Port</a></li>
             <li class="active"><a class="nav-link" href="/detail/sendir/{{ id }}">Directory</a></li>
             <li class="nav-item"><a class="nav-link" href="/detail/vul/{{ id }}">Vul</a></li>
-        {% elif mode == 'vul' %}
+        {% elif _mode == 'vul' %}
             <li class="nav-item"><a class="nav-link" href="/detail/domain/{{ id }}">Subdomain</a></li>
             <li class="nav-item"><a class="nav-link" href="/detail/port/{{ id }}">Port</a></li>
             <li class="nav-item"><a class="nav-link" href="/detail/sendir/{{ id }}">Directory</a></li>
@@ -31,9 +31,9 @@
             <li class="nav-item"><a class="nav-link" href="/detail/port/{{ id }}">Port</a></li>
             <li class="nav-item"><a class="nav-link" href="/detail/sendir/{{ id }}">Directory</a></li>
             <li class="nav-item"><a class="nav-link" href="/detail/vul/{{ id }}">Vul</a></li>
-            {% endif %}
+        {% endif %}
         </ul>
-        {% if not mode %}
+        {% if not _mode %}
         <div class="row placeholders">
             <h3>{{ task_name }}</h3>
             <div class="col-xs-6 col-sm-3 placeholder">
@@ -49,7 +49,7 @@
                 <span class="text-muted">{{ sendir_number }}</span>
             </div>
         </div>
-        {% elif mode == 'domain' %}
+        {% elif _mode == 'domain' %}
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
@@ -74,7 +74,7 @@
                 {% endfor %}
             </table>
         </div>
-        {% elif mode == 'port' %}
+        {% elif _mode == 'port' %}
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>
@@ -106,7 +106,7 @@
                 {% endfor %}
             </table>
         </div>
-        {% elif mode == 'vul' %}
+        {% elif _mode == 'vul' %}
         <div class="table-responsive">
             <table class="table table-striped">
                 <thead>

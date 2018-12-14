@@ -2,16 +2,16 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 from lib.poc.Base import POC
-import ftplib
+import kazoo.client
 
 
-class FtpUnauthorized(POC):
+class ZookeeperUnauthorized(POC):
     def __init__(self, ip):
         self.ip = ip
 
     def info(self):
         info = {
-            'name': 'FtpUnauthorized',
+            'name': 'ZookeeperUnauthorized',
             'level': 'high',
             'type': 'unauthorized',
         }
@@ -19,16 +19,15 @@ class FtpUnauthorized(POC):
 
     def check(self):
         try:
-            ftp = ftplib.FTP()
-            ftp.connect(self.ip, 21)
-            ftp.login()
-            ftp.retrlines('LIST')
-            ftp.quit()
+            conn = kazoo.client.KazooClient(hosts=str(self.ip)+':2181')
+            conn.start()
+            conn.stop()
+            conn.close()
             return True
         except Exception as e:
+            print(e)
             return False
 
 
 if __name__ == '__main__':
-    FtpUnauthorized(ip='115.159.160.21').check()
-
+    ZookeeperUnauthorized('207.244.79.99').check()

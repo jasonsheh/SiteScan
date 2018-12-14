@@ -2,16 +2,16 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 from lib.poc.Base import POC
-import ftplib
+import requests
 
 
-class FtpUnauthorized(POC):
+class ElasticSearchUnauthorized(POC):
     def __init__(self, ip):
         self.ip = ip
 
     def info(self):
         info = {
-            'name': 'FtpUnauthorized',
+            'name': 'ElasticSearchUnauthorized',
             'level': 'high',
             'type': 'unauthorized',
         }
@@ -19,16 +19,14 @@ class FtpUnauthorized(POC):
 
     def check(self):
         try:
-            ftp = ftplib.FTP()
-            ftp.connect(self.ip, 21)
-            ftp.login()
-            ftp.retrlines('LIST')
-            ftp.quit()
-            return True
+            resp = requests.get('http://{}:9200'.format(self.ip))
+            if 'You Know, for Search' in resp.text:
+                return True
+            return False
         except Exception as e:
+            print(e)
             return False
 
 
 if __name__ == '__main__':
-    FtpUnauthorized(ip='115.159.160.21').check()
-
+    ElasticSearchUnauthorized('101.132.42.189').check()
