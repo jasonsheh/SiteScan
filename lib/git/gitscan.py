@@ -6,6 +6,7 @@ import re
 import time
 import socket
 from github import Github, GithubException
+from setting import github_api_key
 
 
 reg_mail = re.compile('([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)')
@@ -14,7 +15,7 @@ reg_ip = re.compile(r"^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(
 
 class GitScan:
     def __init__(self, keyword):
-        self.g = Github("a2601cbe06369ba6f81c4d0a16375a3761b24e79")
+        self.g = Github(github_api_key)
         self.keyword = keyword
         self.search_page = 5
         self.hash_list = []

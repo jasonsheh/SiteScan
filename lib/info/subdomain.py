@@ -17,7 +17,7 @@ monkey.patch_all()
 
 from typing import List, Dict
 from utils.timer import timer
-from setting import user_path, user_agent
+from setting import user_path, user_agent, vt_api_key
 
 
 class Domain(object):
@@ -258,7 +258,7 @@ class SearchDomain(Domain):
     def virustotal(self):
         print('virustotal子域名查询')
         url = 'https://www.virustotal.com/vtapi/v2/domain/report'
-        params = {'apikey': 'your_api_key', 'domain': self.target}
+        params = {'apikey': vt_api_key, 'domain': self.target}
         r = requests.get(url, params=params)
         self.get_ip(r.json()['subdomains'])
 
