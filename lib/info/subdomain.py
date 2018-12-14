@@ -258,7 +258,7 @@ class SearchDomain(Domain):
     def virustotal(self):
         print('virustotal子域名查询')
         url = 'https://www.virustotal.com/vtapi/v2/domain/report'
-        params = {'apikey': '842f3920e6c5b8f15c3ab1d4b3b09b6ae2327936ccca66416e44d42d9753cda5', 'domain': self.target}
+        params = {'apikey': 'your_api_key', 'domain': self.target}
         r = requests.get(url, params=params)
         self.get_ip(r.json()['subdomains'])
 
