@@ -7,7 +7,7 @@
         <h1 class="page-header">FingerPrint</h1>
         <form class="form-inline" role="form" action="/add_rule" method=post>
                 <span class="form-group-btn">
-                    <button class="btn btn-default" type="submit">Add Rule!</button>
+                    <button class="btn btn-outline-info" type="submit">Add Rule!</button>
                 </span>
             <div class="form-group">
                 <input type="text" class="form-control" placeholder=" name ..." name="name" value="">
@@ -22,20 +22,60 @@
                     <th>Id</th>
                     <th>AppName</th>
                     <th>Rule</th>
+                    <th>Edit</th>
+                    <th>Delete</th>
                 </tr>
                 </thead>
                 {% for fingerprint in fingerprints %}
                 <tbody>
                 <tr>
-                    <td>{{ fingerprint.id }}</td>
-                    <td>{{ fingerprint.app }}</td>
-                    <td>{{ fingerprint.rule }}</td>
+                    <td class="{{ fingerprint.id }}">{{ fingerprint.id }}</td>
+                    <td class="{{ fingerprint.id }}">{{ fingerprint.name }}</td>
+                    <td class="{{ fingerprint.id }}">{{ fingerprint.rule }}</td>
+                    <td><a class="btn btn-outline-info btn-sm" data-toggle="modal" data-target="#exampleModal" onclick="update({{ fingerprint.id }})" role="button">修改</a></td>
+                    <td><a class="btn btn-outline-danger btn-sm" href="/del/fingerprint/{{ fingerprint.id }}" role="button">删除</a></td>
                 </tr>
                 </tbody>
                 {% endfor %}
             </table>
         </div>
     </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLongTitle">Edit Rules</h5>
+                </div>
+                <form class="form" role="form" action="/update/fingerprint" method=post>
+                    <div class="form-group">
+                        <label>ID</label>
+                        <input type="text" class="form-control _" name="id" value="">
+                        <label>Name</label>
+                        <input type="text" class="form-control _" name="name" value="">
+                        <label>Rule</label>
+                        <input type="text" class="form-control _" name="rule" value="">
+                    </div><!-- /input-group -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                        <button class="btn btn-primary btn-sm" type="submit">Save changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        function update(id){
+                    $("td[class='" + id + "']").each(function(i){
+                        $("input[class='form-control _']").eq(i).attr('value', $(this).html());
+                    });
+
+                    $("input[class='form-control _']").eq(0).attr('readonly', '');
+                }
+    </script>
+
     {% include 'include/pagination.html' %}
 </div>
 

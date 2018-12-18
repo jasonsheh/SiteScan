@@ -7,7 +7,7 @@
 
 """
 import sqlite3
-from setting import user_path
+from setting import user_path, item_size
 
 
 class Database:
@@ -45,8 +45,8 @@ class Database:
         return task_id[0][0]
 
     def select_task(self, page):
-        sql = "select * from task order by id desc limit ?,15"
-        self.cursor.execute(sql, ((page - 1) * 15,))
+        sql = "select * from task order by id desc limit ?, ?"
+        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
         results = self.cursor.fetchall()
 
         results_list = []
@@ -83,8 +83,8 @@ class Database:
         return results_list[0].values()
 
     def select_task_subdomain(self, page, task_id):
-        sql = "select * from subdomain where taskid = ? order by id desc limit ?,15"
-        self.cursor.execute(sql, (task_id, (page - 1) * 15))
+        sql = "select * from subdomain where taskid = ? order by id desc limit ?,?"
+        self.cursor.execute(sql, (task_id, (page - 1) * item_size, item_size))
         results = self.cursor.fetchall()
 
         results_list = []
@@ -104,8 +104,8 @@ class Database:
         return results_list
 
     def select_task_port(self, page, task_id):
-        sql = "select * from port where taskid = ? order by id desc limit ?,15"
-        self.cursor.execute(sql, (task_id, (page - 1) * 15))
+        sql = "select * from port where taskid = ? order by id desc limit ?,?"
+        self.cursor.execute(sql, (task_id, (page - 1) * item_size, item_size))
         results = self.cursor.fetchall()
 
         results_list = []
@@ -127,8 +127,8 @@ class Database:
         return results_list
 
     def select_task_sendir(self, page, task_id):
-        sql = "select * from sendir where taskid = ? order by id desc limit ?,15"
-        self.cursor.execute(sql, (task_id, (page - 1) * 15))
+        sql = "select * from sendir where taskid = ? order by id desc limit ?,?"
+        self.cursor.execute(sql, (task_id, (page - 1) * item_size, item_size))
         results = self.cursor.fetchall()
 
         results_list = []
@@ -146,8 +146,8 @@ class Database:
         return results_list
 
     def select_task_vul(self, page, task_id):
-        sql = "select * from vul where taskid = ? order by id desc limit ?,15"
-        self.cursor.execute(sql, (task_id, (page - 1) * 15))
+        sql = "select * from vul where taskid = ? order by id desc limit ?,?"
+        self.cursor.execute(sql, (task_id, (page - 1) * item_size, item_size))
         results = self.cursor.fetchall()
 
         results_list = []
@@ -171,22 +171,23 @@ class Database:
                             'url varchar(255), '
                             'title varchar(255), '
                             'appname varchar(255), '
-                            'taskid integer '
+                            'text TEXT, '
+                            'src_id integer '
                             ')')
 
         print("create subdomain successfully")
 
-    def insert_subdomain(self, domains, title, appname, task_id=''):
-        for url, ips in sorted(domains.items()):
-            ips = ' '.join(ips)
-            sql = "insert into subdomain (url, ip, title, appname, taskid) values (?, ?, ?, ?, ?)"
-            self.cursor.execute(sql, (url, ips, title[url], appname[url], task_id))
+    def insert_subdomain(self, domains, infos, src_id):
+        for info in infos:
+            ips = ' '.join(domains[info['domain']])
+            sql = "insert into subdomain (url, ip, title, appname, text, src_id) values (?, ?, ?, ?, ?, ?)"
+            self.cursor.execute(sql, (info['domain'], ips, info['title'], info['app'], info['text'], src_id))
         self.conn.commit()
         self.clean()
 
     def select_subdomain(self, page):
-        sql = "select * from subdomain order by id desc limit ?,15"
-        self.cursor.execute(sql, ((page - 1) * 15,))
+        sql = "select * from subdomain order by id desc limit ?,?"
+        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
         results = self.cursor.fetchall()
 
         results_list = []
@@ -235,8 +236,8 @@ class Database:
         self.conn.commit()
 
     def select_port(self, page):
-        sql = "select * from port order by id desc limit ?,15"
-        self.cursor.execute(sql, ((page - 1) * 15,))
+        sql = "select * from port order by id desc limit ?,?"
+        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
         results = self.cursor.fetchall()
 
         results_list = []
@@ -275,8 +276,8 @@ class Database:
         self.conn.commit()
 
     def select_sendir(self, page):
-        sql = "select * from sendir order by id desc limit ?,15"
-        self.cursor.execute(sql, ((page - 1) * 15,))
+        sql = "select * from sendir order by id desc limit ?,?"
+        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
         results = self.cursor.fetchall()
 
         results_list = []
@@ -310,8 +311,8 @@ class Database:
         self.conn.commit()
 
     def select_vul(self, page):
-        sql = "select * from vul order by id desc limit ?,15"
-        self.cursor.execute(sql, ((page - 1) * 15,))
+        sql = "select * from vul order by id desc limit ?,?"
+        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
         results = self.cursor.fetchall()
 
         results_list = []
@@ -344,8 +345,8 @@ class Database:
         self.conn.commit()
 
     def select_finger(self, page):
-        sql = "select * from finger order by id desc limit ?,15"
-        self.cursor.execute(sql, ((page - 1) * 15,))
+        sql = "select * from finger order by id desc limit ?,?"
+        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
         results = self.cursor.fetchall()
 
         results_list = []

@@ -4,7 +4,8 @@
 # -*- coding:utf-8 -*-
 
 import sqlite3
-from setting import user_path
+import datetime
+from setting import user_path, item_size, sudomain_scan_size
 
 
 class SrcList:
@@ -18,9 +19,11 @@ class SrcList:
                             'id integer primary key,'
                             'name varchar(64),'
                             'src_id integer,'
-                            'url varchar(128)'
+                            'url varchar(128),'
+                            'scan_time TEXT'
                             ')')
         self.conn.commit()
+        self.clean()
 
     def init_data(self):
         src_list = [("阿里asrc", 1, "*.taobao.com"),
@@ -234,20 +237,27 @@ class SrcList:
                     ("微众wsrc", 44, "*.webank.com"),
                     ("万能钥匙wifisrc", 45, "*.wifi.com"),
                     ("中通src", 46, "*.zto.com")]
-        sql = "insert into src (name, src_id, url) values (?, ?, ?)"
+        sql = "insert into src (name, src_id, url, scan_time) values (?, ?, ?, ?)"
         for src_info in src_list:
-            self.cursor.execute(sql, src_info)
+            self.cursor.execute(sql,
+                                (src_info[0], src_info[1], src_info[2], datetime.datetime.now().strftime("%Y-%m-%d")))
         self.conn.commit()
+        self.clean()
         print("create src successfully")
 
+    def update_scan_time(self, url):
+        sql = "update src set scan_time = ? where url = ?"
+        self.cursor.execute(sql, (datetime.datetime.now().strftime("%Y-%m-%d"), url))
+        self.conn.commit()
+
     def insert_src_list(self, name, src_id, url):
-        sql = "insert into src (name, src_id, url) values (?, ?, ?)"
-        self.cursor.execute(sql, (name, src_id, url))
+        sql = "insert into src (name, src_id, url, scan_time) values (?, ?, ?, ?)"
+        self.cursor.execute(sql, (name, src_id, url, datetime.datetime.now().strftime("%Y-%m-%d")))
         self.conn.commit()
 
     def select_src_list(self, page):
-        sql = "select * from src order by id desc limit ?,15"
-        self.cursor.execute(sql, ((page - 1) * 15,))
+        sql = "select * from src order by id desc limit ?,?"
+        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
         results = self.cursor.fetchall()
 
         results_list = []
@@ -257,7 +267,28 @@ class SrcList:
                     'id': result[0],
                     'name': result[1],
                     'src_id': result[2],
-                    'url': result[3]
+                    'url': result[3],
+                    'scan_time': result[4]
+                }
+            )
+
+        self.clean()
+        return results_list
+
+    def select_un_scan_src_list(self):
+        sql = "select * from src order by scan_time desc limit ?"
+        self.cursor.execute(sql, (sudomain_scan_size, ))
+        results = self.cursor.fetchall()
+
+        results_list = []
+        for result in results:
+            results_list.append(
+                {
+                    'id': result[0],
+                    'name': result[1],
+                    'src_id': result[2],
+                    'url': result[3],
+                    'scan_time': result[4]
                 }
             )
 
@@ -280,4 +311,4 @@ class SrcList:
 
 
 if __name__ == '__main__':
-    SrcList().init_data()
+    print(SrcList().select_un_scan_src_list())

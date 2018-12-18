@@ -2,26 +2,24 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
+import os
+from typing import List, Dict
 from setting import user_path
 
 
 class SaveToFile:
-    def __init__(self, target, domains, title, fingerprint, dirs):
-        self.target = target
-        self.domains = domains
-        self.title = title
-        self.fingerprint = fingerprint
+    def __init__(self, domain, domains, info, dirs):
+        self.domain: str = domain
+        self.domains: Dict = domains
+        self.info: List = info
         self.dirs = dirs
 
     def save(self):
-        with open(user_path+'./result/'+self.target+'.txt', 'w', encoding='utf-8') as file:
-            for url, ips in sorted(self.domains.items()):
-                file.writelines('\n{}\t{}\n'.format(url, ips))
-                if url in self.fingerprint.keys():
-                    file.writelines('\t' + self.fingerprint[url] + '\n')
-                if url in self.title.keys():
-                    file.writelines('\t'+self.title[url]+'\n')
+        if not os.path.exists(user_path+'/result'):
+            os.mkdir(user_path+'/result')
 
-                if url in self.dirs.keys():
-                    for _dir in self.dirs[url]:
-                        file.writelines('\t' + _dir+'\n')
+        with open(user_path+'/result/'+self.domain+'.txt', 'w', encoding='utf-8') as file:
+            for info in self.info:
+                file.writelines('\n{}\t{}\n'.format(info['domain'], self.domains[info['domain']]))
+                file.writelines('\t' + info['title'] + '\n')
+                file.writelines('\t'+info['app']+'\n')

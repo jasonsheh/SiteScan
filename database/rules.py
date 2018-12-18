@@ -3,7 +3,7 @@
 # -*- coding:utf-8 -*-
 
 import sqlite3
-from setting import user_path
+from setting import user_path, item_size
 
 
 class Rules:
@@ -11,17 +11,23 @@ class Rules:
         self.conn = sqlite3.connect(user_path + '/db/Rules.db')
         self.cursor = self.conn.cursor()
 
-    def insert_application(self, app, rule):
-        sql = "insert into application (app, rule) " \
+    def insert_fingerprint(self, name, rule):
+        sql = "insert into fingerprint (name, rule) " \
               "values ('%s', '%s')"\
-              % (app, rule)
+              % (name, rule)
         self.cursor.execute(sql)
         self.conn.commit()
         self.clean()
 
-    def select_application(self, page):
-        sql = 'select * from application order by id desc limit %s,15' % ((page-1)*15)
-        self.cursor.execute(sql)
+    def update_fingerprint(self, name, rule):
+        sql = "update fingerprint set rule = ? where name = ? "
+        self.cursor.execute(sql, (rule, name))
+        self.conn.commit()
+        self.clean()
+
+    def select_fingerprint(self, page):
+        sql = "select * from fingerprint order by id desc limit ?, ?"
+        self.cursor.execute(sql, ((page-1)*item_size, item_size))
         results = self.cursor.fetchall()
 
         results_list = []
@@ -29,13 +35,19 @@ class Rules:
             results_list.append(
                 {
                     'id': result[0],
-                    'app': result[1],
+                    'name': result[1],
                     'rule': result[2]
                 }
             )
 
         self.clean()
         return results_list
+
+    def delete(self, id):
+        sql = "delete from where id = ? "
+        self.cursor.execute(sql, (id, ))
+        self.conn.commit()
+        self.clean()
 
     def count(self, mode):
         self.cursor.execute('select count(*) from %s' % mode)

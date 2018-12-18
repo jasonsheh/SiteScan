@@ -7,13 +7,12 @@
 """
 
 from lib.info.subdomain import AllDomain
-from lib.info.getTitle import GetTitle
-from lib.info.fingerprint import FingerPrint
+from lib.info.siteinfo import SiteInfo
 from lib.info.sendir import SenDir
 from lib.info.save2file import SaveToFile
 
 from lib.poc.common.xss import Xss
-from lib.poc.common.sqli import Sqli
+from lib.poc.common.sqli import SqlInjection
 from lib.poc.common.struts2 import Struts2
 
 from lib.poc.service.unauth_redis import RedisUnauthorized
@@ -43,10 +42,9 @@ def info_collect(domain):
     """
     # id = Database().insert_task(domain)
     domains = AllDomain(domain).run()
-    title = GetTitle([x for x in domains.keys()]).run()
-    fingerprint = FingerPrint([x for x in domains.keys()]).run()
+    info = SiteInfo([x for x in domains.keys()]).run()
     dirs = SenDir([x for x in domains.keys()]).run()
-    SaveToFile(domain, domains, title, fingerprint, dirs).save()
+    SaveToFile(domain, domains, info, dirs).save()
 
 
 def service_scan(ip):
@@ -85,7 +83,7 @@ def vul_scan(domain):
     """
     urls = Crawler(target=domain, dynamic=False).run()
     Xss(targets=urls).scan()
-    Sqli(targets=urls).scan()
+    SqlInjection(targets=urls).scan()
     Struts2(urls).scan()
 
 

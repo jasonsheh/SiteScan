@@ -9,6 +9,7 @@ from lib.controller import service_scan
 from lib.controller import all_scan
 from lib.controller import git_scan
 
+from lib.server import SRCKiller
 from utils.timer import timer
 
 import sys
@@ -32,13 +33,15 @@ parser.add_argument('--sub', default="false",
                     help='whether get all sub domains')
 parser.add_argument("--install",
                     help="install SiteScan")
+parser.add_argument("--server",
+                    help="run as service")
 args = parser.parse_args()
 
-print(''' ____  _ _       ____''')
-print('''/ ___|(_) |_ ___/ ___|  ___ __ _ _ __''')
-print('''\___ \| | __/ _ \___ \ / __/ _` | '_  \ ''')
-print(''' ___) | | ||  __/___) | (_| (_| | | | |''')
-print('''|____/|_|\__\___|____/ \___\__,_|_| |_|''')
+print(r''' ____  _ _       ____''')
+print(r'''/ ___|(_) |_ ___/ ___|  ___ __ _ _ __''')
+print(r'''\___ \| | __/ _ \___ \ / __/ _` | '_  \ ''')
+print(r''' ___) | | ||  __/___) | (_| (_| | | | |''')
+print(r'''|____/|_|\__\___|____/ \___\__,_|_| |_|''')
 print('\t\t written by Jason_Sheh')
 
 
@@ -55,6 +58,8 @@ def main():
             all_scan(args.all)
         if args.git:
             git_scan(args.git)
+        if args.server:
+            SRCKiller().info_collect()
     except KeyboardInterrupt:
         print('用户中断')
         sys.exit(0)

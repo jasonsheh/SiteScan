@@ -8,23 +8,22 @@ import requests
 import time
 import socket
 import re
-import asyncio
-import aiohttp
 import gevent
-from gevent.queue import Queue
-from gevent import monkey
-monkey.patch_all()
 
 from typing import List, Dict
 from utils.timer import timer
-from setting import user_path, user_agent, vt_api_key
+from setting import user_path, user_agent, vt_api_key, subdomain_thread_num
+
+from gevent.queue import Queue
+from gevent import monkey
+monkey.patch_all()
 
 
 class Domain(object):
     def __init__(self, target, info_id=0):
         self.info_id: int = info_id
         self.target: str = target
-        self.thread_num: int = 200
+        self.thread_num: int = subdomain_thread_num
         self.ip: List = []
         self.error_ip: List = []
         self.headers: Dict = {'User-Agent': user_agent}
@@ -36,21 +35,20 @@ class Domain(object):
         self.removed_domains = []
 
     def output(self):
+        print("\n")
         for url, ips in sorted(self.domains.items()):
             print(url)
-            for ip in ips:
-                print('\t' + ip)
+            print(ips)
 
 
 class BruteDomain(Domain):
     def __init__(self, target, info_id=0):
         super().__init__(target, info_id)
-        self.process_num = 4
         self.dns = ['119.29.29.29', '119.28.28.28', '223.5.5.5', '223.6.6.6', '182.254.116.116', '114.114.114.114',
                     '114.114.115.115', '114.114.114.119', '114.114.115.119', '180.76.76.76']
 
     def domain_dict(self):
-        with open(user_path + '/dict/domain.txt', 'r') as dicts:
+        with open(user_path + '/dict/domain_full.txt', 'r') as dicts:
             for i in dicts:
                 self.queue.put_nowait(i.strip())
 
@@ -60,23 +58,25 @@ class BruteDomain(Domain):
                 for domain in self.domain:
                     self.queue.put_nowait('{}.{}'.format(i.strip(), domain))
 
-    def sub_domian(self):
+    def sub_domain(self):
         for domain in self.domain:
             self.queue.put_nowait(domain)
 
-    def remove_error_subdomain(self, d):
+    def remove_error_subdomain(self, dns_number):
         while not self.queue.empty():
-            domain = 'this_subdomain_will_never_exist.{}'.format(self.queue.get())
+            domain = self.queue.get()
+            error_domain = 'this_subdomain_will_never_exist.{}'.format(domain)
             resolvers = dns.resolver.Resolver(configure=False)
-            resolvers.nameservers = [self.dns[d % len(self.dns)]]
+            resolvers.nameservers = [self.dns[dns_number % len(self.dns)]]
             resolvers.timeout = 4.0
             try:
-                answers = dns.resolver.query(domain)
+                answers = dns.resolver.query(error_domain)
                 ips = [answer.address for answer in answers]
                 for ip in ips:
                     if ip in self.error_ip:
                         continue
                     self.removed_domains.append(domain)
+                    break
             except dns.resolver.NXDOMAIN:
                 pass
             except dns.resolver.NoAnswer:
@@ -84,22 +84,38 @@ class BruteDomain(Domain):
             except dns.exception.Timeout:
                 pass
 
+    def add_local_error_dns(self, domain):
+        try:
+            url = 'this_subdomain_will_never_exist.{}'.format(domain)
+            answers = dns.resolver.query(url)
+            ips = [answer.address for answer in answers]
+            for ip in ips:
+                self.error_ip.append(ip)
+        except dns.resolver.NXDOMAIN:
+            pass
+        except dns.resolver.NoAnswer:
+            pass
+        except dns.exception.Timeout:
+            pass
+
     def run_brute(self):
         print('\n子域名爆破...')
         self.domain_dict()
-        self.add_local_error_dns()
-        self._brute()
+        self.add_local_error_dns(self.target)
+        threads = [gevent.spawn(self.gevent_brute, dns_number) for dns_number in range(self.thread_num)]
+        gevent.joinall(threads)
 
         # 第一次移除错误域名
         self.domain = list(set([x for x in self.domains.keys()]))
-        threads = [gevent.spawn(self.remove_error_subdomain, d) for d in range(int(self.thread_num / 2))]
+        self.sub_domain()
+        threads = [gevent.spawn(self.remove_error_subdomain, dns_number) for dns_number in range(int(self.thread_num / 5))]
         gevent.joinall(threads)
         for domain in self.removed_domains:
             self.domain.remove(domain)
 
         print('\n二级子域名爆破...')
         self.sub_domain_dict()
-        threads = [gevent.spawn(self.sub_brute, d) for d in range(self.thread_num)]
+        threads = [gevent.spawn(self.sub_brute, dns_number) for dns_number in range(self.thread_num)]
         gevent.joinall(threads)
 
         '''
@@ -118,32 +134,16 @@ class BruteDomain(Domain):
         print('\nTotal time: ' + str(t2 - t1) + '\n')
         '''
 
-    def add_local_error_dns(self):
-        try:
-            url = 'this_subdomain_will_never_exist.{}'.format(self.target)
-            answers = dns.resolver.query(url)
-            ips = [answer.address for answer in answers]
-            for ip in ips:
-                self.error_ip.append(ip)
-        except dns.resolver.NXDOMAIN:
-            pass
-        except dns.resolver.NoAnswer:
-            pass
-        except dns.exception.Timeout:
-            pass
-
-    def _brute(self):
-        threads = [gevent.spawn(self.gevent_brute, d) for d in range(self.thread_num)]
-        gevent.joinall(threads)
-
-    def gevent_brute(self, d):
+    def gevent_brute(self, dns_number):
         while not self.queue.empty():
             sub = self.queue.get()
             domain = sub + '.' + self.target
             resolvers = dns.resolver.Resolver(configure=False)
-            resolvers.nameservers = [self.dns[d % len(self.dns)]]
+            resolvers.nameservers = [self.dns[dns_number % len(self.dns)]]
             resolvers.lifetime = resolvers.timeout = 4.0
             try:
+                sys.stdout.write('\r子域名数: ' + str(len(self.domains.keys())) + '剩余爆破数: ' + str(self.queue.qsize()))
+                sys.stdout.flush()
                 answers = resolvers.query(domain)
                 ips = [answer.address for answer in answers]
                 for ip in ips:
@@ -152,8 +152,6 @@ class BruteDomain(Domain):
                             self.domains[domain].append(ip)
                         else:
                             self.domains[domain] = [ip]
-                        sys.stdout.write('\r子域名数:'+str(len(self.domains.keys())))
-                        sys.stdout.flush()
             except dns.resolver.NXDOMAIN:
                 continue
             except dns.resolver.NoAnswer:
@@ -166,16 +164,16 @@ class BruteDomain(Domain):
                 print(e)
                 continue
 
-    def sub_brute(self, d):
+    def sub_brute(self, dns_number):
         """
         多线程2级子域名扫描
-        :param d:
+        :param dns_number:
         :return:
         """
         while not self.queue.empty():
             domain = self.queue.get()
             resolvers = dns.resolver.Resolver(configure=False)
-            resolvers.nameservers = [self.dns[d % len(self.dns)]]
+            resolvers.nameservers = [self.dns[dns_number % len(self.dns)]]
             resolvers.timeout = 4.0
             try:
                 sys.stdout.write('\r子域名数: '+str(len(self.domains.keys()))+'剩余爆破数: '+str(self.queue.qsize()))
@@ -385,11 +383,10 @@ class AllDomain(SearchDomain, BruteDomain):
     def run(self):
         super().run_search()
         super().run_brute()
-        super().run_clean()
         super().output()
-        return self.domains
+        return sorted(self.domains)
         # Database().insert_subdomain(self.domains, self.title, self.appname, self.info_id)
 
 
 if __name__ == '__main__':
-    AllDomain('jit.edu.cn').run()
+    AllDomain('bilibili.com').run()
