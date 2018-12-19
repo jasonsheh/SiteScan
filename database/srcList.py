@@ -255,6 +255,26 @@ class SrcList:
         self.cursor.execute(sql, (name, src_id, url, datetime.datetime.now().strftime("%Y-%m-%d")))
         self.conn.commit()
 
+    def select_src_by_id(self, id):
+        sql = "select * from src where id = ?"
+        self.cursor.execute(sql, (id, ))
+        results = self.cursor.fetchall()
+
+        results_list = []
+        for result in results:
+            results_list.append(
+                {
+                    'id': result[0],
+                    'name': result[1],
+                    'src_id': result[2],
+                    'url': result[3],
+                    'scan_time': result[4]
+                }
+            )
+
+        self.clean()
+        return results[0][3]
+
     def select_src_list(self, page):
         sql = "select * from src order by id desc limit ?,?"
         self.cursor.execute(sql, ((page - 1) * item_size, item_size))
@@ -278,6 +298,26 @@ class SrcList:
     def select_un_scan_src_list(self):
         sql = "select * from src order by scan_time desc limit ?"
         self.cursor.execute(sql, (sudomain_scan_size, ))
+        results = self.cursor.fetchall()
+
+        results_list = []
+        for result in results:
+            results_list.append(
+                {
+                    'id': result[0],
+                    'name': result[1],
+                    'src_id': result[2],
+                    'url': result[3],
+                    'scan_time': result[4]
+                }
+            )
+
+        self.clean()
+        return results_list
+
+    def select_recent_src_list(self, page):
+        sql = "select * from src order by scan_time desc limit ?,?"
+        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
         results = self.cursor.fetchall()
 
         results_list = []

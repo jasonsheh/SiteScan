@@ -6,38 +6,42 @@
     <div class="container">
         <h1 class="page-header">Subdomain</h1>
         <form class="form-inline" role="form" action="/add" method=post>
-                <span class="form-group-btn">
-                <button class="btn btn-default" type="submit">Scan it!</button>
-                </span>
+            <span class="form-group-btn">
+                <button class="btn btn-outline-info" type="submit">Scan it!</button>
+            </span>
             <div class="form-group">
                 <input type="text" class="form-control" placeholder="Add a task ..." name="domain" value="">
             </div><!-- /input-group -->
         </form>
 
         <div class="table-responsive">
-            <table class="table table-striped">
+            <table class="table table-hover">
                 <thead>
                 <tr>
-                    <th>Id</th>
                     <th>Url</th>
                     <th>IP</th>
                     <th>Title</th>
                     <th>Appname</th>
+                    <th>Is New</th>
+                    <th>Detail</th>
                 </tr>
                 </thead>
-                {% for domain in domains %}
                 <tbody>
+                {% for domain in domains %}
                 <tr>
-                    <td>{{ domain.id }}</td>
                     <td><a href="http://{{ domain.url }}" target="_blank">{{ domain.url }}</a></td>
                     <td>{{ domain.ip }}</td>
                     <td>{{ domain.title }}</td>
                     <td>{{ domain.appname }}</td>
-                    <td><a class="btn btn-danger btn-xs" href="/del/{{domain.id}}/subdomain" role="button">删除</a>
+                    <td>
+                        {% if domain.is_new == '1' %}
+                            <button type="button" class="btn btn-outline-warning btn-sm">NEW!</button>
+                        {% endif %}
                     </td>
+                    <td><a class="btn btn-outline-info btn-sm" href="/domain/detail/{{ domain.id }}" role="button">详情</a></td>
                 </tr>
-                </tbody>
                 {% endfor %}
+                </tbody>
             </table>
         </div>
     </div>

@@ -5,37 +5,37 @@
 <div class="container-fluid">
     <div class="container">
         <ul class="nav nav-tabs">
-            <li class="nav-item"><a class="nav-link" href="/detail/{{ id }}">Index</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/{{ domain_id }}">Index</a></li>
         {% if _mode == 'domain' %}
-            <li class="active"><a class="nav-link" href="/detail/domain/{{ id }}">Subdomain</a></li>
-            <li class="nav-item"><a class="nav-link" href="/detail/port/{{ id }}">Port</a></li>
-            <li class="nav-item"><a class="nav-link" href="/detail/sendir/{{ id }}">Directory</a></li>
-            <li class="nav-item"><a class="nav-link" href="/detail/vul/{{ id }}">Vul</a></li>
+            <li class="active"><a class="nav-link" href="/detail/domain/{{ domain_id }}">Subdomain</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/port/{{ domain_id }}">Port</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/sendir/{{ domain_id }}">Directory</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/vul/{{ domain_id }}">Vul</a></li>
         {% elif _mode == 'port' %}
-            <li class="nav-item"><a class="nav-link" href="/detail/domain/{{ id }}">Subdomain</a></li>
-            <li class="active"><a class="nav-link" href="/detail/port/{{ id }}">Port</a></li>
-            <li class="nav-item"><a class="nav-link" href="/detail/sendir/{{ id }}">Directory</a></li>
-            <li class="nav-item"><a class="nav-link" href="/detail/vul/{{ id }}">Vul</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/domain/{{ domain_id }}">Subdomain</a></li>
+            <li class="active"><a class="nav-link" href="/detail/port/{{ domain_id }}">Port</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/sendir/{{ domain_id }}">Directory</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/vul/{{ domain_id }}">Vul</a></li>
         {% elif _mode == 'sendir' %}
-            <li class="nav-item"><a class="nav-link" href="/detail/domain/{{ id }}">Subdomain</a></li>
-            <li class="nav-item"><a class="nav-link" href="/detail/port/{{ id }}">Port</a></li>
-            <li class="active"><a class="nav-link" href="/detail/sendir/{{ id }}">Directory</a></li>
-            <li class="nav-item"><a class="nav-link" href="/detail/vul/{{ id }}">Vul</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/domain/{{ domain_id }}">Subdomain</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/port/{{ domain_id }}">Port</a></li>
+            <li class="active"><a class="nav-link" href="/detail/sendir/{{ domain_id }}">Directory</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/vul/{{ domain_id }}">Vul</a></li>
         {% elif _mode == 'vul' %}
-            <li class="nav-item"><a class="nav-link" href="/detail/domain/{{ id }}">Subdomain</a></li>
-            <li class="nav-item"><a class="nav-link" href="/detail/port/{{ id }}">Port</a></li>
-            <li class="nav-item"><a class="nav-link" href="/detail/sendir/{{ id }}">Directory</a></li>
-            <li class="active"><a class="nav-link" href="/detail/vul/{{ id }}">Vul</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/domain/{{ domain_id }}">Subdomain</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/port/{{ domain_id }}">Port</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/sendir/{{ domain_id }}">Directory</a></li>
+            <li class="active"><a class="nav-link" href="/detail/vul/{{ domain_id }}">Vul</a></li>
         {% else %}
-            <li class="nav-item"><a class="nav-link" href="/detail/domain/{{ id }}">Subdomain</a></li>
-            <li class="nav-item"><a class="nav-link" href="/detail/port/{{ id }}">Port</a></li>
-            <li class="nav-item"><a class="nav-link" href="/detail/sendir/{{ id }}">Directory</a></li>
-            <li class="nav-item"><a class="nav-link" href="/detail/vul/{{ id }}">Vul</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/domain/{{ domain_id }}">Subdomain</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/port/{{ domain_id }}">Port</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/sendir/{{ domain_id }}">Directory</a></li>
+            <li class="nav-item"><a class="nav-link" href="/detail/vul/{{ domain_id }}">Vul</a></li>
         {% endif %}
         </ul>
         {% if not _mode %}
         <div class="row placeholders">
-            <h3>{{ task_name }}</h3>
+            <h3>{{ src_name }}</h3>
             <div class="col-xs-6 col-sm-3 placeholder">
                 <h4>Subdomain</h4>
                 <span class="text-muted">{{ domain_number }}</span>
@@ -51,27 +51,33 @@
         </div>
         {% elif _mode == 'domain' %}
         <div class="table-responsive">
-            <table class="table table-striped">
+            <table class="table table-hover">
                 <thead>
                 <tr>
-                    <th>Id</th>
                     <th>Url</th>
                     <th>IP</th>
                     <th>Title</th>
                     <th>Appname</th>
+                    <th>Is New</th>
+                    <th>Detail</th>
                 </tr>
                 </thead>
-                {% for domain in domains %}
                 <tbody>
+                {% for domain in domains %}
                 <tr>
-                    <td>{{ domain.id }}</td>
                     <td><a href="http://{{ domain.url }}" target="_blank">{{ domain.url }}</a></td>
                     <td>{{ domain.ip }}</td>
                     <td>{{ domain.title }}</td>
                     <td>{{ domain.appname }}</td>
+                    <td>
+                        {% if domain.is_new == '1' %}
+                            <button type="button" class="btn btn-outline-warning btn-sm">NEW!</button>
+                        {% endif %}
+                    </td>
+                    <td><a class="btn btn-outline-info btn-sm" href="/domain/detail/{{ domain.id }}" role="button">详情</a></td>
                 </tr>
-                </tbody>
                 {% endfor %}
+                </tbody>
             </table>
         </div>
         {% elif _mode == 'port' %}
@@ -143,7 +149,7 @@
                     <td>{{ sendir.id }}</td>
                     <td><a href="{{sendir.url}}" target="_blank">{{ sendir.url }}</a></td>
                     <td>{{ sendir.status_code }}</td>
-                    <td><a class="btn btn-danger btn-xs" href="/del/{{sendir.id}}/subdomain" role="button">删除</a>
+                    <td><a class="btn btn-outline-danger btn-sm" href="/del/{{sendir.id}}/subdomain" role="button">删除</a>
                     </td>
                 </tr>
                 </tbody>

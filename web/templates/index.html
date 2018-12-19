@@ -28,36 +28,31 @@
             </div>
         </div>
 
-        <h2 class="sub-header">Task List</h2>
-        <form class="form-inline" role="form" action="/add_vul" method=post>
-            <span class="form-group-btn">
-                <button class="btn btn-outline-info" type="submit">Scan it!</button>
-            </span>
-            <div class="form-group">
-                <input type="text" class="form-control" placeholder="Add a task ..." name="sitescan" value="">
-            </div><!-- /input-group -->
-        </form>
-
+        <h2 class="sub-header">Recent Scanned</h2>
         <div class="table-responsive">
-            <table class="table table-striped table-sm ">
+            <table class="table table-hover table-sm">
                 <thead>
                 <tr>
                     <th>ID</th>
                     <th>Name</th>
+                    <th>SRC ID</th>
+                    <th>Url</th>
+                    <th>Scan Time</th>
                     <th>Detail</th>
-                    <th>Delete</th>
                 </tr>
                 </thead>
-                {% for task in tasks %}
                 <tbody>
+                {% for src in src_list %}
                 <tr>
-                    <td>{{ task.id }}</td>
-                    <td>{{ task.name }}</td>
-                    <td><a class="btn btn-outline-info btn-sm" href="/detail/{{ task.id }}" role="button">任务详情</a></td>
-                    <td><a class="btn btn-outline-danger btn-sm" href="/del/{{ task.id }}/task" role="button">删除</a></td>
+                    <td>{{ src.id }}</td>
+                    <td>{{ src.name }}</td>
+                    <td>{{ src.src_id }}</td>
+                    <td>{{ src.url }}</td>
+                    <td>{{ src.scan_time }}</td>
+                    <td><a class="btn btn-outline-info btn-sm" href="/detail/{{ src.id }}" role="button">详情</a></td>
                 </tr>
-                </tbody>
                 {% endfor %}
+                </tbody>
             </table>
             {% include 'include/pagination.html' %}
         </div>

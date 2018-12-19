@@ -2,23 +2,22 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
-import sys
-import requests
-import gevent
 
-from setting import user_path, user_agent
+from setting import user_path, user_agent, sendir_thread_num
 from typing import List, Dict
 
 from gevent.queue import Queue
 from gevent import monkey
 monkey.patch_all()
 
+import requests
+import gevent
+
 
 class SenDir:
     def __init__(self, domains, id=0):
         self.domains: List = domains
         self.id: int = id
-        self.thread_num: int = 50
         self.timeout: int = 2
         self.queue = Queue()
         self.sensitive: Dict = {}
@@ -53,6 +52,8 @@ class SenDir:
             except requests.exceptions.ConnectTimeout:
                 continue
             except requests.exceptions.ReadTimeout:
+                continue
+            except requests.exceptions.ConnectionError:
                 continue
 
             if r.status_code in self.exist_status_code:
@@ -101,7 +102,7 @@ class SenDir:
 
         print('\n检测敏感目录...')
         self.enqueue_dir()
-        threads = [gevent.spawn(self.directory_brute) for _ in range(self.thread_num)]
+        threads = [gevent.spawn(self.directory_brute) for _ in range(sendir_thread_num)]
         gevent.joinall(threads)
         # self.directory_brute()
 

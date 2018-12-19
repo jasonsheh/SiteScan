@@ -6,11 +6,18 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
+
+from typing import List, Dict
+from setting import user_path, user_agent, siteinfo_thread_num
+
+from gevent.queue import Queue
+from gevent import monkey
+monkey.patch_all()
+
 import sqlite3
 import re
 import requests
-from typing import List, Dict
-from setting import user_path, user_agent
+import gevent
 
 
 class SiteInfo:
@@ -18,6 +25,7 @@ class SiteInfo:
         self.conn = sqlite3.connect(user_path + '/db/Rules.db')
         self.cursor = self.conn.cursor()
         self.targets: List = targets
+        self.queue = Queue()
         self.protocol: str = 'http://'
         self.headers: Dict = {'User-Agent': user_agent}
         self.results: List = []
@@ -29,6 +37,10 @@ class SiteInfo:
 
         self.title_pattern = "<title.*?>(.*?)</title.*?>"
         self.encoding_pattern = "encoding=[\'|\"]?(.*?)[\'|\"]"
+
+    def enqueue_domain(self):
+        for domain in self.targets:
+            self.queue.put_nowait(domain)
 
     def get_title(self, r):
         try:
@@ -64,13 +76,18 @@ class SiteInfo:
         except LookupError:
             return ''
 
-    def run(self):
-        for domain in self.targets:
+    def get_info(self):
+        while not self.queue.empty():
+            domain = self.queue.get()
             result = {'domain': domain, 'title': '', 'text': '', 'headers': [], 'app': []}
             try:
                 r = requests.get(self.protocol + domain, timeout=3, headers=self.headers)
-            except requests.exceptions:
+            except requests.exceptions.ConnectTimeout:
                 return result
+            except requests.exceptions.ReadTimeout:
+                continue
+            except requests.exceptions.ConnectionError:
+                continue
 
             result['title'] = self.get_title(r)
             result['headers'] = [{"key": k, "value": v} for k, v in r.headers.items()]
@@ -95,6 +112,12 @@ class SiteInfo:
                             result['app'].append(appname)
                             break
             self.results.append(result)
+
+    def run(self):
+        print("获取页面信息")
+        self.enqueue_domain()
+        threads = [gevent.spawn(self.get_info) for _ in range(siteinfo_thread_num)]
+        gevent.joinall(threads)
         return self.results
 
 

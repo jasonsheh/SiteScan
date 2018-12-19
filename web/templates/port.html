@@ -6,9 +6,9 @@
     <div class="container">
         <h1 class="page-header">Port</h1>
         <form class="form-inline" role="form" action="/add" method=post>
-						<span class="form-group-btn">
-						<button class="btn btn-default" type="submit">Scan it!</button>
-						</span>
+            <span class="form-group-btn">
+                <button class="btn btn-outline-info" type="submit">Scan it!</button>
+            </span>
             <div class="form-group">
                 <input type="text" class="form-control" placeholder="Add a task ..." name="port" value="">
             </div><!-- /input-group -->
@@ -27,8 +27,8 @@
                     <th>Version</th>
                 </tr>
                 </thead>
-                {% for port in ports %}
                 <tbody>
+                {% for port in ports %}
                 <tr>
                     <td>{{ port.id }}</td>
                     <td>{{ port.ip }}</td>
@@ -38,8 +38,8 @@
                     <td>{{ port.service }}</td>
                     <td>{{ port.version }}</td>
                 </tr>
-                </tbody>
                 {% endfor %}
+                </tbody>
             </table>
         </div>
     </div>

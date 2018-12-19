@@ -2,6 +2,11 @@
 # __author__ = 'jasonsheh'
 # -*- coding:utf-8 -*-
 
+from gevent.queue import Queue
+from gevent import monkey
+
+monkey.patch_all()
+
 import dns.resolver
 import sys
 import requests
@@ -13,10 +18,6 @@ import gevent
 from typing import List, Dict
 from utils.timer import timer
 from setting import user_path, user_agent, vt_api_key, subdomain_thread_num
-
-from gevent.queue import Queue
-from gevent import monkey
-monkey.patch_all()
 
 
 class Domain(object):
@@ -108,7 +109,8 @@ class BruteDomain(Domain):
         # 第一次移除错误域名
         self.domain = list(set([x for x in self.domains.keys()]))
         self.sub_domain()
-        threads = [gevent.spawn(self.remove_error_subdomain, dns_number) for dns_number in range(int(self.thread_num / 5))]
+        threads = [gevent.spawn(self.remove_error_subdomain, dns_number) for dns_number in
+                   range(int(self.thread_num / 5))]
         gevent.joinall(threads)
         for domain in self.removed_domains:
             self.domain.remove(domain)
@@ -176,7 +178,7 @@ class BruteDomain(Domain):
             resolvers.nameservers = [self.dns[dns_number % len(self.dns)]]
             resolvers.timeout = 4.0
             try:
-                sys.stdout.write('\r子域名数: '+str(len(self.domains.keys()))+'剩余爆破数: '+str(self.queue.qsize()))
+                sys.stdout.write('\r子域名数: ' + str(len(self.domains.keys())) + '剩余爆破数: ' + str(self.queue.qsize()))
                 sys.stdout.flush()
                 answers = resolvers.query(domain)
                 ips = [answer.address for answer in answers]
@@ -213,9 +215,6 @@ class SearchDomain(Domain):
         self.so360()
 
         self.remove_spread_record()
-        # for test
-        print(self.domains)
-        return self.domains
 
     def get_ip(self, domains):
         for domain in domains:
@@ -245,7 +244,7 @@ class SearchDomain(Domain):
         url = 'https://crt.sh/?q=%.{}'.format(self.target)
         try:
             r = requests.get(url)
-            pattern = re.compile("<TD>(.*?"+self.target+")</TD>")
+            pattern = re.compile("<TD>(.*?" + self.target + ")</TD>")
             text = r.text.replace('*.', '')
             domains = re.findall(pattern, text)
             domains = list(set(domains))
@@ -266,7 +265,7 @@ class SearchDomain(Domain):
         url = 'http://www.baidu.com/s?wd=site:{}&pn='.format(self.target)
         pattern = re.compile('<a.*?class="c-showurl".*?>(.*?)/&nbsp;</a>')
         for page in range(1, self.search_depth):
-            r = requests.get(url+str(page), headers=self.headers)
+            r = requests.get(url + str(page), headers=self.headers)
             domains += re.findall(pattern, r.text)
 
         domains = self.remove_irrelevant_domain(domains)
@@ -279,7 +278,7 @@ class SearchDomain(Domain):
         pattern = re.compile('<cite>(.*?)</strong>')
         for page in range(0, self.search_depth):
             try:
-                r = requests.get(url + str(page*10), headers=self.headers)
+                r = requests.get(url + str(page * 10), headers=self.headers)
                 domains += re.findall(pattern, r.text)
             except requests.exceptions.ChunkedEncodingError:
                 continue
@@ -305,7 +304,7 @@ class SearchDomain(Domain):
         need_to_be_removed = []
         for domain in self.domains.keys():
             if len(domain.replace(self.target, '').split('.')) > 2:
-                _domain = 'this_subdomain_will_never_exist'+'.'+domain.split('.', 1)[1]
+                _domain = 'this_subdomain_will_never_exist' + '.' + domain.split('.', 1)[1]
                 try:
                     socket.gethostbyname(_domain)
                     need_to_be_removed.append(domain)
@@ -384,8 +383,7 @@ class AllDomain(SearchDomain, BruteDomain):
         super().run_search()
         super().run_brute()
         super().output()
-        return sorted(self.domains)
-        # Database().insert_subdomain(self.domains, self.title, self.appname, self.info_id)
+        return self.domains
 
 
 if __name__ == '__main__':

@@ -8,16 +8,18 @@
         <h1 class="page-header">监控范围列表</h1>
 
         <form class="form-inline" role="form" action="/add_vul" method=post>
-                        <span class="form-group-btn">
-                        <button class="btn btn-default" type="submit">Scan it!</button>
-                        </span>
             <div class="form-group">
-                <input type="text" class="form-control" placeholder="Add a task ..." name="sitescan" value="">
+                <input type="text" class="form-control" placeholder="its name" id="name" name="Name" value="">
+                <input type="text" class="form-control" placeholder="id" id="id" name="Id" value="">
+                <input type="text" class="form-control" placeholder="and range" id="url" name="Url" value="">
             </div><!-- /input-group -->
+            <span class="form-group-btn">
+                <button class="btn btn-outline-info" type="submit">Add it</button>
+            </span>
         </form>
 
         <div class="table-responsive">
-            <table class="table table-striped table-sm">
+            <table class="table table-hover table-sm">
                 <thead>
                 <tr>
                     <th>ID</th>
@@ -28,8 +30,8 @@
                     <th>Delete</th>
                 </tr>
                 </thead>
-                {% for src in src_list %}
                 <tbody>
+                {% for src in src_list %}
                 <tr>
                     <td>{{ src.id }}</td>
                     <td>{{ src.name }}</td>
@@ -38,8 +40,8 @@
                     <td>{{ src.scan_time }}</td>
                     <td><a class="btn btn-outline-danger btn-sm" href="/del/{{ src.id }}/src" role="button">删除</a></td>
                 </tr>
-                </tbody>
                 {% endfor %}
+                </tbody>
             </table>
             {% include 'include/pagination.html' %}
         </div>

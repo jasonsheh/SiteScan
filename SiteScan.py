@@ -3,6 +3,8 @@
 # -*- coding:utf-8 -*-
 
 from lib.controller import init_domain
+from lib.info.subdomain import AllDomain
+
 from lib.controller import info_collect
 from lib.controller import vul_scan
 from lib.controller import service_scan
@@ -21,6 +23,8 @@ sys.path.append(user_path)
 parser = argparse.ArgumentParser()
 parser.add_argument("-i", "--info",
                     help="collect info related to this domain")
+parser.add_argument("--subdomain",
+                    help="collect subdomain related to this domain")
 parser.add_argument('-s', "--scan",
                     help='find vulnerabilities related to this domain')
 parser.add_argument('-p', "--port",
@@ -50,6 +54,8 @@ def main():
     try:
         if args.info:
             info_collect(init_domain(args.info))
+        if args.subdomain:
+            AllDomain(init_domain(args.subdomain)).run()
         if args.scan:
             vul_scan(init_domain(args.scan))
         if args.port:

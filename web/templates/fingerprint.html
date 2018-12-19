@@ -6,9 +6,9 @@
     <div class="container">
         <h1 class="page-header">FingerPrint</h1>
         <form class="form-inline" role="form" action="/add_rule" method=post>
-                <span class="form-group-btn">
-                    <button class="btn btn-outline-info" type="submit">Add Rule!</button>
-                </span>
+            <span class="form-group-btn">
+                <button class="btn btn-outline-info" type="submit">Add Rule!</button>
+            </span>
             <div class="form-group">
                 <input type="text" class="form-control" placeholder=" name ..." name="name" value="">
                 <input type="text" class="form-control" placeholder=" rule ..." name="rule" value="">
@@ -16,7 +16,7 @@
         </form>
 
         <div class="table-responsive">
-            <table class="table table-striped">
+            <table class="table table-hover">
                 <thead>
                 <tr>
                     <th>Id</th>
@@ -26,23 +26,23 @@
                     <th>Delete</th>
                 </tr>
                 </thead>
-                {% for fingerprint in fingerprints %}
                 <tbody>
+                {% for fingerprint in fingerprints %}
                 <tr>
                     <td class="{{ fingerprint.id }}">{{ fingerprint.id }}</td>
                     <td class="{{ fingerprint.id }}">{{ fingerprint.name }}</td>
                     <td class="{{ fingerprint.id }}">{{ fingerprint.rule }}</td>
-                    <td><a class="btn btn-outline-info btn-sm" data-toggle="modal" data-target="#exampleModal" onclick="update({{ fingerprint.id }})" role="button">修改</a></td>
+                    <td><a class="btn btn-outline-info btn-sm" data-toggle="modal" data-target="#edit" onclick="update({{ fingerprint.id }})" role="button">修改</a></td>
                     <td><a class="btn btn-outline-danger btn-sm" href="/del/fingerprint/{{ fingerprint.id }}" role="button">删除</a></td>
                 </tr>
-                </tbody>
                 {% endfor %}
+                </tbody>
             </table>
         </div>
     </div>
 
     <!-- Modal -->
-    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+    <div class="modal fade" id="edit" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
          aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
