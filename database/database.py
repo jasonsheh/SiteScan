@@ -21,11 +21,7 @@ class Database:
         self.create_sendir()
         self.create_vul()
 
-    def select_subdomain_by_domain_id(self, domain_id):
-        sql = "select * from subdomain order by id_new desc where domain_id = ?"
-        self.cursor.execute(sql, (domain_id,))
-        results = self.cursor.fetchall()
-
+    def organize_subdomain_data(self, results):
         results_list = []
         for result in results:
             results_list.append(
@@ -41,30 +37,18 @@ class Database:
                     'is_new': result[8],
                 }
             )
-
+        self.clean()
         return results_list
 
-    def select_subdomain_by_page(self, page, domain_id):
-        sql = "select * from subdomain where domain_id = ? order by id desc limit ?,?"
-        self.cursor.execute(sql, (domain_id, (page - 1) * item_size, item_size))
-        results = self.cursor.fetchall()
+    def select_subdomain_by_domain_id(self, domain_id, page=-1):
+        if page == -1:
+            sql = "select * from subdomain order by id_new desc where domain_id = ?"
+            self.cursor.execute(sql, (domain_id,))
+        else:
+            sql = "select * from subdomain where domain_id = ? order by id desc limit ?,?"
+            self.cursor.execute(sql, (domain_id, (page - 1) * item_size, item_size))
 
-        results_list = []
-        for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'ip': result[1],
-                    'url': result[2],
-                    'title': result[3],
-                    'appname': result[4],
-                    'text': result[5],
-                    'domain_id': result[6],
-                    'src_id': result[7],
-                    'is_new': result[8],
-                }
-            )
-        return results_list
+        return self.organize_subdomain_data(self.cursor.fetchall())
 
     def select_port_by_page(self, page, domain_id):
         sql = "select * from port where domain_id = ? order by id desc limit ?,?"
@@ -146,6 +130,9 @@ class Database:
         subdomains = self.select_subdomain_by_domain_id(domain_id)
         subdomain_list = [x['url'] for x in subdomains]
 
+        self.conn = sqlite3.connect(user_path + '/db/SiteScan.db')
+        self.cursor = self.conn.cursor()
+
         for info in infos:
             ips = ' '.join(domains[info['domain']])
             app = ' '.join(info['app'])
@@ -164,50 +151,12 @@ class Database:
     def select_subdomain(self, page):
         sql = "select * from subdomain order by is_new desc, id desc limit ?,?"
         self.cursor.execute(sql, ((page - 1) * item_size, item_size))
-        results = self.cursor.fetchall()
-
-        results_list = []
-        for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'ip': result[1],
-                    'url': result[2],
-                    'title': result[3],
-                    'appname': result[4],
-                    'text': result[5],
-                    'domain_id': result[6],
-                    'src_id': result[7],
-                    'is_new': result[8],
-                }
-            )
-
-        self.clean()
-        return results_list
+        return self.organize_subdomain_data(self.cursor.fetchall())
 
     def select_subdomain_detail(self, domain_id):
         sql = "select * from subdomain where id = ?"
         self.cursor.execute(sql, (domain_id, ))
-        results = self.cursor.fetchall()
-
-        results_list = []
-        for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'ip': result[1],
-                    'url': result[2],
-                    'title': result[3],
-                    'appname': result[4],
-                    'text': result[5],
-                    'domain_id': result[6],
-                    'src_id': result[7],
-                    'is_new': result[8],
-                }
-            )
-
-        self.clean()
-        return results_list
+        return self.organize_subdomain_data(self.cursor.fetchall())
 
     def create_port(self):
         self.cursor.execute('create table port('

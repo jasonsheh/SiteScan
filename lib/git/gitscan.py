@@ -9,21 +9,27 @@ from github import Github, GithubException
 from setting import github_api_key
 
 
-reg_mail = re.compile('([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)')
-reg_ip = re.compile(r"^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$")
+# reg_mail = re.compile('([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)')
+# reg_ip = re.compile(r"^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$")
 
 
 class GitScan:
-    def __init__(self, keyword):
-        self.g = Github(github_api_key)
-        self.keyword = keyword
-        self.search_page = 5
+    def __init__(self, target: str):
+        self.key_num = 0
+        self.g = Github(github_api_key[self.key_num])
+        self.target: str = target
+        self.search_page: int = 1
+        self.timeout: int = 10
         self.hash_list = []
-        self.useless_ext = ['css', 'htm', 'html', 'pac', 'csv', 'txt', 'csv.dat', 'rules', 'md', 'svg']
+        self.useless_ext = ['css', 'htm', 'html', 'pac', 'csv', 'txt', 'csv.dat', 'rules', 'svg']
         self.useful_ext = ['properties']
-        self.keywords = ['pwd', 'smtp password', 'admin password']
-        self.fuzz_list = ['fuzz', 'dict', 'hack', 'whitelist']
-        self.email = ['@163.com']
+        # self.keywords = ['jdbc:', 'smtp password', 'password=']
+        self.keywords = {'jdbc:': 'jdbc:',
+                         'smtp password': "[(smtp)]?.*?password.*[^>]=[^<]",
+                         'password=': "password.*[=]"}
+        # self.keywords = ['password =']
+
+        self.fuzz_repo_keyword = ['fuzz', 'hack', 'whitelist', 'blacklist']
 
     # 移除无用的文件类型
     def filter(self, url):
@@ -33,61 +39,71 @@ class GitScan:
                 return True
         return False
 
-    # 移除Github上fuzz，字典相关repo
     def remove_dict_from_repo(self, name):
-        for fuzz_keyword in self.fuzz_list:
+        """
+        移除Github上 fuzz，字典等相关repo
+        :param name: repo url 类似名称
+        :return: is_fuzz_or_dict_like bool
+        """
+        for fuzz_keyword in self.fuzz_repo_keyword:
             if re.search(fuzz_keyword, name, re.IGNORECASE):
                 return True
         return False
 
     def get_keyword_code(self, full_code):
+        """
+        获取匹配到关键字的代码行
+        :param full_code: 全量代码
+        :return: 关键代码
+        """
         codes = full_code.splitlines()
         key_code = []
-        for keyword in self.keywords:
+        for keyword, rule in self.keywords.items():
+            # for k in keyword.split(' '):
+            #     if k == '':
+            #         continue
             for code in codes:
-                for kw in keyword.split(' '):
-                    if re.search(kw, code, re.IGNORECASE) and len(code) < 300:
-                        key_code.append(code.strip())
-        if len(key_code) > 40:
-            return []
+                if re.search(rule, code, re.I) and len(code) < 300:
+                    key_code.append(code.strip())
         return list(set(key_code))
+
+    def switch_api_key(self):
+        self.key_num = (self.key_num + 1) // len(github_api_key)
+        self.g = Github(github_api_key[self.key_num])
 
     def test(self):
         for kw in self.keywords:
-            resource = self.g.search_code(self.keyword+' '+kw, sort="indexed", order="desc")
-            for page in range(1, self.search_page):
-                # You have triggered an abuse detection mechanism. Please wait a few minutes before you try again.
+            resource = self.g.search_code('{}+{}'.format(self.target, kw), sort="indexed", order="desc")
+            print(resource.totalCount)
+            for page in range(0, self.search_page):
                 try:
                     for index, content in enumerate(resource.get_page(page)):
-                        if content.sha not in self.hash_list:
-                            url = content.html_url
-                            full_name = content.repository.full_name
+                        if content.sha in self.hash_list:
+                            continue
+                        url = content.html_url
+                        full_name = content.repository.full_name
 
-                            self.hash_list.append(content.sha)
-                            if self.remove_dict_from_repo(url):
-                                continue
-                            if self.filter(url):
-                                continue
+                        self.hash_list.append(content.sha)
+                        if self.remove_dict_from_repo(url):
+                            continue
+                        if self.filter(url):
+                            continue
 
-                            try:
-                                full_code = content.decoded_content.decode('utf-8')
-                            except socket.timeout:
-                                print('error', url)
-                                continue
-                            except GithubException.UnknownObjectException:
-                                print('error', url)
-                                continue
-                            codes = self.get_keyword_code(full_code)
-                            mail = re.findall(reg_mail, full_code)
-                            ip = re.findall(reg_ip, full_code)
-                            print(index, content.html_url)
+                        full_code = content.decoded_content.decode('utf-8')
+
+                        codes = self.get_keyword_code(full_code)
+                        if codes:
+                            print(index, content.html_url, full_name)
                             for code in codes:
                                 print('\t', code)
-                except GithubException:
+                except GithubException as e:
+                    print(e)
                     time.sleep(5)
                     continue
-                time.sleep(3)
+                time.sleep(self.timeout)
+            # 每个关键字搜索完成(默认30页)切换api_key
+            self.switch_api_key()
 
 
 if __name__ == '__main__':
-    GitScan('smartisan').test()
+    GitScan('youdao.com').test()

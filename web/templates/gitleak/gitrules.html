@@ -1,0 +1,84 @@
+{% include 'include/header.html' %}
+
+{% include 'include/navbar.html' %}
+
+<div class="container-fluid">
+    <div class="container">
+        <h1 class="page-header">Github 监控范围</h1>
+        <form class="form-inline" role="form" action="/add_rule" method=post>
+            <span class="form-group-btn">
+                <button class="btn btn-outline-info" type="submit">Add Rule!</button>
+            </span>
+            <div class="form-group">
+                <input type="text" class="form-control" placeholder=" name ..." name="name" value="">
+                <input type="text" class="form-control" placeholder=" rule ..." name="rule" value="">
+            </div><!-- /input-group -->
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Domain</th>
+                    <th>Scan Time</th>
+                    <th>Edit</th>
+                    <th>Delete</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for rule in rules %}
+                <tr>
+                    <td class="{{ rule.id }}">{{ rule.id }}</td>
+                    <td class="{{ rule.id }}">{{ rule.domain }}</td>
+                    <td class="{{ rule.id }}">{{ rule.scan_time }}</td>
+                    <td><a class="btn btn-outline-info btn-sm" data-toggle="modal" data-target="#edit"
+                           onclick="update({{ rule.id }})" role="button">修改</a></td>
+                    <td><a class="btn btn-outline-danger btn-sm" href="/del/rule/{{ rule.id }}"
+                           role="button">删除</a></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="edit" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLongTitle">Edit Rules</h5>
+                </div>
+                <form class="form" role="form" action="/update/rule" method=post>
+                    <div class="form-group">
+                        <label>ID</label>
+                        <input type="text" class="form-control _" name="id" value="">
+                        <label>Domain</label>
+                        <input type="text" class="form-control _" name="domain" value="">
+                        <label>Sign</label>
+                        <input type="text" class="form-control _" name="sign" value="">
+                    </div><!-- /input-group -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+                        <button class="btn btn-primary btn-sm" type="submit">Save changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        function update(id){
+                    $("td[class='" + id + "']").each(function(i){
+                        $("input[class='form-control _']").eq(i).attr('value', $(this).html());
+                    });
+
+                    $("input[class='form-control _']").eq(0).attr('readonly', '');
+                }
+
+    </script>
+    {% include 'include/pagination.html' %}
+</div>
+
+{% include 'include/footer.html' %}

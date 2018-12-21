@@ -9,7 +9,10 @@ from database.rules import Rules
 from database.srcList import SrcList
 from setting import item_size
 
+from web.gitleak import gitleak
+
 app = Flask(__name__)
+app.register_blueprint(gitleak)
 
 max_domain = Database().count('subdomain')
 max_port = Database().count('port')
@@ -38,6 +41,19 @@ def setting(page=1):
                            max_page=max_src // item_size + 1)
 
 
+@app.route('/fingerscan')
+def finger_scan():
+    return render_template('fingerscan.html', total_number=max_fingerprint)
+
+# @app.route('/fingerscan/post', methods=['POST'])
+# def add_task():
+#     if request.method == 'POST':
+#         if request.form.get('domain').find('.') != -1:
+#             result = FingerPrint(request.form.get('finger'), request.form.get('protocol')).run()
+#             flash(result.split(' ')[:-1])
+#         return redirect('/index')
+
+
 @app.route('/detail/<int:domain_id>')
 def detail(domain_id):
     # 域名ID
@@ -55,7 +71,7 @@ def detail(domain_id):
 def detail_domain(mode, id, page=1):
     if mode == 'domain':
         domain_number = Database().count_detail('subdomain', id)
-        domains = Database().select_subdomain_by_page(page, id)
+        domains = Database().select_subdomain_by_domain_id(id, page)
         return render_template('detail.html', id=id, _mode=mode, mode="detail/{}/{}".format(mode, id), page=page,
                                max_page=domain_number // item_size + 1, domains=domains)
     if mode == 'port':

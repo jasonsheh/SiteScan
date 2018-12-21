@@ -3,29 +3,40 @@
 # __email__ = 'qq3039344@gmail.com'
 # -*- coding:utf-8 -*-
 
+
 import sqlite3
 import datetime
 from setting import user_path, item_size
 
 
-class SrcList:
+class GitLeak:
     def __init__(self):
-        self.conn = sqlite3.connect(user_path + '/db/SiteScan.db')
+        self.conn = sqlite3.connect(user_path + '/db/GitLeak.db')
         self.cursor = self.conn.cursor()
 
-    # 创建src列表数据库
-    def create_src_list(self):
-        self.cursor.execute('create table src('
+    def create_rule(self):
+        self.cursor.execute('create table rule ('
                             'id integer primary key,'
-                            'name varchar(64),'
-                            'src_id integer,'
-                            'url varchar(128),'
-                            'scan_time TEXT'
+                            'domain_id integer, '
+                            'domain varchar(255), '
+                            'sign varchar(255), '
+                            'scan_time text'
                             ')')
-        self.conn.commit()
-        self.clean()
+        print("create rule successfully")
 
-    def init_data(self):
+    def create_leak(self):
+        self.cursor.execute('create table leak ('
+                            'id integer primary key,'
+                            'domain_id integer, '
+                            'domain varchar(255), '
+                            'repository_name varchar(255), '
+                            'repository_url varchar(255), '
+                            'code text, '
+                            'scan_time text'
+                            ')')
+        print("create leak successfully")
+
+    def init_rule(self):
         src_list = [("阿里asrc", 1, "*.taobao.com"),
                     ("阿里asrc", 1, "*.tmall.com"),
                     ("阿里asrc", 1, "*.alipay.com"),
@@ -237,27 +248,30 @@ class SrcList:
                     ("微众wsrc", 44, "*.webank.com"),
                     ("万能钥匙wifisrc", 45, "*.wifi.com"),
                     ("中通src", 46, "*.zto.com")]
-        sql = "insert into src (name, src_id, url, scan_time) values (?, ?, ?, ?)"
+        sql = "insert into rule (domain_id, domain, sign, scan_time) values (?, ?, ?, ?)"
+        i = 0
         for src_info in src_list:
+            i += 1
             self.cursor.execute(sql,
-                                (src_info[0], src_info[1], src_info[2], datetime.datetime.now().strftime("%Y-%m-%d")))
+                                (i, src_info[2][2:], "", datetime.datetime.now().strftime("%Y-%m-%d")))
         self.conn.commit()
-        self.clean()
-        print("create src successfully")
+        print("init rule successfully")
 
-    def update_scan_time(self, url):
-        sql = "update src set scan_time = ? where url = ?"
-        self.cursor.execute(sql, (datetime.datetime.now().strftime("%Y-%m-%d"), url))
-        self.conn.commit()
+    def create_database(self):
+        self.create_rule()
+        self.create_leak()
+        self.init_rule()
 
-    def insert_src_list(self, name, src_id, url):
-        sql = "insert into src (name, src_id, url, scan_time) values (?, ?, ?, ?)"
-        self.cursor.execute(sql, (name, src_id, url, datetime.datetime.now().strftime("%Y-%m-%d")))
-        self.conn.commit()
-
-    def select_src_by_id(self, id):
-        sql = "select * from src where id = ?"
-        self.cursor.execute(sql, (id, ))
+    def select_rules(self, page=0, count=0):
+        if count != 0:
+            sql = "select * from rule order by scan_time desc limit ?"
+            self.cursor.execute(sql, (count,))
+        if page != 0:
+            sql = "select * from rule order by scan_time desc limit ?,?"
+            self.cursor.execute(sql, ((page - 1) * item_size, item_size))
+        if page == 0 and count == 0:
+            sql = "select * from rule order by scan_time desc"
+            self.cursor.execute(sql)
         results = self.cursor.fetchall()
 
         results_list = []
@@ -265,39 +279,22 @@ class SrcList:
             results_list.append(
                 {
                     'id': result[0],
-                    'name': result[1],
-                    'src_id': result[2],
-                    'url': result[3],
+                    'domain_id': result[1],
+                    'domain': result[2],
+                    'sign': result[3],
                     'scan_time': result[4]
                 }
             )
-
-        self.clean()
-        return results[0][3]
-
-    def select_src_list(self, page):
-        sql = "select * from src order by id desc limit ?,?"
-        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
-        results = self.cursor.fetchall()
-
-        results_list = []
-        for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'name': result[1],
-                    'src_id': result[2],
-                    'url': result[3],
-                    'scan_time': result[4]
-                }
-            )
-
         self.clean()
         return results_list
 
-    def select_un_scan_src_list(self, scan_size):
-        sql = "select * from src order by scan_time desc limit ?"
-        self.cursor.execute(sql, (scan_size, ))
+    def select_leak(self, page):
+        if page != 0:
+            sql = "select * from leak order by scan_time desc limit ?,?"
+            self.cursor.execute(sql, ((page - 1) * item_size, item_size))
+        else:
+            sql = "select * from rule order by scan_time desc"
+            self.cursor.execute(sql)
         results = self.cursor.fetchall()
 
         results_list = []
@@ -305,43 +302,19 @@ class SrcList:
             results_list.append(
                 {
                     'id': result[0],
-                    'name': result[1],
-                    'src_id': result[2],
-                    'url': result[3],
+                    'domain_id': result[1],
+                    'domain': result[2],
+                    'sign': result[3],
                     'scan_time': result[4]
                 }
             )
-
         self.clean()
         return results_list
 
-    def select_recent_src_list(self, page):
-        sql = "select * from src order by scan_time desc limit ?,?"
-        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
-        results = self.cursor.fetchall()
-
-        results_list = []
-        for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'name': result[1],
-                    'src_id': result[2],
-                    'url': result[3],
-                    'scan_time': result[4]
-                }
-            )
-
-        self.clean()
-        return results_list
-
-    def count(self):
-        self.cursor.execute('select count(*) from src')
-        total = self.cursor.fetchone()
-        return total[0]
-
-    def delete(self, id):
-        self.cursor.execute('delete from src where id = ?', (id,))
+    def insert_leak(self, leak):
+        sql = "insert into src (domain_id, domain, repository_name, repository_url, code, scan_time) " \
+              "values (?, ?, ?, ?, ?, ?)"
+        self.cursor.execute(sql, (leak[0], leak[1], leak[2], datetime.datetime.now().strftime("%Y-%m-%d")))
         self.conn.commit()
         self.clean()
 
@@ -351,4 +324,5 @@ class SrcList:
 
 
 if __name__ == '__main__':
-    print(SrcList().select_un_scan_src_list())
+    r = GitLeak().select_rules(2)
+    print(r)
