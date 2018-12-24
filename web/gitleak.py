@@ -5,17 +5,33 @@
 
 from flask import Blueprint, render_template, request, redirect
 from database.gitLeak import GitLeak
+from setting import item_size
 
 gitleak = Blueprint('gitleak', __name__)
 
 
 @gitleak.route('/gitleak')
-def gitleak_index():
-    return render_template('gitleak/gitleak.html')
+@gitleak.route('/gitleak/<int:page>')
+def gitleak_index(page=1):
+    leaks = GitLeak().select_leak(page=page)
+    return render_template('gitleak/gitleak.html', leaks=leaks, mode='gitleak', page=page // item_size)
 
 
-@gitleak.route('/gitleak/rules')
-@gitleak.route('/gitleak/rules/<int:page>')
-def gitleak_rules(page=1):
-    rules = GitLeak().select_rules_by_page(page=page)
-    return render_template('gitleak/gitrules.html', rules=rules, mode='/gitleak/rules', page=page)
+@gitleak.route('/gitleak/range')
+@gitleak.route('/gitleak/range/<int:page>')
+def gitleak_range(page=1):
+    ranges = GitLeak().select_range(page=page)
+    return render_template('gitleak/gitrange.html', ranges=ranges, mode='gitleak/range', page=page // item_size)
+
+
+@gitleak.route('/gitleak/<string:mode>/<int:leak_id>')
+def gitleak_mode(mode, leak_id):
+    if mode == "ignore":
+        GitLeak().update_type(leak_id, 0)
+        return redirect(request.referrer)
+    if mode == "confirm":
+        GitLeak().update_type(leak_id, 1)
+        return redirect(request.referrer)
+    if mode == "irrelevant":
+        GitLeak().update_type(leak_id, 2)
+        return redirect(request.referrer)

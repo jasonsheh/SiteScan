@@ -10,8 +10,9 @@ user_path = "C:/Code/SiteScan"
 # 页面显示条目数
 item_size: int = 15
 
-# 每日子域名获取数量
-sudomain_scan_size: int = 2
+# 每小时子域名获取数量
+# 大约8.8 实现天级监控
+sudomain_scan_size: int = 3
 
 # github 监控数量
 github_scan_size: int = 2
@@ -25,9 +26,9 @@ siteinfo_thread_num: int = 30
 user_agent = "Mozilla/5.0 (Windows NT 10.0; WOW64; rv:49.0) Gecko/20100101 Firefox/49.0"
 
 # 30/min*key 1800/hour
-vt_api_key = ""
-
 github_api_key = ["", ]
 
-qq_email_username = "m"
+# virusTotal api key
+vt_api_key = ""
+qq_email_username = ""
 qq_email_password = ""

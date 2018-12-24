@@ -5,9 +5,25 @@
 <div class="container-fluid">
     <div class="container">
         <h2 class="sub-header">Github 敏感信息监控</h2>
-
+        {% for leak in leaks %}
+        <div class="card mb-3">
+            <div class="card-header">
+                {{ leak.scan_time }} | {{ leak.domain }} | <a target="_blank" href="{{ leak.repository_url }}">{{ leak.repository_name }}</a> | {{ leak.file_name }}
+            </div>
+            <div class="card-body">
+                <p class="card-text">
+                {% for code in leak.code %}
+                    {{ code }}<br>
+                {% endfor %}
+                </p>
+                <a class="btn btn-outline-info btn-sm" href="/gitleak/ignore/{{ leak.id }}" role="button">忽略</a>
+                <a class="btn btn-outline-danger btn-sm" href="/gitleak/confirm/{{ leak.id }}" role="button">确认</a>
+                <a class="btn btn-outline-secondary btn-sm" href="/gitleak/irrelevant/{{ leak.id }}" role="button">无关</a>
+            </div>
         </div>
+        {% endfor %}
     </div>
+    {% include 'include/pagination.html' %}
 </div>
 
 {% include 'include/footer.html' %}

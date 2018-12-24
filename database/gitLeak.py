@@ -14,29 +14,40 @@ class GitLeak:
         self.conn = sqlite3.connect(user_path + '/db/GitLeak.db')
         self.cursor = self.conn.cursor()
 
-    def create_rule(self):
-        self.cursor.execute('create table rule ('
-                            'id integer primary key,'
-                            'domain_id integer, '
-                            'domain varchar(255), '
-                            'sign varchar(255), '
-                            'scan_time text'
-                            ')')
-        print("create rule successfully")
+    def create_range(self):
+        self.cursor.execute(
+            'create table range ('
+            'id integer primary key,'
+            'domain_id integer, '
+            'domain varchar(255), '
+            'sign varchar(255), '
+            'scan_time text'
+            ')')
+        print("create range successfully")
 
     def create_leak(self):
-        self.cursor.execute('create table leak ('
-                            'id integer primary key,'
-                            'domain_id integer, '
-                            'domain varchar(255), '
-                            'repository_name varchar(255), '
-                            'repository_url varchar(255), '
-                            'code text, '
-                            'scan_time text'
-                            ')')
+        """
+        type default -1 未知/unknown
+        type 0 忽略/无危害
+        type 1 确认/相关
+        type 2 确认/不相关
+        :return:
+        """
+        self.cursor.execute(
+            'create table leak ('
+            'id integer primary key,'
+            'domain_id integer, '
+            'domain varchar(255), '
+            'repository_name varchar(255), '
+            'repository_url varchar(255), '
+            'code text, '
+            'scan_time text, '
+            'type integer'
+            ')')
+
         print("create leak successfully")
 
-    def init_rule(self):
+    def init_range(self):
         src_list = [("阿里asrc", 1, "*.taobao.com"),
                     ("阿里asrc", 1, "*.tmall.com"),
                     ("阿里asrc", 1, "*.alipay.com"),
@@ -248,29 +259,29 @@ class GitLeak:
                     ("微众wsrc", 44, "*.webank.com"),
                     ("万能钥匙wifisrc", 45, "*.wifi.com"),
                     ("中通src", 46, "*.zto.com")]
-        sql = "insert into rule (domain_id, domain, sign, scan_time) values (?, ?, ?, ?)"
+        sql = "insert into range (domain_id, domain, sign, scan_time) values (?, ?, ?, ?)"
         i = 0
         for src_info in src_list:
             i += 1
             self.cursor.execute(sql,
                                 (i, src_info[2][2:], "", datetime.datetime.now().strftime("%Y-%m-%d")))
         self.conn.commit()
-        print("init rule successfully")
+        print("init range successfully")
 
     def create_database(self):
-        self.create_rule()
+        self.create_range()
         self.create_leak()
-        self.init_rule()
+        self.init_range()
 
-    def select_rules(self, page=0, count=0):
+    def select_range(self, page=0, count=0):
         if count != 0:
-            sql = "select * from rule order by scan_time desc limit ?"
+            sql = "select * from range order by scan_time desc limit ?"
             self.cursor.execute(sql, (count,))
         if page != 0:
-            sql = "select * from rule order by scan_time desc limit ?,?"
+            sql = "select * from range order by scan_time desc limit ?,?"
             self.cursor.execute(sql, ((page - 1) * item_size, item_size))
         if page == 0 and count == 0:
-            sql = "select * from rule order by scan_time desc"
+            sql = "select * from range order by scan_time desc"
             self.cursor.execute(sql)
         results = self.cursor.fetchall()
 
@@ -288,12 +299,15 @@ class GitLeak:
         self.clean()
         return results_list
 
-    def select_leak(self, page):
+    def select_leak(self, page=0, leak_id=-1):
         if page != 0:
             sql = "select * from leak order by scan_time desc limit ?,?"
             self.cursor.execute(sql, ((page - 1) * item_size, item_size))
+        elif leak_id != -1:
+            sql = "select * from leak where id = ?"
+            self.cursor.execute(sql, (leak_id,))
         else:
-            sql = "select * from rule order by scan_time desc"
+            sql = "select * from leak order by scan_time desc"
             self.cursor.execute(sql)
         results = self.cursor.fetchall()
 
@@ -304,17 +318,33 @@ class GitLeak:
                     'id': result[0],
                     'domain_id': result[1],
                     'domain': result[2],
-                    'sign': result[3],
-                    'scan_time': result[4]
+                    'repository_name': result[3],
+                    'repository_url': result[4],
+                    'code': result[5].split('\n'),
+                    'scan_time': result[6],
+                    'type': result[7],
+                    'file_name': result[4].rsplit("/")[-1],
                 }
             )
         self.clean()
         return results_list
 
-    def insert_leak(self, leak):
-        sql = "insert into src (domain_id, domain, repository_name, repository_url, code, scan_time) " \
-              "values (?, ?, ?, ?, ?, ?)"
-        self.cursor.execute(sql, (leak[0], leak[1], leak[2], datetime.datetime.now().strftime("%Y-%m-%d")))
+    def update_scan_time(self, domain_id):
+        sql = "update range set scan_time = ? where id = ?"
+        self.cursor.execute(sql, (datetime.datetime.now().strftime("%Y-%m-%d"), domain_id))
+        self.conn.commit()
+
+    def insert_leak(self, leak, domain_id, leak_type):
+        sql = "insert into leak (domain_id, domain, repository_name, repository_url, code, scan_time, type) " \
+              "values (?, ?, ?, ?, ?, ?, ?)"
+        self.cursor.execute(sql,
+                            (domain_id, leak["domain"], leak["repository_name"], leak["repository_url"], leak["code"],
+                             datetime.datetime.now().strftime("%Y-%m-%d"), leak_type))
+        self.conn.commit()
+
+    def update_type(self, leak_id, leak_type):
+        sql = "update leak set type = ? where id = ?"
+        self.cursor.execute(sql, (leak_type, leak_id))
         self.conn.commit()
         self.clean()
 
@@ -324,5 +354,4 @@ class GitLeak:
 
 
 if __name__ == '__main__':
-    r = GitLeak().select_rules(2)
-    print(r)
+    GitLeak().create_leak()

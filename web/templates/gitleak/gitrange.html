@@ -4,14 +4,14 @@
 
 <div class="container-fluid">
     <div class="container">
-        <h1 class="page-header">Github 监控规则</h1>
+        <h1 class="page-header">Github 监控范围</h1>
         <form class="form-inline" role="form" action="/add_range" method=post>
             <span class="form-group-btn">
                 <button class="btn btn-outline-info" type="submit">Add range!</button>
             </span>
             <div class="form-group">
-                <input type="text" class="form-control" placeholder=" keyword ..." name="keyword" value="">
-                <input type="text" class="form-control" placeholder=" rules ..." name="rules" value="">
+                <input type="text" class="form-control" placeholder=" name ..." name="name" value="">
+                <input type="text" class="form-control" placeholder=" range ..." name="range" value="">
             </div><!-- /input-group -->
         </form>
 
@@ -70,12 +70,13 @@
     </div>
     <script>
         function update(id){
-            $("td[class='" + id + "']").each(function(i){
-                $("input[class='form-control _']").eq(i).attr('value', $(this).html());
-            });
+                    $("td[class='" + id + "']").each(function(i){
+                        $("input[class='form-control _']").eq(i).attr('value', $(this).html());
+                    });
 
-            $("input[class='form-control _']").eq(0).attr('readonly', '');
-        }
+                    $("input[class='form-control _']").eq(0).attr('readonly', '');
+                }
+
     </script>
     {% include 'include/pagination.html' %}
 </div>

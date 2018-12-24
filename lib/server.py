@@ -10,6 +10,8 @@
 """
 对所有脚本进行统一规划管理
 """
+import time
+
 
 from database.srcList import SrcList
 from database.database import Database
@@ -30,11 +32,8 @@ from setting import sudomain_scan_size, github_scan_size
 
 
 class SRCKiller:
-    def __init__(self):
-        self.src_scan_list = SrcList().select_un_scan_src_list(sudomain_scan_size)
-
     def info_collect(self):
-        for domain in self.src_scan_list:
+        for domain in SrcList().select_un_scan_src_list(sudomain_scan_size):
             src_id = domain['src_id']
             domain_id = domain['id']
             url = domain['url']
@@ -49,12 +48,28 @@ class SRCKiller:
             SrcList().update_scan_time(url)
 
     def git_leak(self):
-        rules = GitLeak().select_rules(count=github_scan_size)
-        for rule in rules:
-            leak = {"domain_id": rule["domain_id"], "domain": rule["domain"]}
-            print(rule)
-            leak[""] = GitScan(rule['domain'])
-            GitLeak().insert_leak(leak)
+        ranges = GitLeak().select_range(count=github_scan_size)
+
+        g = GitLeak()
+        for _ in ranges:
+            leaks = GitScan(_['domain']).run()
+
+            already_scanned = GitLeak().select_leak()
+
+            for leak in leaks:
+                # 是否已在库中
+                is_scanned = False
+                for scanned in already_scanned:
+                    if leak["code"] == scanned["code"]:
+                        is_scanned = True
+                        break
+                if not is_scanned:
+                    g.insert_leak(leak, _["domain_id"], -1)
+            # 更新扫描时间
+            g.update_scan_time(_["id"])
+
+            time.sleep(5)
+        g.clean()
 
 
 if __name__ == '__main__':
