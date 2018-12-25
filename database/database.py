@@ -12,7 +12,7 @@ from setting import user_path, item_size
 
 class Database:
     def __init__(self):
-        self.conn = sqlite3.connect(user_path + '/db/SiteScan.db')
+        self.conn = sqlite3.connect(user_path + '/db/SiteScan.db', check_same_thread=False)
         self.cursor = self.conn.cursor()
 
     def create_database(self):
@@ -37,7 +37,6 @@ class Database:
                     'is_new': result[8],
                 }
             )
-        self.clean()
         return results_list
 
     def select_subdomain_by_domain_id(self, domain_id, page=-1):
@@ -70,8 +69,6 @@ class Database:
                     'domain_id': result[8],
                 }
             )
-
-        self.clean()
         return results_list
 
     def select_sendir_by_page(self, page, domain_id):
@@ -89,8 +86,6 @@ class Database:
                     'domain_id': result[3],
                 }
             )
-
-        self.clean()
         return results_list
 
     def select_vul_by_page(self, page, domain_id):
@@ -108,8 +103,6 @@ class Database:
                     'domain_id': result[3],
                 }
             )
-
-        self.clean()
         return results_list
 
     def create_subdomain(self):
@@ -146,7 +139,6 @@ class Database:
                 self.cursor.execute(sql,
                                     (info['domain'], ips, info['title'], app, info['text'], domain_id, src_id))
         self.conn.commit()
-        self.clean()
 
     def select_subdomain(self, page):
         sql = "select * from subdomain order by is_new desc, id desc limit ?,?"
@@ -207,8 +199,6 @@ class Database:
                     'domain_id': result[8],
                 }
             )
-
-        self.clean()
         return results_list
 
     def create_sendir(self):
@@ -242,8 +232,6 @@ class Database:
                     'domain_id': result[3],
                 }
             )
-
-        self.clean()
         return results_list
 
     def create_vul(self):
@@ -277,8 +265,6 @@ class Database:
                     'domain_id': result[3],
                 }
             )
-
-        self.clean()
         return results_list
 
     def delete(self, domain_id, mode):
@@ -292,12 +278,9 @@ class Database:
             self.cursor.execute('delete from vul where domain_id = ?', (domain_id,))
             self.conn.commit()
 
-        self.clean()
-
     def delete_all(self, mode):
         self.cursor.execute('delete from {}'.format(mode))
         self.conn.commit()
-        self.clean()
 
     def count(self, mode):
         self.cursor.execute('select count(*) from {}'.format(mode))

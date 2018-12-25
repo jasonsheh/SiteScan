@@ -69,6 +69,7 @@ class GitScan:
         possible_codes = list(set(possible_codes))
         removed_code = []
         for possible_code in possible_codes:
+            # TODO 127.0.0.1 bug
             for false_positive in self.false_positive:
                 if re.search(false_positive, possible_code, re.I):
                     removed_code.append(possible_code)
@@ -80,8 +81,9 @@ class GitScan:
         return possible_codes
 
     def switch_api_key(self):
-        self.key_num = (self.key_num + 1) // len(github_api_key)
+        self.key_num = (self.key_num + 1) % len(github_api_key)
         self.g = Github(github_api_key[self.key_num])
+        print(self.key_num)
 
     def handle_content(self, content):
         if content.sha in self.hash_list:
@@ -105,20 +107,26 @@ class GitScan:
 
     def run(self):
         for kw in self.keywords:
+            # 每个关键字搜索完成(默认30条)切换api_key
+            self.switch_api_key()
             resource = self.g.search_code('{}+{}'.format(self.target, kw), sort="indexed", order="desc")
             for page in range(0, self.search_page):
                 try:
                     for index, content in enumerate(resource.get_page(page)):
                         # 处理数据
-                        self.handle_content(content)
+                        try:
+                            # TODO add hash 去重
+
+                            self.handle_content(content)
+                        except socket.timeout:
+                            time.sleep(self.timeout)
+                            continue
                 except GithubException as e:
                     print(e)
                     time.sleep(self.timeout)
                     continue
             time.sleep(self.timeout)
 
-            # 每个关键字搜索完成(默认30条)切换api_key
-            self.switch_api_key()
         return self.result
 
     def output(self):
@@ -130,5 +138,5 @@ class GitScan:
 
 if __name__ == '__main__':
     g = GitScan('taobao.com')
-    g.run()
-    g.output()
+    for i in range(10):
+        g.switch_api_key()

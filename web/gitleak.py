@@ -9,19 +9,25 @@ from setting import item_size
 
 gitleak = Blueprint('gitleak', __name__)
 
+g = GitLeak()
+
 
 @gitleak.route('/gitleak')
 @gitleak.route('/gitleak/<int:page>')
 def gitleak_index(page=1):
-    leaks = GitLeak().select_leak(page=page)
-    return render_template('gitleak/gitleak.html', leaks=leaks, mode='gitleak', page=page // item_size)
+    leaks = g.select_leak(page=page)
+    max_leaks = g.count("leak", not_type="0")
+    return render_template('gitleak/gitleak.html', leaks=leaks, mode='gitleak', page=page,
+                           max_page=max_leaks // item_size + 1)
 
 
 @gitleak.route('/gitleak/range')
 @gitleak.route('/gitleak/range/<int:page>')
 def gitleak_range(page=1):
-    ranges = GitLeak().select_range(page=page)
-    return render_template('gitleak/gitrange.html', ranges=ranges, mode='gitleak/range', page=page // item_size)
+    ranges = g.select_range(page=page)
+    max_ranges = g.count("range")
+    return render_template('gitleak/gitrange.html', ranges=ranges, mode='gitleak/range',
+                           page=max_ranges // item_size + 1)
 
 
 @gitleak.route('/gitleak/<string:mode>/<int:leak_id>')

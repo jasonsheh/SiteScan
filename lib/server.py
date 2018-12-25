@@ -19,58 +19,56 @@ from database.gitLeak import GitLeak
 
 from lib.info.subdomain import AllDomain
 from lib.info.siteinfo import SiteInfo
-from lib.info.sendir import SenDir
-
-from lib.poc.common.xss import Xss
-from lib.poc.common.sqli import SqlInjection
-from lib.poc.common.struts2 import Struts2
 
 from lib.git.gitscan import GitScan
-from lib.crawler import Crawler
 
 from setting import sudomain_scan_size, github_scan_size
 
 
-class SRCKiller:
-    def info_collect(self):
-        for domain in SrcList().select_un_scan_src_list(sudomain_scan_size):
-            src_id = domain['src_id']
-            domain_id = domain['id']
-            url = domain['url']
-            domain = domain['url'][2:]
+def info_collect():
+    for domain in SrcList().select_un_scan_src_list(sudomain_scan_size):
+        src_id = domain['src_id']
+        domain_id = domain['id']
+        url = domain['url']
+        domain = domain['url'][2:]
 
-            domains = AllDomain(domain).run()
+        domains = AllDomain(domain).run()
 
-            print(len(domains.keys()))
+        print(len(domains.keys()))
 
-            info = SiteInfo([x for x in domains.keys()]).run()
-            Database().insert_subdomain(domains, info, domain_id, src_id)
-            SrcList().update_scan_time(url)
+        info = SiteInfo([x for x in domains.keys()]).run()
+        Database().insert_subdomain(domains, info, domain_id, src_id)
+        SrcList().update_scan_time(url)
 
-    def git_leak(self):
-        ranges = GitLeak().select_range(count=github_scan_size)
 
-        g = GitLeak()
-        for _ in ranges:
-            leaks = GitScan(_['domain']).run()
+def git_leak():
+    ranges = GitLeak().select_range(count=github_scan_size)
 
-            already_scanned = GitLeak().select_leak()
+    g = GitLeak()
+    for _ in ranges:
+        # 扫描单个站点
+        leaks = GitScan(_['domain']).run()
 
-            for leak in leaks:
-                # 是否已在库中
-                is_scanned = False
-                for scanned in already_scanned:
-                    if leak["code"] == scanned["code"]:
-                        is_scanned = True
-                        break
-                if not is_scanned:
-                    g.insert_leak(leak, _["domain_id"], -1)
-            # 更新扫描时间
-            g.update_scan_time(_["id"])
+        already_scanned = GitLeak().select_leak(domain_id=_["domain_id"])
+        for leak in leaks:
+            is_scanned = False
+            for scanned in already_scanned:
+                if leak["repository_url"] == scanned["repository_url"] and leak["code"].split('\n') == scanned["code"]:
+                    is_scanned = True
+                    break
+            if not is_scanned:
+                g.insert_leak(leak, _["domain_id"], -1)
+        # 更新扫描时间
+        g.update_scan_time(_["id"])
 
-            time.sleep(5)
-        g.clean()
+        time.sleep(5)
+    g.clean()
+
+    # TODO 定时删除 type == 0 一周冗余数据
 
 
 if __name__ == '__main__':
-    SRCKiller().git_leak()
+    # g = GitLeak().select_leak(domain_id=1)
+    # for _ in g:
+    #     print(_)
+    git_leak()

@@ -11,7 +11,7 @@ from setting import user_path, item_size
 
 class GitLeak:
     def __init__(self):
-        self.conn = sqlite3.connect(user_path + '/db/GitLeak.db')
+        self.conn = sqlite3.connect(user_path + '/db/GitLeak.db', check_same_thread=False)
         self.cursor = self.conn.cursor()
 
     def create_range(self):
@@ -275,7 +275,7 @@ class GitLeak:
 
     def select_range(self, page=0, count=0):
         if count != 0:
-            sql = "select * from range order by scan_time desc limit ?"
+            sql = "select * from range order by scan_time asc limit ?"
             self.cursor.execute(sql, (count,))
         if page != 0:
             sql = "select * from range order by scan_time desc limit ?,?"
@@ -296,16 +296,15 @@ class GitLeak:
                     'scan_time': result[4]
                 }
             )
-        self.clean()
         return results_list
 
-    def select_leak(self, page=0, leak_id=-1):
+    def select_leak(self, page=0, domain_id=-1):
         if page != 0:
-            sql = "select * from leak order by scan_time desc limit ?,?"
+            sql = "select * from leak where type != 0 order by scan_time desc, id desc limit ?,?"
             self.cursor.execute(sql, ((page - 1) * item_size, item_size))
-        elif leak_id != -1:
-            sql = "select * from leak where id = ?"
-            self.cursor.execute(sql, (leak_id,))
+        elif domain_id != -1:
+            sql = "select * from leak where domain_id = ?"
+            self.cursor.execute(sql, (domain_id,))
         else:
             sql = "select * from leak order by scan_time desc"
             self.cursor.execute(sql)
@@ -326,7 +325,6 @@ class GitLeak:
                     'file_name': result[4].rsplit("/")[-1],
                 }
             )
-        self.clean()
         return results_list
 
     def update_scan_time(self, domain_id):
@@ -342,11 +340,18 @@ class GitLeak:
                              datetime.datetime.now().strftime("%Y-%m-%d"), leak_type))
         self.conn.commit()
 
+    def count(self, mode, not_type=None):
+        if not_type:
+            self.cursor.execute('select count(*) from {} where type != ?'.format(mode), (not_type, ))
+        else:
+            self.cursor.execute('select count(*) from {}'.format(mode))
+        total = self.cursor.fetchone()
+        return total[0]
+
     def update_type(self, leak_id, leak_type):
         sql = "update leak set type = ? where id = ?"
         self.cursor.execute(sql, (leak_type, leak_id))
         self.conn.commit()
-        self.clean()
 
     def clean(self):
         self.cursor.close()

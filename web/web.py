@@ -14,11 +14,13 @@ from web.gitleak import gitleak
 app = Flask(__name__)
 app.register_blueprint(gitleak)
 
-max_domain = Database().count('subdomain')
-max_port = Database().count('port')
-max_sendir = Database().count('sendir')
+# TODO 每次刷新
+d = Database()
+max_domain = d.count('subdomain')
+max_port = d.count('port')
+max_sendir = d.count('sendir')
 max_fingerprint = Rules().count('fingerprint')
-max_vul = Database().count('vul')
+max_vul = d.count('vul')
 max_src = SrcList().count()
 
 
@@ -58,10 +60,10 @@ def finger_scan():
 def detail(domain_id):
     # 域名ID
     src_name = SrcList().select_src_by_id(domain_id)
-    domain_number = Database().count_detail('subdomain', domain_id)
-    port_number = Database().count_detail('port', domain_id)
-    sendir_number = Database().count_detail('sendir', domain_id)
-    vul_number = Database().count_detail('vul', domain_id)
+    domain_number = d.count_detail('subdomain', domain_id)
+    port_number = d.count_detail('port', domain_id)
+    sendir_number = d.count_detail('sendir', domain_id)
+    vul_number = d.count_detail('vul', domain_id)
     return render_template('detail.html', domain_id=domain_id, src_name=src_name[2:], domain_number=domain_number,
                            port_number=port_number, sendir_number=sendir_number, vul_number=vul_number)
 
@@ -70,23 +72,23 @@ def detail(domain_id):
 @app.route('/detail/<string:mode>/<int:id>/<int:page>')
 def detail_domain(mode, id, page=1):
     if mode == 'domain':
-        domain_number = Database().count_detail('subdomain', id)
-        domains = Database().select_subdomain_by_domain_id(id, page)
+        domain_number = d.count_detail('subdomain', id)
+        domains = d.select_subdomain_by_domain_id(id, page)
         return render_template('detail.html', id=id, _mode=mode, mode="detail/{}/{}".format(mode, id), page=page,
                                max_page=domain_number // item_size + 1, domains=domains)
     if mode == 'port':
-        port_number = Database().count_detail('port', id)
-        ports = Database().select_port_by_page(page, id)
+        port_number = d.count_detail('port', id)
+        ports = d.select_port_by_page(page, id)
         return render_template('detail.html', id=id, _mode=mode, mode="detail/{}/{}".format(mode, id), page=page,
                                max_page=port_number // item_size + 1, ports=ports)
     if mode == 'sendir':
-        sendir_number = Database().count_detail('sendir', id)
-        sendir = Database().select_sendir_by_page(page, id)
+        sendir_number = d.count_detail('sendir', id)
+        sendir = d.select_sendir_by_page(page, id)
         return render_template('detail.html', id=id, _mode=mode, mode="detail/{}/{}".format(mode, id), page=page,
                                max_page=sendir_number // item_size + 1, sendirs=sendir)
     if mode == 'vul':
-        vul_number = Database().count_detail('vul', id)
-        vuls = Database().select_vul_by_page(page, id)
+        vul_number = d.count_detail('vul', id)
+        vuls = d.select_vul_by_page(page, id)
         return render_template('detail.html', id=id, _mode=mode, mode="detail/{}/{}".format(mode, id), page=page,
                                max_page=vul_number // item_size + 1, sendirs=vuls)
 
@@ -94,14 +96,14 @@ def detail_domain(mode, id, page=1):
 @app.route('/domain')
 @app.route('/domain/<int:page>')
 def subdomain(page=1):
-    domains = Database().select_subdomain(page)
+    domains = d.select_subdomain(page)
     return render_template('domain.html', mode="domain", page=page, max_page=max_domain // item_size + 1,
                            domains=domains)
 
 
 @app.route('/domain/detail/<int:domain_id>')
 def subdomain_detail(domain_id):
-    domain = Database().select_subdomain_detail(domain_id)[0]
+    domain = d.select_subdomain_detail(domain_id)[0]
     # TODO 完善子域名详细信息功能
     return render_template('domain_detail.html', domain=domain)
 
@@ -109,14 +111,14 @@ def subdomain_detail(domain_id):
 @app.route('/port')
 @app.route('/port/<int:page>')
 def port(page=1):
-    ports = Database().select_port(page)
+    ports = d.select_port(page)
     return render_template('port.html', mode="port", page=page, max_page=max_port // item_size + 1, ports=ports)
 
 
 @app.route('/sendir')
 @app.route('/sendir/<int:page>')
 def sendir(page=1):
-    sendir = Database().select_sendir(page)
+    sendir = d.select_sendir(page)
     return render_template('sendir.html', mode="sendir", page=page, max_page=max_sendir // item_size + 1,
                            sendirs=sendir)
 
@@ -124,7 +126,7 @@ def sendir(page=1):
 @app.route('/vul')
 @app.route('/vul/<int:page>')
 def vul(page=1):
-    vuls = Database().select_vul(page)
+    vuls = d.select_vul(page)
     return render_template('vul.html', mode="vul", page=page, max_page=max_vul // item_size + 1, sendirs=vuls)
 
 
@@ -160,5 +162,5 @@ def delete(id, mode):
     if mode == 'fingerprint':
         Rules().delete(id)
     else:
-        Database().delete(id, mode)
+        d.delete(id, mode)
     return redirect(request.referrer)
