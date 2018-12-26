@@ -17,13 +17,11 @@ class Rules:
               % (name, rule)
         self.cursor.execute(sql)
         self.conn.commit()
-        self.clean()
 
     def update_fingerprint(self, name, rule):
         sql = "update fingerprint set rule = ? where name = ? "
         self.cursor.execute(sql, (rule, name))
         self.conn.commit()
-        self.clean()
 
     def select_fingerprint(self, page):
         sql = "select * from fingerprint order by id desc limit ?, ?"
@@ -40,14 +38,12 @@ class Rules:
                 }
             )
 
-        self.clean()
         return results_list
 
     def delete(self, id):
         sql = "delete from where id = ? "
         self.cursor.execute(sql, (id, ))
         self.conn.commit()
-        self.clean()
 
     def count(self, mode):
         self.cursor.execute('select count(*) from %s' % mode)

@@ -340,6 +340,11 @@ class GitLeak:
                              datetime.datetime.now().strftime("%Y-%m-%d"), leak_type))
         self.conn.commit()
 
+    def delete_leak(self):
+        sql = "delete from leak where type = 0"
+        self.cursor.execute(sql)
+        self.conn.commit()
+
     def count(self, mode, not_type=None):
         if not_type:
             self.cursor.execute('select count(*) from {} where type != ?'.format(mode), (not_type, ))

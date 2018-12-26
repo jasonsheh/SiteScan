@@ -19,8 +19,10 @@ d = Database()
 max_domain = d.count('subdomain')
 max_port = d.count('port')
 max_sendir = d.count('sendir')
-max_fingerprint = Rules().count('fingerprint')
 max_vul = d.count('vul')
+
+r = Rules()
+max_fingerprint = r.count('fingerprint')
 max_src = SrcList().count()
 
 
@@ -133,7 +135,7 @@ def vul(page=1):
 @app.route('/fingerprint')
 @app.route('/fingerprint/<int:page>')
 def fingerprint(page=1):
-    finger_print = Rules().select_fingerprint(page)
+    finger_print = r.select_fingerprint(page)
     return render_template('fingerprint.html', mode="fingerprint", page=page, max_page=max_fingerprint // item_size + 1,
                            fingerprints=finger_print)
 
@@ -142,7 +144,7 @@ def fingerprint(page=1):
 def add_rule():
     if request.method == 'POST':
         if request.form.get('name') and request.form.get('rule'):
-            Rules().insert_fingerprint(request.form['name'], request.form['rule'])
+            r.insert_fingerprint(request.form['name'], request.form['rule'])
             return redirect('/fingerprint/1')
 
 
@@ -151,7 +153,7 @@ def update(mode):
     if request.method == 'POST':
         if mode == "fingerprint":
             if request.form.get('name') and request.form.get('rule'):
-                Rules().update_fingerprint(request.form['name'], request.form['rule'])
+                r.update_fingerprint(request.form['name'], request.form['rule'])
                 return redirect(request.referrer)
 
 
@@ -160,7 +162,7 @@ def delete(id, mode):
     if mode == 'src':
         SrcList().delete(id)
     if mode == 'fingerprint':
-        Rules().delete(id)
+        r.delete(id)
     else:
         d.delete(id, mode)
     return redirect(request.referrer)

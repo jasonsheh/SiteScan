@@ -4,10 +4,12 @@
 
 import re
 import time
+import datetime
 import socket
 from github import Github, GithubException
 from setting import github_api_key
 from typing import Dict
+from database.gitLeak import GitLeak
 
 
 # reg_mail = re.compile('([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)')
@@ -15,6 +17,7 @@ from typing import Dict
 
 
 class GitScan:
+    # TODO 也许会增加机器学习来判断是否为真正的信息泄露
     def __init__(self, target: str):
         self.key_num = 0
         self.g = Github(github_api_key[self.key_num])
@@ -25,12 +28,14 @@ class GitScan:
         self.result = []
         self.useless_ext = ['css', 'htm', 'html', 'pac', 'csv', 'txt', 'csv.dat', 'rules', 'svg']
         self.useful_ext = ['properties']
+
+        # TODO More Rules
         self.keywords: Dict = {
-            'jdbc:': 'jdbc:',
-            'smtp password': "[(smtp)]?.*?password.*[ a-zA-Z0-9_\"']=[^<]",
-            'password=': "password[ a-zA-Z0-9_\"':]+[=][^<]"
+            'jdbc:': 'jdbc:/.*/',
+            'smtp password': "[(smtp)]?.*?password.*[ a-zA-Z0-9_\"']*=[^<]",
+            'password=': "password.*[ a-zA-Z0-9_\"':]+[=][^<]"
         }
-        self.false_positive = ['localhost', 'l27.0.0.1']
+        self.false_positive = ['localhost', '127.0.0.1']
         self.fuzz_repo_keyword = ['fuzz', 'hack', 'whitelist', 'blacklist']
 
     # 移除无用的文件类型
@@ -64,26 +69,26 @@ class GitScan:
             for code in all_code:
                 if len(code) > 350:
                     continue
-                if re.search(rule, code, re.I):
+                is_false_positive = False
+                for false_positive in self.false_positive:
+                    if re.search(false_positive, code, re.I):
+                        is_false_positive = True
+                        break
+                if re.search(rule, code, re.I) and not is_false_positive:
                     possible_codes.append(code.strip())
-        possible_codes = list(set(possible_codes))
-        removed_code = []
-        for possible_code in possible_codes:
-            # TODO 127.0.0.1 bug
-            for false_positive in self.false_positive:
-                if re.search(false_positive, possible_code, re.I):
-                    removed_code.append(possible_code)
-                    break
-        # 移除匹配到false positive的code
-        for code in removed_code:
-            possible_codes.remove(code)
+        return list(set(possible_codes))
 
-        return possible_codes
+    def confidence(self):
+        """
+        对匹配到的代码进行置信度计算
+        :return:
+        """
+        # TODO confidence
+        pass
 
     def switch_api_key(self):
         self.key_num = (self.key_num + 1) % len(github_api_key)
         self.g = Github(github_api_key[self.key_num])
-        print(self.key_num)
 
     def handle_content(self, content):
         if content.sha in self.hash_list:
@@ -97,7 +102,11 @@ class GitScan:
             return
 
         full_name = content.repository.full_name
-        result = {'domain': self.target, 'repository_name': full_name, 'repository_url': url}
+        update_time = content.repository.updated_at
+        update_time = datetime.datetime.strptime(update_time, '%a %d %b %Y %H:%M:%S GMT')
+        update_time = update_time.strftime("%Y-%m-%d")
+        # TODO 数据库增加最后更新日期字段
+        result = {'domain': self.target, 'repository_name': full_name, 'repository_url': url, "update_time": update_time}
         full_code = content.decoded_content.decode('utf-8')
 
         codes = self.get_keyword_code(full_code)
@@ -106,6 +115,7 @@ class GitScan:
             self.result.append(result)
 
     def run(self):
+        print("scan {}".format(self.target))
         for kw in self.keywords:
             # 每个关键字搜索完成(默认30条)切换api_key
             self.switch_api_key()
@@ -121,6 +131,9 @@ class GitScan:
                         except socket.timeout:
                             time.sleep(self.timeout)
                             continue
+                        except AssertionError:
+                            # github library encoding error
+                            continue
                 except GithubException as e:
                     print(e)
                     time.sleep(self.timeout)
@@ -135,8 +148,15 @@ class GitScan:
             for code in result["code"].split('\n'):
                 print("\t"+code)
 
+    @staticmethod
+    def clean():
+        """
+        删除 type == 0 冗余数据
+        一周执行一次
+        :return:
+        """
+        GitLeak().delete_leak()
+
 
 if __name__ == '__main__':
-    g = GitScan('taobao.com')
-    for i in range(10):
-        g.switch_api_key()
+    GitScan("bilibili.com").run()

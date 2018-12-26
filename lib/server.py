@@ -46,6 +46,7 @@ def git_leak():
 
     g = GitLeak()
     for _ in ranges:
+        t1 = time.time()
         # 扫描单个站点
         leaks = GitScan(_['domain']).run()
 
@@ -53,22 +54,19 @@ def git_leak():
         for leak in leaks:
             is_scanned = False
             for scanned in already_scanned:
-                if leak["repository_url"] == scanned["repository_url"] and leak["code"].split('\n') == scanned["code"]:
+                if leak["repository_name"] == scanned["repository_name"] and leak["code"].split('\n') == scanned["code"]:
                     is_scanned = True
                     break
             if not is_scanned:
+                already_scanned.append(leak)
                 g.insert_leak(leak, _["domain_id"], -1)
         # 更新扫描时间
         g.update_scan_time(_["id"])
 
         time.sleep(5)
+        print(time.time() - t1)
     g.clean()
-
-    # TODO 定时删除 type == 0 一周冗余数据
 
 
 if __name__ == '__main__':
-    # g = GitLeak().select_leak(domain_id=1)
-    # for _ in g:
-    #     print(_)
     git_leak()

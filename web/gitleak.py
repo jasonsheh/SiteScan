@@ -27,17 +27,17 @@ def gitleak_range(page=1):
     ranges = g.select_range(page=page)
     max_ranges = g.count("range")
     return render_template('gitleak/gitrange.html', ranges=ranges, mode='gitleak/range',
-                           page=max_ranges // item_size + 1)
+                           page=page, max_page=max_ranges // item_size + 1)
 
 
 @gitleak.route('/gitleak/<string:mode>/<int:leak_id>')
 def gitleak_mode(mode, leak_id):
     if mode == "ignore":
-        GitLeak().update_type(leak_id, 0)
+        g.update_type(leak_id, 0)
         return redirect(request.referrer)
     if mode == "confirm":
-        GitLeak().update_type(leak_id, 1)
+        g.update_type(leak_id, 1)
         return redirect(request.referrer)
     if mode == "irrelevant":
-        GitLeak().update_type(leak_id, 2)
+        g.update_type(leak_id, 2)
         return redirect(request.referrer)
