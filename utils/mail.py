@@ -16,7 +16,7 @@ class MyMail:
         self.smtp_server = 'smtp.qq.com'
         self.smtp_port = 587
 
-    def send_mail(self, subject, title, sender):
+    def send_mail(self, subject, title, sender="SiteScan Email Module"):
         receivers = ['3039344@qq.com']  # 接收邮件，可设置为你的QQ邮箱或者其他邮箱
 
         message = MIMEText(subject, 'plain', 'utf-8')

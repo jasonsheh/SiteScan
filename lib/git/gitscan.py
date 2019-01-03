@@ -5,6 +5,7 @@
 import re
 import time
 import datetime
+import requests
 import socket
 from github import Github, GithubException
 from setting import github_api_key
@@ -23,20 +24,22 @@ class GitScan:
         self.g = Github(github_api_key[self.key_num])
         self.target: str = target
         self.search_page: int = 1
-        self.timeout: int = 5
+        self.timeout: int = 4
         self.hash_list = []
         self.result = []
         self.useless_ext = ['css', 'htm', 'html', 'pac', 'csv', 'txt', 'csv.dat', 'rules', 'svg']
         self.useful_ext = ['properties']
 
         # TODO More Rules
+        # TODO single database
         self.keywords: Dict = {
             'jdbc:': 'jdbc:/.*/',
-            'smtp password': "[(smtp)]?.*?password.*[ a-zA-Z0-9_\"']*=[^<]",
-            'password=': "password.*[ a-zA-Z0-9_\"':]+[=][^<]"
+            'smtp password': "[(smtp)]?.*?password[^,./ ]?[a-zA-Z0-9_\"':]*[ ]*[=][^<]*",
+            'password=': "password[^,/ ]?[a-zA-Z0-9_\"':]*[ ]*[=][^<]*"
         }
-        self.false_positive = ['localhost', '127.0.0.1']
-        self.fuzz_repo_keyword = ['fuzz', 'hack', 'whitelist', 'blacklist']
+        self.false_positive = ['localhost', '127.0.0.1', "\(\)$"]
+        self.fuzz_repo_name = ['fuzz', 'hack', 'whitelist', 'blacklist']
+        self.fuzz_file_name = ["Surge3.conf"]
 
     # 移除无用的文件类型
     def filter(self, url):
@@ -46,13 +49,16 @@ class GitScan:
                 return True
         return False
 
-    def remove_dict_from_repo(self, name):
+    def remove_useless_from_repo(self, name):
         """
         移除Github上 fuzz，字典等相关repo
         :param name: repo url 类似名称
         :return: is_fuzz_or_dict_like bool
         """
-        for fuzz_keyword in self.fuzz_repo_keyword:
+        for fuzz_keyword in self.fuzz_repo_name:
+            if re.search(fuzz_keyword, name, re.IGNORECASE):
+                return True
+        for fuzz_keyword in self.fuzz_file_name:
             if re.search(fuzz_keyword, name, re.IGNORECASE):
                 return True
         return False
@@ -96,22 +102,33 @@ class GitScan:
         self.hash_list.append(content.sha)
 
         url = content.html_url
-        if self.remove_dict_from_repo(url):
+        if self.remove_useless_from_repo(url):
             return
         if self.filter(url):
             return
 
         full_name = content.repository.full_name
         update_time = content.repository.updated_at
-        update_time = datetime.datetime.strptime(update_time, '%a %d %b %Y %H:%M:%S GMT')
-        update_time = update_time.strftime("%Y-%m-%d")
-        # TODO 数据库增加最后更新日期字段
-        result = {'domain': self.target, 'repository_name': full_name, 'repository_url': url, "update_time": update_time}
-        full_code = content.decoded_content.decode('utf-8')
+        update_time_str = update_time.strftime("%Y-%m-%d")
+        result = {
+            'domain': self.target,
+            'repository_name': full_name,
+            'repository_url': url,
+            "update_time": update_time_str
+        }
+
+        # 更新时间不能超过6个月
+        if (datetime.datetime.now() - update_time).days > 120:
+            return
+
+        try:
+            full_code = content.decoded_content.decode('utf-8')
+        except requests.exceptions.ConnectionError:
+            return
 
         codes = self.get_keyword_code(full_code)
         if codes:
-            result['code'] = "\n".join(codes)
+            result['code'] = codes
             self.result.append(result)
 
     def run(self):
@@ -119,25 +136,26 @@ class GitScan:
         for kw in self.keywords:
             # 每个关键字搜索完成(默认30条)切换api_key
             self.switch_api_key()
-            resource = self.g.search_code('{}+{}'.format(self.target, kw), sort="indexed", order="desc")
+            resource = self.g.search_code('"{}"+{}'.format(self.target, kw), sort="indexed", order="desc")
             for page in range(0, self.search_page):
                 try:
                     for index, content in enumerate(resource.get_page(page)):
                         # 处理数据
                         try:
                             # TODO add hash 去重
-
                             self.handle_content(content)
                         except socket.timeout:
                             time.sleep(self.timeout)
                             continue
+                        except requests.exceptions.ReadTimeout:
+                            continue
                         except AssertionError:
                             # github library encoding error
                             continue
+
                 except GithubException as e:
                     print(e)
                     time.sleep(self.timeout)
-                    continue
             time.sleep(self.timeout)
 
         return self.result

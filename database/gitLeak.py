@@ -42,10 +42,20 @@ class GitLeak:
             'repository_url varchar(255), '
             'code text, '
             'scan_time text, '
-            'type integer'
+            'type integer, '
+            'update_time text'
             ')')
 
         print("create leak successfully")
+
+    def create_rule(self):
+        self.cursor.execute(
+            'create table rule ('
+            'id integer primary key,'
+            'keyword varchar(255), '
+            'pattern varchar(255)'
+            ')')
+        print("create rule successfully")
 
     def init_range(self):
         src_list = [("阿里asrc", 1, "*.taobao.com"),
@@ -298,6 +308,26 @@ class GitLeak:
             )
         return results_list
 
+    def select_rules(self, page=0):
+        if page != 0:
+            sql = "select * from rule limit ?,?"
+            self.cursor.execute(sql, ((page - 1) * item_size, item_size))
+        else:
+            sql = "select * from rule"
+            self.cursor.execute(sql)
+        results = self.cursor.fetchall()
+
+        results_list = []
+        for result in results:
+            results_list.append(
+                {
+                    'id': result[0],
+                    'keyword': result[1],
+                    'pattern': result[2],
+                }
+            )
+        return results_list
+
     def select_leak(self, page=0, domain_id=-1):
         if page != 0:
             sql = "select * from leak where type != 0 order by scan_time desc, id desc limit ?,?"
@@ -319,9 +349,10 @@ class GitLeak:
                     'domain': result[2],
                     'repository_name': result[3],
                     'repository_url': result[4],
-                    'code': result[5].split('\n'),
+                    'code': result[5].split("\n"),
                     'scan_time': result[6],
                     'type': result[7],
+                    'update_time': result[8],
                     'file_name': result[4].rsplit("/")[-1],
                 }
             )
@@ -332,12 +363,33 @@ class GitLeak:
         self.cursor.execute(sql, (datetime.datetime.now().strftime("%Y-%m-%d"), domain_id))
         self.conn.commit()
 
+    def update_range(self, id, domain):
+        sql = "update range set domain = ? where id = ?"
+        self.cursor.execute(sql, (domain, id))
+        self.conn.commit()
+
+    def update_rule(self, id, keyword, rule):
+        sql = "update rule set keyword = ? , rule = ? where id = ?"
+        self.cursor.execute(sql, (keyword, rule, id))
+        self.conn.commit()
+
     def insert_leak(self, leak, domain_id, leak_type):
-        sql = "insert into leak (domain_id, domain, repository_name, repository_url, code, scan_time, type) " \
-              "values (?, ?, ?, ?, ?, ?, ?)"
+        sql = "insert into leak (domain_id, domain, repository_name, repository_url, code, scan_time, type, " \
+              "update_time) values (?, ?, ?, ?, ?, ?, ?, ?)"
         self.cursor.execute(sql,
-                            (domain_id, leak["domain"], leak["repository_name"], leak["repository_url"], leak["code"],
-                             datetime.datetime.now().strftime("%Y-%m-%d"), leak_type))
+                            (domain_id, leak["domain"], leak["repository_name"], leak["repository_url"],
+                             "\n".join(leak["code"]), datetime.datetime.now().strftime("%Y-%m-%d"),
+                             leak_type, leak["update_time"]))
+        self.conn.commit()
+
+    def insert_range(self, domain_id, domain):
+        sql = "insert into range (domain_id, domain, sign, scan_time) values (?, ?, ?, ?)"
+        self.cursor.execute(sql, (domain_id, domain, "", datetime.datetime.now().strftime("%Y-%m-%d")))
+        self.conn.commit()
+
+    def insert_rule(self, keyword, pattern):
+        sql = "insert into rule (keyword, pattern) values (?, ?)"
+        self.cursor.execute(sql, (keyword, pattern))
         self.conn.commit()
 
     def delete_leak(self):
@@ -345,9 +397,14 @@ class GitLeak:
         self.cursor.execute(sql)
         self.conn.commit()
 
+    def delete(self, mode, id):
+        sql = "delete from %s where id = ?".format(mode)
+        self.cursor.execute(sql, (id, ))
+        self.conn.commit()
+
     def count(self, mode, not_type=None):
         if not_type:
-            self.cursor.execute('select count(*) from {} where type != ?'.format(mode), (not_type, ))
+            self.cursor.execute('select count(*) from {} where type != ?'.format(mode), (not_type,))
         else:
             self.cursor.execute('select count(*) from {}'.format(mode))
         total = self.cursor.fetchone()
@@ -364,4 +421,8 @@ class GitLeak:
 
 
 if __name__ == '__main__':
-    GitLeak().create_leak()
+    g = GitLeak()
+    leak = g.select_rules()
+    g.clean()
+
+    print(leak)

@@ -4,14 +4,14 @@
 
 <div class="container-fluid">
     <div class="container">
-        <h1 class="page-header">Github 监控规则</h1>
-        <form class="form-inline" role="form" action="/add_range" method=post>
+        <h1 class="page-header">Github 扫描规则</h1>
+        <form class="form-inline" role="form" action="/gitleak/add/rule" method=post>
             <span class="form-group-btn">
-                <button class="btn btn-outline-info" type="submit">Add range!</button>
+                <button class="btn btn-outline-info" type="submit">Add Rules!</button>
             </span>
             <div class="form-group">
                 <input type="text" class="form-control" placeholder=" keyword ..." name="keyword" value="">
-                <input type="text" class="form-control" placeholder=" rules ..." name="rules" value="">
+                <input type="text" class="form-control" placeholder=" pattern ..." name="pattern" value="">
             </div><!-- /input-group -->
         </form>
 
@@ -20,21 +20,21 @@
                 <thead>
                 <tr>
                     <th>Id</th>
-                    <th>Domain</th>
-                    <th>Scan Time</th>
+                    <th>Keyword</th>
+                    <th>Pattern</th>
                     <th>Edit</th>
                     <th>Delete</th>
                 </tr>
                 </thead>
                 <tbody>
-                {% for range in ranges %}
+                {% for rule in rules %}
                 <tr>
-                    <td class="{{ range.id }}">{{ range.id }}</td>
-                    <td class="{{ range.id }}">{{ range.domain }}</td>
-                    <td class="{{ range.id }}">{{ range.scan_time }}</td>
+                    <td class="{{ rule.id }}">{{ rule.id }}</td>
+                    <td class="{{ rule.id }}">{{ rule.keyword }}</td>
+                    <td class="{{ rule.id }}">{{ rule.pattern }}</td>
                     <td><a class="btn btn-outline-info btn-sm" data-toggle="modal" data-target="#edit"
-                           onclick="update({{ range.id }})" role="button">修改</a></td>
-                    <td><a class="btn btn-outline-danger btn-sm" href="/del/range/{{ range.id }}"
+                           onclick="update({{ rule.id }})" role="button">修改</a></td>
+                    <td><a class="btn btn-outline-danger btn-sm" href="/gitleak/del/rule/{{ rule.id }}"
                            role="button">删除</a></td>
                 </tr>
                 {% endfor %}
@@ -49,16 +49,16 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLongTitle">Edit Ranges</h5>
+                    <h5 class="modal-title" id="exampleModalLongTitle">Edit Rules</h5>
                 </div>
-                <form class="form" role="form" action="/update/range" method=post>
+                <form class="form" role="form" action="/gitleak/update/rule" method=post>
                     <div class="form-group">
                         <label>ID</label>
                         <input type="text" class="form-control _" name="id" value="">
-                        <label>Domain</label>
-                        <input type="text" class="form-control _" name="domain" value="">
-                        <label>Sign</label>
-                        <input type="text" class="form-control _" name="sign" value="">
+                        <label>Keyword</label>
+                        <input type="text" class="form-control _" name="keyword" value="">
+                        <label>Pattern</label>
+                        <input type="text" class="form-control _" name="pattern" value="">
                     </div><!-- /input-group -->
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>

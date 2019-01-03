@@ -21,6 +21,15 @@ def gitleak_index(page=1):
                            max_page=max_leaks // item_size + 1)
 
 
+@gitleak.route('/gitleak/rules')
+@gitleak.route('/gitleak/rules/<int:page>')
+def gitleak_rules(page=1):
+    rules = g.select_rules(page=page)
+    max_leaks = g.count("rule")
+    return render_template('gitleak/gitrules.html', rules=rules, mode='gitleak/rules', page=page,
+                           max_page=max_leaks // item_size + 1)
+
+
 @gitleak.route('/gitleak/range')
 @gitleak.route('/gitleak/range/<int:page>')
 def gitleak_range(page=1):
@@ -41,3 +50,41 @@ def gitleak_mode(mode, leak_id):
     if mode == "irrelevant":
         g.update_type(leak_id, 2)
         return redirect(request.referrer)
+
+
+@gitleak.route('/gitleak/del/<string:mode>/<int:id>')
+def gitleak_delete(mode, id):
+    """
+    删除github 监控范围或搜索规则
+    :param mode: range or rule
+    :param id: id
+    :return:
+    """
+    g.delete(mode, id)
+    return redirect(request.referrer)
+
+
+@gitleak.route('/gitleak/update/<string:mode>', methods=['POST'])
+def gitleak_update(mode):
+    if mode == "range":
+        if request.form.get('id') and request.form.get('domain'):
+            g.update_range(request.form['id'], request.form['domain'])
+            return redirect(request.referrer)
+    if mode == "rule":
+        if request.form.get('id') and request.form.get('keyword') and request.form.get('pattern'):
+            g.update_rule(request.form['id'], request.form['keyword'], request.form['pattern'])
+            return redirect(request.referrer)
+    return redirect('/gitleak')
+
+
+@gitleak.route('/gitleak/add/<string:mode>', methods=['POST'])
+def gitleak_add(mode):
+    if mode == "range":
+        if request.form.get('domain'):
+            g.insert_range(request.form['id'], request.form['domain'])
+            return redirect('/gitleak/range')
+    if mode == "rule":
+        if request.form.get('keyword') and request.form.get('pattern'):
+            g.insert_rule(request.form['keyword'], request.form['pattern'])
+            return redirect('/gitleak/rules')
+    return redirect('/gitleak')

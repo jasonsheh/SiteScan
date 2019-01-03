@@ -12,7 +12,6 @@
 """
 import time
 
-
 from database.srcList import SrcList
 from database.database import Database
 from database.gitLeak import GitLeak
@@ -21,7 +20,7 @@ from lib.info.subdomain import AllDomain
 from lib.info.siteinfo import SiteInfo
 
 from lib.git.gitscan import GitScan
-
+from utils.mail import MyMail
 from setting import sudomain_scan_size, github_scan_size
 
 
@@ -46,7 +45,6 @@ def git_leak():
 
     g = GitLeak()
     for _ in ranges:
-        t1 = time.time()
         # 扫描单个站点
         leaks = GitScan(_['domain']).run()
 
@@ -54,7 +52,7 @@ def git_leak():
         for leak in leaks:
             is_scanned = False
             for scanned in already_scanned:
-                if leak["repository_name"] == scanned["repository_name"] and leak["code"].split('\n') == scanned["code"]:
+                if leak["repository_name"] == scanned["repository_name"] and leak["code"] == scanned["code"]:
                     is_scanned = True
                     break
             if not is_scanned:
@@ -63,8 +61,8 @@ def git_leak():
         # 更新扫描时间
         g.update_scan_time(_["id"])
 
-        time.sleep(5)
-        print(time.time() - t1)
+        # TODO 发送邮件告警
+        # MyMail().send_mail(leaks, "Github 信息泄露告警")
     g.clean()
 
 

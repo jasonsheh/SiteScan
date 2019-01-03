@@ -5,7 +5,7 @@
 <div class="container-fluid">
     <div class="container">
         <h1 class="page-header">Github 监控范围</h1>
-        <form class="form-inline" role="form" action="/add_range" method=post>
+        <form class="form-inline" role="form" action="/gitleak/add/range" method=post>
             <span class="form-group-btn">
                 <button class="btn btn-outline-info" type="submit">Add range!</button>
             </span>
@@ -34,7 +34,7 @@
                     <td class="{{ range.id }}">{{ range.scan_time }}</td>
                     <td><a class="btn btn-outline-info btn-sm" data-toggle="modal" data-target="#edit"
                            onclick="update({{ range.id }})" role="button">修改</a></td>
-                    <td><a class="btn btn-outline-danger btn-sm" href="/del/range/{{ range.id }}"
+                    <td><a class="btn btn-outline-danger btn-sm" href="/gitleak/del/range/{{ range.id }}"
                            role="button">删除</a></td>
                 </tr>
                 {% endfor %}
@@ -51,14 +51,14 @@
                 <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalLongTitle">Edit Ranges</h5>
                 </div>
-                <form class="form" role="form" action="/update/range" method=post>
+                <form class="form" role="form" action="/gitleak/update/range" method=post>
                     <div class="form-group">
                         <label>ID</label>
                         <input type="text" class="form-control _" name="id" value="">
                         <label>Domain</label>
                         <input type="text" class="form-control _" name="domain" value="">
-                        <label>Sign</label>
-                        <input type="text" class="form-control _" name="sign" value="">
+                        <label>Scan Time</label>
+                        <input type="text" class="form-control _" name="time" value="">
                     </div><!-- /input-group -->
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
