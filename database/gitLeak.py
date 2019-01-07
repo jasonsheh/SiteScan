@@ -43,7 +43,8 @@ class GitLeak:
             'code text, '
             'scan_time text, '
             'type integer, '
-            'update_time text'
+            'update_time text, '
+            'confidence integer'
             ')')
 
         print("create leak successfully")
@@ -328,13 +329,16 @@ class GitLeak:
             )
         return results_list
 
-    def select_leak(self, page=0, domain_id=-1):
+    def select_leak(self, page=0, repository_name="", domain=""):
         if page != 0:
             sql = "select * from leak where type != 0 order by scan_time desc, id desc limit ?,?"
             self.cursor.execute(sql, ((page - 1) * item_size, item_size))
-        elif domain_id != -1:
-            sql = "select * from leak where domain_id = ?"
-            self.cursor.execute(sql, (domain_id,))
+        elif repository_name != "":
+            sql = "select * from leak where repository_name = ?"
+            self.cursor.execute(sql, (repository_name,))
+        elif domain != "":
+            sql = "select * from leak where domain = ?"
+            self.cursor.execute(sql, (domain,))
         else:
             sql = "select * from leak order by scan_time desc"
             self.cursor.execute(sql)
@@ -353,6 +357,7 @@ class GitLeak:
                     'scan_time': result[6],
                     'type': result[7],
                     'update_time': result[8],
+                    'confidence': result[9],
                     'file_name': result[4].rsplit("/")[-1],
                 }
             )
@@ -369,17 +374,17 @@ class GitLeak:
         self.conn.commit()
 
     def update_rule(self, id, keyword, rule):
-        sql = "update rule set keyword = ? , rule = ? where id = ?"
+        sql = "update rule set keyword = ? , pattern = ? where id = ?"
         self.cursor.execute(sql, (keyword, rule, id))
         self.conn.commit()
 
     def insert_leak(self, leak, domain_id, leak_type):
         sql = "insert into leak (domain_id, domain, repository_name, repository_url, code, scan_time, type, " \
-              "update_time) values (?, ?, ?, ?, ?, ?, ?, ?)"
+              "update_time, confidence) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
         self.cursor.execute(sql,
                             (domain_id, leak["domain"], leak["repository_name"], leak["repository_url"],
                              "\n".join(leak["code"]), datetime.datetime.now().strftime("%Y-%m-%d"),
-                             leak_type, leak["update_time"]))
+                             leak_type, leak["update_time"], leak["confidence"]))
         self.conn.commit()
 
     def insert_range(self, domain_id, domain):
@@ -421,8 +426,4 @@ class GitLeak:
 
 
 if __name__ == '__main__':
-    g = GitLeak()
-    leak = g.select_rules()
-    g.clean()
-
-    print(leak)
+    GitLeak().create_leak()

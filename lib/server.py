@@ -47,12 +47,13 @@ def git_leak():
     for _ in ranges:
         # 扫描单个站点
         leaks = GitScan(_['domain']).run()
-
-        already_scanned = GitLeak().select_leak(domain_id=_["domain_id"])
         for leak in leaks:
+            already_scanned = g.select_leak(repository_name=leak["repository_name"])
+            already_scanned += g.select_leak(domain=leak["domain"])
+
             is_scanned = False
             for scanned in already_scanned:
-                if leak["repository_name"] == scanned["repository_name"] and leak["code"] == scanned["code"]:
+                if leak["code"] == scanned["code"]:
                     is_scanned = True
                     break
             if not is_scanned:

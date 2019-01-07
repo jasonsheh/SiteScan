@@ -8,7 +8,7 @@ from setting import user_path, item_size
 
 class Rules:
     def __init__(self):
-        self.conn = sqlite3.connect(user_path + '/db/Rules.db')
+        self.conn = sqlite3.connect(user_path + '/db/Rules.db', check_same_thread=False)
         self.cursor = self.conn.cursor()
 
     def insert_fingerprint(self, name, rule):

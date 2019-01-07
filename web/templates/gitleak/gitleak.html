@@ -9,17 +9,17 @@
             {% if leak.type == 1 %}
         <div class="card border-success mb-3">
             <div class="card-header text-success">
-                {{ leak.scan_time }} | {{ leak.domain }} | <a target="_blank" href="{{ leak.repository_url }}">{{ leak.repository_name }}</a> | {{ leak.file_name }} | {{ leak.update_time }}
+                {{ leak.scan_time }} | {{ leak.domain }} | <a target="_blank" href="{{ leak.repository_url }}">{{ leak.repository_name }}</a> | {{ leak.file_name }} | {{ leak.update_time }} | 评分: {{ leak.confidence }}
             </div>
             {% elif leak.type == 2 %}
         <div class="card border-info mb-3">
             <div class="card-header text-info">
-                {{ leak.scan_time }} | {{ leak.domain }} | <a target="_blank" href="{{ leak.repository_url }}">{{ leak.repository_name }}</a> | {{ leak.file_name }} | {{ leak.update_time }}
+                {{ leak.scan_time }} | {{ leak.domain }} | <a target="_blank" href="{{ leak.repository_url }}">{{ leak.repository_name }}</a> | {{ leak.file_name }} | {{ leak.update_time }} | 评分: {{ leak.confidence }}
             </div>
             {% else %}
         <div class="card border mb-3">
             <div class="card-header">
-                {{ leak.scan_time }} | {{ leak.domain }} | <a target="_blank" href="{{ leak.repository_url }}">{{ leak.repository_name }}</a> | {{ leak.file_name }} | {{ leak.update_time }}
+                {{ leak.scan_time }} | {{ leak.domain }} | <a target="_blank" href="{{ leak.repository_url }}">{{ leak.repository_name }}</a> | {{ leak.file_name }} | {{ leak.update_time }} | 评分: {{ leak.confidence }}
             </div>
             {% endif %}
                 <div class="card-body">

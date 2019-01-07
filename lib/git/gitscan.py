@@ -14,7 +14,6 @@ from database.gitLeak import GitLeak
 
 
 # reg_mail = re.compile('([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)')
-# reg_ip = re.compile(r"^((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))$")
 
 
 class GitScan:
@@ -34,12 +33,17 @@ class GitScan:
         # TODO single database
         self.keywords: Dict = {
             'jdbc:': 'jdbc:/.*/',
-            'smtp password': "[(smtp)]?.*?password[^,./ ]?[a-zA-Z0-9_\"':]*[ ]*[=][^<]*",
-            'password=': "password[^,/ ]?[a-zA-Z0-9_\"':]*[ ]*[=][^<]*"
+            'smtp password': "[(smtp)]?.*?password[^,./ ]?[a-zA-Z0-9_\"':]*[ ]*[=:][^<]*",
+            'password': "password[^,/ ]?[a-zA-Z0-9_\"':]*[ ]*[=:][^<]*",
+            'passwd': "passwd[^,/ ]?[a-zA-Z0-9_\"':]*[ ]*[=:][^<]*",
         }
-        self.false_positive = ['localhost', '127.0.0.1', "\(\)$"]
-        self.fuzz_repo_name = ['fuzz', 'hack', 'whitelist', 'blacklist']
+        self.false_positive = [r"\(\)[;,]?$", r"\*{6}", "changeit", "type: ss, server:"]
+        self.fuzz_repo_name = ['fuzz', 'hack', 'whitelist', 'blacklist', '.github.io']
         self.fuzz_file_name = ["Surge3.conf"]
+
+        self.reg_domain = r"[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+"
+        self.reg_ip = r"((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))"
+        self.reg_private_ip = r"(127\.)|(192\.168\.)|(10\.)|(172\.1[6-9]\.)|(172\.2[0-9]\.)|(172\.3[0-1]\.)|(localhost)"
 
     # 移除无用的文件类型
     def filter(self, url):
@@ -62,35 +66,6 @@ class GitScan:
             if re.search(fuzz_keyword, name, re.IGNORECASE):
                 return True
         return False
-
-    def get_keyword_code(self, all_codes):
-        """
-        获取匹配到关键字的代码行
-        :param all_codes: 全量代码
-        :return: 关键代码
-        """
-        all_code = all_codes.splitlines()
-        possible_codes = []
-        for keyword, rule in self.keywords.items():
-            for code in all_code:
-                if len(code) > 350:
-                    continue
-                is_false_positive = False
-                for false_positive in self.false_positive:
-                    if re.search(false_positive, code, re.I):
-                        is_false_positive = True
-                        break
-                if re.search(rule, code, re.I) and not is_false_positive:
-                    possible_codes.append(code.strip())
-        return list(set(possible_codes))
-
-    def confidence(self):
-        """
-        对匹配到的代码进行置信度计算
-        :return:
-        """
-        # TODO confidence
-        pass
 
     def switch_api_key(self):
         self.key_num = (self.key_num + 1) % len(github_api_key)
@@ -117,19 +92,78 @@ class GitScan:
             "update_time": update_time_str
         }
 
-        # 更新时间不能超过6个月
-        if (datetime.datetime.now() - update_time).days > 120:
+        # 更新时间不能超过1个月
+        if (datetime.datetime.now() - update_time).days > 30:
             return
-
         try:
             full_code = content.decoded_content.decode('utf-8')
         except requests.exceptions.ConnectionError:
             return
 
+        result["confidence"] = self.confidence(full_code)
         codes = self.get_keyword_code(full_code)
         if codes:
             result['code'] = codes
             self.result.append(result)
+
+    def get_keyword_code(self, all_codes):
+        """
+        获取匹配到关键字的代码行
+        :param all_codes: 全量代码
+        :return: 关键代码
+        """
+        all_code = all_codes.splitlines()
+        possible_codes = []
+        for keyword, rule in self.keywords.items():
+            for code in all_code:
+                if len(code) > 350:
+                    continue
+                is_false_positive = False
+                for false_positive in self.false_positive:
+                    if re.search(false_positive, code, re.I):
+                        is_false_positive = True
+                        break
+                if re.search(self.reg_private_ip, code, re.I):
+                    is_false_positive = True
+                if re.search(rule, code, re.I) and not is_false_positive:
+                    possible_codes.append(code.strip())
+        return list(set(possible_codes))
+
+    def confidence(self, all_codes):
+        """
+        实验性的置信度计算函数
+
+        对匹配到的代码进行置信度计算
+        计算 出现总IP数量/私有地址
+        计算 出现url数量/包含的目标域名
+        :param all_codes: 全量代码
+        :return: 置信度
+        """
+        confidence = 0
+
+        all_code = all_codes.splitlines()
+        ip_count = 0
+        private_ip_count = 0
+
+        url_count = 0
+        target_url_count = 0
+        for code in all_code:
+            # 公有IP出现次数
+            if re.search(self.reg_ip, code, re.I):
+                ip_count += 1
+                if re.search(self.reg_private_ip, code, re.I):
+                    private_ip_count += 1
+
+            # url出现次数
+            if re.search(self.reg_domain, code, re.I):
+                url_count += 1
+                if self.target in code:
+                    target_url_count += 1
+        if ip_count != 0:
+            confidence += ((ip_count - private_ip_count) / ip_count)
+        if url_count != 0:
+            confidence += (target_url_count / url_count)
+        return int(round(confidence, 2) * 100)
 
     def run(self):
         print("scan {}".format(self.target))
@@ -164,7 +198,7 @@ class GitScan:
         for result in self.result:
             print(result["repository_name"], result["repository_url"])
             for code in result["code"].split('\n'):
-                print("\t"+code)
+                print("\t" + code)
 
     @staticmethod
     def clean():
@@ -177,4 +211,4 @@ class GitScan:
 
 
 if __name__ == '__main__':
-    GitScan("bilibili.com").run()
+    GitScan("").run()
