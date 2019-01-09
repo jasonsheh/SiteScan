@@ -6,14 +6,16 @@ import re
 import time
 import datetime
 import requests
-import socket
 from github import Github, GithubException
 from setting import github_api_key
 from typing import Dict
 from database.gitLeak import GitLeak
+from utils.mail import MyMail
 
-
+# TODO 增加邮箱登陆信息的自动判断 ！！！
 # reg_mail = re.compile('([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)')
+
+# TODO 增加数据库登陆信息的自动判断
 
 
 class GitScan:
@@ -23,24 +25,26 @@ class GitScan:
         self.g = Github(github_api_key[self.key_num])
         self.target: str = target
         self.search_page: int = 1
+        self.search_days: int = 15
         self.timeout: int = 4
         self.hash_list = []
         self.result = []
-        self.useless_ext = ['css', 'htm', 'html', 'pac', 'csv', 'txt', 'csv.dat', 'rules', 'svg']
-        self.useful_ext = ['properties']
+        self.useless_ext = ['c', 'css', 'csv', 'csv.dat', 'htm', 'html', 'pac', 'svg', 'smali', 'txt', 'rules']
+        # self.useful_ext = ['properties']
 
         # TODO More Rules
         # TODO single database
         self.keywords: Dict = {
             'jdbc:': 'jdbc:/.*/',
-            'smtp password': "[(smtp)]?.*?password[^,./ ]?[a-zA-Z0-9_\"':]*[ ]*[=:][^<]*",
-            'password': "password[^,/ ]?[a-zA-Z0-9_\"':]*[ ]*[=:][^<]*",
-            'passwd': "passwd[^,/ ]?[a-zA-Z0-9_\"':]*[ ]*[=:][^<]*",
+            'smtp password': "[(smtp)]?.*?password[^,./ ]?[a-zA-Z0-9_\"': ]*[=:][^<]+",
+            'password': "password[^,/ ]?[a-zA-Z0-9_\"': ]*[=:][^<]+",
+            'passwd': "passwd[^,/ ]?[a-zA-Z0-9_\"': ]*[=:][^<]+",
         }
-        self.false_positive = [r"\(\)[;,]?$", r"\*{6}", "changeit", "type: ss, server:"]
+        self.false_positive = [r"\(\)[;,]?$", r"[*x]{5}", "changeit", "type: ss, server:", r"[{\[:]$", r"''"]
         self.fuzz_repo_name = ['fuzz', 'hack', 'whitelist', 'blacklist', '.github.io']
         self.fuzz_file_name = ["Surge3.conf"]
 
+        self.reg_chinese = "[\u4E00-\u9FA5]+"
         self.reg_domain = r"[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+"
         self.reg_ip = r"((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))"
         self.reg_private_ip = r"(127\.)|(192\.168\.)|(10\.)|(172\.1[6-9]\.)|(172\.2[0-9]\.)|(172\.3[0-1]\.)|(localhost)"
@@ -49,7 +53,7 @@ class GitScan:
     def filter(self, url):
         # 是否应该被过滤
         for ext in self.useless_ext:
-            if url.endswith(ext):
+            if url.endswith("."+ext):
                 return True
         return False
 
@@ -92,8 +96,8 @@ class GitScan:
             "update_time": update_time_str
         }
 
-        # 更新时间不能超过1个月
-        if (datetime.datetime.now() - update_time).days > 30:
+        # 更新时间不能超过15天
+        if (datetime.datetime.now() - update_time).days > self.search_days:
             return
         try:
             full_code = content.decoded_content.decode('utf-8')
@@ -125,6 +129,9 @@ class GitScan:
                         break
                 if re.search(self.reg_private_ip, code, re.I):
                     is_false_positive = True
+                if re.search(self.reg_chinese, code, re.I):
+                    if "#" not in code and "//" not in code:
+                        is_false_positive = True
                 if re.search(rule, code, re.I) and not is_false_positive:
                     possible_codes.append(code.strip())
         return list(set(possible_codes))
@@ -175,24 +182,17 @@ class GitScan:
                 try:
                     for index, content in enumerate(resource.get_page(page)):
                         # 处理数据
-                        try:
-                            # TODO add hash 去重
-                            self.handle_content(content)
-                        except socket.timeout:
-                            time.sleep(self.timeout)
-                            continue
-                        except requests.exceptions.ReadTimeout:
-                            continue
-                        except AssertionError:
-                            # github library encoding error
-                            continue
-
+                        # TODO add hash 去重
+                        self.handle_content(content)
                 except GithubException as e:
                     print(e)
                     time.sleep(self.timeout)
             time.sleep(self.timeout)
 
         return self.result
+
+    def leak_email_test(self):
+        MyMail.mail_test("", "", "smtp.163.com", 25)
 
     def output(self):
         for result in self.result:
