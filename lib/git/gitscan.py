@@ -8,12 +8,10 @@ import datetime
 import requests
 from github import Github, GithubException
 from setting import github_api_key
-from typing import Dict
+from typing import Dict, List
 from database.gitLeak import GitLeak
 from utils.mail import MyMail
 
-# TODO 增加邮箱登陆信息的自动判断 ！！！
-# reg_mail = re.compile('([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)')
 
 # TODO 增加数据库登陆信息的自动判断
 
@@ -46,6 +44,13 @@ class GitScan:
 
         self.reg_chinese = "[\u4E00-\u9FA5]+"
         self.reg_domain = r"[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+"
+
+        # 邮件信息相关正则
+        self.reg_email = r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z-]+)"
+        self.reg_email_host = r"host.*?(smtp\.[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+)"
+        self.reg_email_port = r"port.*?([0-9]+)"
+        self.reg_email_password = r"""pass(?:wd|word)["':= ]*?([a-zA-Z0-9_,@$%^.*+-]+)["',]?"""
+
         self.reg_ip = r"((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))"
         self.reg_private_ip = r"(127\.)|(192\.168\.)|(10\.)|(172\.1[6-9]\.)|(172\.2[0-9]\.)|(172\.3[0-1]\.)|(localhost)"
 
@@ -53,7 +58,7 @@ class GitScan:
     def filter(self, url):
         # 是否应该被过滤
         for ext in self.useless_ext:
-            if url.endswith("."+ext):
+            if url.endswith("." + ext):
                 return True
         return False
 
@@ -182,7 +187,6 @@ class GitScan:
                 try:
                     for index, content in enumerate(resource.get_page(page)):
                         # 处理数据
-                        # TODO add hash 去重
                         self.handle_content(content)
                 except GithubException as e:
                     print(e)
@@ -191,8 +195,69 @@ class GitScan:
 
         return self.result
 
-    def leak_email_test(self):
-        MyMail.mail_test("", "", "smtp.163.com", 25)
+    def leak_email_test(self, all_codes):
+        email_search_range: int = 5
+
+        # TODO 增加邮箱登陆信息的自动判断 ！！！
+        email_info_list = []
+
+        all_codes = all_codes.splitlines()
+        email_pattern = re.compile(self.reg_email)
+        email_host_pattern = re.compile(self.reg_email_host)
+        email_port_pattern = re.compile(self.reg_email_port, re.I)
+        email_password_pattern = re.compile(self.reg_email_password, re.I)
+
+        for code in all_codes:
+            if re.search("receive", code, re.I):
+                continue
+            if re.search(email_pattern, code):
+                email_info = {
+                    "email": "",
+                    "password": "",
+                    "host": "",
+                    "port": [25, 456]
+                }
+                if re.findall(email_pattern, code)[0]:
+                    email_info["email"] = re.findall(email_pattern, code)[0]
+                email_line_num = all_codes.index(code)
+
+                # 获取邮箱附近代码
+                if email_line_num - email_search_range < 0:
+                    start = 0
+                else:
+                    start = email_line_num - email_search_range
+                if email_line_num + email_search_range > len(all_codes):
+                    end = len(all_codes)
+                else:
+                    end = email_line_num + email_search_range
+
+                for smtp_info in all_codes[start:end]:
+                    if re.findall(email_host_pattern, smtp_info):
+                        email_info["host"] = re.findall(email_host_pattern, smtp_info)[0]
+
+                    for port in re.findall(email_port_pattern, smtp_info):
+                        if port not in ["25", "465"]:
+                            continue
+                        email_info["port"] = int(port)
+
+                    if re.findall(email_password_pattern, smtp_info):
+                        email_info["password"] = re.findall(email_password_pattern, smtp_info)[0]
+
+                email_info_list.append(email_info)
+
+        if not email_info_list:
+            return
+        for email_info in email_info_list:
+            if email_info["email"].endswith("qq.com"):
+                if not email_info["host"]:
+                    email_info["host"] = "smtp.qq.com"
+                email_info["port"] = 465
+
+            # if MyMail.mail_test(email_info["email"], email_info["password"], email_info["host"], email_info["port"]):
+            #     print("Email Successfully Login")
+
+            # type = 3 机器确认有待人工审核
+            print(email_info)
 
     def output(self):
         for result in self.result:
@@ -211,4 +276,36 @@ class GitScan:
 
 
 if __name__ == '__main__':
-    GitScan("").run()
+    data = """
+private static String smtp_host = "smtp.163.com"; // 网易
+	private static String username = "itcast_search@163.com"; // 邮箱账户
+	private static String password = "itcast123"; // 邮箱授权码
+
+	private static String from = "itcast_search@163.com"; // 使用当前账户
+	public static String activeUrl = "http://localhost:9003/bos_fore/customer_activeMail";
+
+	public static void sendMail(String subject, String content, String to) {
+		Properties props = new Properties();
+		props.setProperty("mail.smtp.host", smtp_host);
+		props.setProperty("mail.transport.protocol", "smtp");
+		props.setProperty("mail.smtp.auth", "true");
+		Session session = Session.getInstance(props);
+		Message message = new MimeMessage(session);
+		try {
+			message.setFrom(new InternetAddress(from));
+			message.setRecipient(RecipientType.TO, new InternetAddress(to));
+			message.setSubject(subject);
+			message.setContent(content, "text/html;charset=utf-8");
+			Transport transport = session.getTransport();
+			transport.connect(smtp_host, username, password);
+			transport.sendMessage(message, message.getAllRecipients());
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException("邮件发送失败...");
+		}
+	}
+
+	public static void main(String[] args) {
+		sendMail("测试邮件", "你好，传智播客", "itcast_search@163.com");
+	}"""
+    GitScan("").leak_email_test(data)
