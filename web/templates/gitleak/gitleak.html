@@ -7,13 +7,18 @@
         <h2 class="sub-header">Github 敏感信息监控</h2>
         {% for leak in leaks %}
             {% if leak.type == 1 %}
-        <div class="card border-success mb-3">
-            <div class="card-header text-success">
+        <div class="card border-danger mb-3">
+            <div class="card-header text-danger">
                 {{ leak.scan_time }} | {{ leak.domain }} | <a target="_blank" href="{{ leak.repository_url }}">{{ leak.repository_name }}</a> | {{ leak.file_name }} | {{ leak.update_time }} | 评分: {{ leak.confidence }}
             </div>
             {% elif leak.type == 2 %}
         <div class="card border-info mb-3">
             <div class="card-header text-info">
+                {{ leak.scan_time }} | {{ leak.domain }} | <a target="_blank" href="{{ leak.repository_url }}">{{ leak.repository_name }}</a> | {{ leak.file_name }} | {{ leak.update_time }} | 评分: {{ leak.confidence }}
+            </div>
+            {% elif leak.type == 3 %}
+        <div class="card border-success mb-3">
+            <div class="card-header text-success">
                 {{ leak.scan_time }} | {{ leak.domain }} | <a target="_blank" href="{{ leak.repository_url }}">{{ leak.repository_name }}</a> | {{ leak.file_name }} | {{ leak.update_time }} | 评分: {{ leak.confidence }}
             </div>
             {% else %}
@@ -28,9 +33,9 @@
                         {{ code }}<br>
                     {% endfor %}
                     </p>
-                    <a class="btn btn-outline-info btn-sm" href="/gitleak/ignore/{{ leak.id }}" role="button">忽略</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="/gitleak/ignore/{{ leak.id }}" role="button">忽略</a>
                     <a class="btn btn-outline-danger btn-sm" href="/gitleak/confirm/{{ leak.id }}" role="button">确认</a>
-                    <a class="btn btn-outline-secondary btn-sm" href="/gitleak/irrelevant/{{ leak.id }}" role="button">无关</a>
+                    <a class="btn btn-outline-info btn-sm" href="/gitleak/irrelevant/{{ leak.id }}" role="button">无关</a>
                 </div>
             </div>
         {% endfor %}

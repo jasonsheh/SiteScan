@@ -4,59 +4,71 @@
 # -*- coding:utf-8 -*-
 
 
-import sqlite3
 import datetime
+from sqlalchemy import create_engine
+from sqlalchemy import Column, Integer, String, Time, Text
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 from setting import user_path, item_size
+
+Base = declarative_base()
+
+
+class Range(Base):
+    __tablename__ = "range"
+
+    id = Column(Integer, primary_key=True)
+    domain_id = Column(Integer)
+    domain = Column(String(255))
+    sign = Column(String(255))
+    scan_time = Column(Time)
+
+
+class Leak(Base):
+    """
+    type default -1 未知/unknown
+    type 0 忽略/无危害
+    type 1 确认/相关
+    type 2 确认/不相关
+    type 3 确认/程序判断
+    """
+    __tablename__ = "leak"
+
+    id = Column(Integer, primary_key=True)
+    domain_id = Column(Integer)
+    domain = Column(String(255))
+    sign = Column(String(255))
+    repository_name = Column(String(255))
+    repository_url = Column(String(255))
+    code = Column(Text)
+    scan_time = Column(Time)
+    update_time = Column(Time)
+    type = Column(Integer)
+    confidence = Column(Integer)
+
+
+class Rule(Base):
+    """
+    type default -1 未知/unknown
+    type 0 忽略/无危害
+    type 1 确认/相关
+    type 2 确认/不相关
+    type 3 确认/程序判断
+    """
+    __tablename__ = "rule"
+
+    id = Column(Integer, primary_key=True)
+    keyword = Column(String(255))
+    pattern = Column(String(255))
 
 
 class GitLeak:
     def __init__(self):
-        self.conn = sqlite3.connect(user_path + '/db/GitLeak.db', check_same_thread=False)
-        self.cursor = self.conn.cursor()
-
-    def create_range(self):
-        self.cursor.execute(
-            'create table range ('
-            'id integer primary key,'
-            'domain_id integer, '
-            'domain varchar(255), '
-            'sign varchar(255), '
-            'scan_time text'
-            ')')
-        print("create range successfully")
-
-    def create_leak(self):
-        """
-        type default -1 未知/unknown
-        type 0 忽略/无危害
-        type 1 确认/相关
-        type 2 确认/不相关
-        :return:
-        """
-        self.cursor.execute(
-            'create table leak ('
-            'id integer primary key,'
-            'domain_id integer, '
-            'domain varchar(255), '
-            'repository_name varchar(255), '
-            'repository_url varchar(255), '
-            'code text, '
-            'scan_time text, '
-            'type integer, '
-            'update_time text, '
-            'confidence integer'
-            ')')
-
-        print("create leak successfully")
-
-    def create_rule(self):
-        self.cursor.execute(
-            'create table rule ('
-            'id integer primary key,'
-            'keyword varchar(255), '
-            'pattern varchar(255)'
-            ')')
-        print("create rule successfully")
+        # 增加setting文件中，数据库类型的选择
+        self.engine = create_engine(
+            "sqlite:///{user_path}/db/GitLeak.db?check_same_thread=False".format(user_path=user_path))
+        # self.conn = sqlite3.connect(user_path + '/db/GitLeak.db', check_same_thread=False)
+        self.session = sessionmaker(bind=self.engine)()
 
     def init_range(self):
         src_list = [("阿里asrc", 1, "*.taobao.com"),
@@ -270,19 +282,16 @@ class GitLeak:
                     ("微众wsrc", 44, "*.webank.com"),
                     ("万能钥匙wifisrc", 45, "*.wifi.com"),
                     ("中通src", 46, "*.zto.com")]
-        sql = "insert into range (domain_id, domain, sign, scan_time) values (?, ?, ?, ?)"
         i = 0
         for src_info in src_list:
             i += 1
-            self.cursor.execute(sql,
-                                (i, src_info[2][2:], "", datetime.datetime.now().strftime("%Y-%m-%d")))
-        self.conn.commit()
+            self.session.add(Range(domain_id=i, domain=src_info[2][2:], sign="",
+                                   scan_time=datetime.datetime.now().strftime("%Y-%m-%d")))
+        self.session.commit()
         print("init range successfully")
 
     def create_database(self):
-        self.create_range()
-        self.create_leak()
-        self.init_range()
+        Base.metadata.create_all(self.engine)
 
     def select_range(self, page=0, count=0):
         if count != 0:
@@ -378,34 +387,35 @@ class GitLeak:
         self.cursor.execute(sql, (keyword, rule, id))
         self.conn.commit()
 
-    def insert_leak(self, leak, domain_id, leak_type):
-        sql = "insert into leak (domain_id, domain, repository_name, repository_url, code, scan_time, type, " \
-              "update_time, confidence) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        self.cursor.execute(sql,
-                            (domain_id, leak["domain"], leak["repository_name"], leak["repository_url"],
-                             "\n".join(leak["code"]), datetime.datetime.now().strftime("%Y-%m-%d"),
-                             leak_type, leak["update_time"], leak["confidence"]))
-        self.conn.commit()
+    def insert_leak(self, leak, domain_id):
+        leak = Leak(domain_id=domain_id, domain=leak["domain"], repository_name=leak["repository_name"],
+                    repository_url=leak["repository_url"], code="\n".join(leak["code"]), type=leak["type"],
+                    scan_time=datetime.datetime.now().strftime("%Y-%m-%d"), update_time=leak["update_time"],
+                    confidence=leak["confidence"])
+        self.session.add(leak)
+        self.session.commit()
 
     def insert_range(self, domain_id, domain):
-        sql = "insert into range (domain_id, domain, sign, scan_time) values (?, ?, ?, ?)"
-        self.cursor.execute(sql, (domain_id, domain, "", datetime.datetime.now().strftime("%Y-%m-%d")))
-        self.conn.commit()
+        _range = Range(domain_id=domain_id, domain=domain, sign="",
+                       scan_time=datetime.datetime.now().strftime("%Y-%m-%d"))
+        self.session.add(_range)
+        self.session.commit()
 
     def insert_rule(self, keyword, pattern):
-        sql = "insert into rule (keyword, pattern) values (?, ?)"
-        self.cursor.execute(sql, (keyword, pattern))
-        self.conn.commit()
+        rule = Rule(keyword=keyword, pattern=pattern)
+        self.session.add(rule)
+        self.session.commit()
 
     def delete_leak(self):
-        sql = "delete from leak where type = 0"
-        self.cursor.execute(sql)
-        self.conn.commit()
+        self.session.query(Leak).filter_by(type=0).delete()
 
     def delete(self, mode, id):
-        sql = "delete from %s where id = ?".format(mode)
-        self.cursor.execute(sql, (id, ))
-        self.conn.commit()
+        del_mode = {
+            "leak": Leak,
+            "range": Range,
+            "rule": Rule
+        }
+        self.session.query(del_mode[mode]).filter_by(id=id).delete()
 
     def count(self, mode, not_type=None):
         if not_type:
@@ -426,4 +436,4 @@ class GitLeak:
 
 
 if __name__ == '__main__':
-    GitLeak().create_leak()
+    GitLeak().create_database()

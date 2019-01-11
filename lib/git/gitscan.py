@@ -25,7 +25,7 @@ class GitScan:
         self.search_page: int = 1
         self.search_days: int = 15
         self.timeout: int = 4
-        self.hash_list = []
+        self.hash_list: List = []
         self.result = []
         self.useless_ext = ['c', 'css', 'csv', 'csv.dat', 'htm', 'html', 'pac', 'svg', 'smali', 'txt', 'rules']
         # self.useful_ext = ['properties']
@@ -39,7 +39,8 @@ class GitScan:
             'passwd': "passwd[^,/ ]?[a-zA-Z0-9_\"': ]*[=:][^<]+",
         }
         self.false_positive = [r"\(\)[;,]?$", r"[*x]{5}", "changeit", "type: ss, server:", r"[{\[:]$", r"''"]
-        self.fuzz_repo_name = ['fuzz', 'hack', 'whitelist', 'blacklist', '.github.io']
+        self.fuzz_repo_name = ['fuzz', 'hack', 'whitelist', 'blacklist', '.github.io', 'phishing']
+        # repo blacklist
         self.fuzz_file_name = ["Surge3.conf"]
 
         self.reg_chinese = "[\u4E00-\u9FA5]+"
@@ -47,7 +48,7 @@ class GitScan:
 
         # 邮件信息相关正则
         self.reg_email = r"([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z-]+)"
-        self.reg_email_host = r"host.*?(smtp\.[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+)"
+        self.reg_email_host = r"(?:host|server).*?((?:smtp|pop|imap)\.[a-zA-Z0-9-]+\.[a-zA-Z0-9-]+)"
         self.reg_email_port = r"port.*?([0-9]+)"
         self.reg_email_password = r"""pass(?:wd|word)["':= ]*?([a-zA-Z0-9_,@$%^.*+-]+)["',]?"""
 
@@ -56,7 +57,7 @@ class GitScan:
 
     # 移除无用的文件类型
     def filter(self, url):
-        # 是否应该被过滤
+        # 根据文件名判断是否该被过滤
         for ext in self.useless_ext:
             if url.endswith("." + ext):
                 return True
@@ -98,7 +99,8 @@ class GitScan:
             'domain': self.target,
             'repository_name': full_name,
             'repository_url': url,
-            "update_time": update_time_str
+            "update_time": update_time_str,
+            "type": -1
         }
 
         # 更新时间不能超过15天
@@ -106,6 +108,8 @@ class GitScan:
             return
         try:
             full_code = content.decoded_content.decode('utf-8')
+        except requests.exceptions.ReadTimeout:
+            return
         except requests.exceptions.ConnectionError:
             return
 
@@ -114,6 +118,8 @@ class GitScan:
         if codes:
             result['code'] = codes
             self.result.append(result)
+
+        result["type"] = self.leak_email_test(full_code)
 
     def get_keyword_code(self, all_codes):
         """
@@ -125,6 +131,7 @@ class GitScan:
         possible_codes = []
         for keyword, rule in self.keywords.items():
             for code in all_code:
+                # 代码过长
                 if len(code) > 350:
                     continue
                 is_false_positive = False
@@ -134,6 +141,7 @@ class GitScan:
                         break
                 if re.search(self.reg_private_ip, code, re.I):
                     is_false_positive = True
+                # 去除中文且非注释的代码
                 if re.search(self.reg_chinese, code, re.I):
                     if "#" not in code and "//" not in code:
                         is_false_positive = True
@@ -195,7 +203,7 @@ class GitScan:
 
         return self.result
 
-    def leak_email_test(self, all_codes):
+    def leak_email_test(self, all_codes: str) -> int:
         email_search_range: int = 5
 
         # TODO 增加邮箱登陆信息的自动判断 ！！！
@@ -208,6 +216,7 @@ class GitScan:
         email_password_pattern = re.compile(self.reg_email_password, re.I)
 
         for code in all_codes:
+            # 去除可能为接收者的邮箱
             if re.search("receive", code, re.I):
                 continue
             if re.search(email_pattern, code):
@@ -215,13 +224,13 @@ class GitScan:
                     "email": "",
                     "password": "",
                     "host": "",
-                    "port": [25, 456]
+                    "port": [25, 456]  # 常见smtp服务端口号
                 }
                 if re.findall(email_pattern, code)[0]:
                     email_info["email"] = re.findall(email_pattern, code)[0]
                 email_line_num = all_codes.index(code)
 
-                # 获取邮箱附近代码
+                # 获取邮箱附近代码 -10 ~ 10
                 if email_line_num - email_search_range < 0:
                     start = 0
                 else:
@@ -238,7 +247,7 @@ class GitScan:
                     for port in re.findall(email_port_pattern, smtp_info):
                         if port not in ["25", "465"]:
                             continue
-                        email_info["port"] = int(port)
+                        email_info["port"] = [int(port)]
 
                     if re.findall(email_password_pattern, smtp_info):
                         email_info["password"] = re.findall(email_password_pattern, smtp_info)[0]
@@ -246,18 +255,32 @@ class GitScan:
                 email_info_list.append(email_info)
 
         if not email_info_list:
-            return
+            return -1
         for email_info in email_info_list:
+            # 若未匹配到密码则继续
+            if not email_info["password"]:
+                continue
+
             if email_info["email"].endswith("qq.com"):
+                # qq邮箱默认服务器及端口
                 if not email_info["host"]:
                     email_info["host"] = "smtp.qq.com"
-                email_info["port"] = 465
+                email_info["port"] = [465]
 
-            # if MyMail.mail_test(email_info["email"], email_info["password"], email_info["host"], email_info["port"]):
-            #     print("Email Successfully Login")
+            # 测试邮箱密码是否可以登陆
+            for port in email_info["port"]:
+                if MyMail.mail_test(email_info["email"], email_info["password"], email_info["host"], port):
+                    print("Email Successfully Login")
+                    # type = 3 机器确认有待人工审核
+                    print(email_info["port"])
+                    return 3
+        return -1
 
-            # type = 3 机器确认有待人工审核
-            print(email_info)
+    def leak_database_test(self, all_codes: str) -> int:
+        all_codes = all_codes.splitlines()
+        for code in all_codes:
+            pass
+        return -1
 
     def output(self):
         for result in self.result:
@@ -276,36 +299,5 @@ class GitScan:
 
 
 if __name__ == '__main__':
-    data = """
-private static String smtp_host = "smtp.163.com"; // 网易
-	private static String username = "itcast_search@163.com"; // 邮箱账户
-	private static String password = "itcast123"; // 邮箱授权码
-
-	private static String from = "itcast_search@163.com"; // 使用当前账户
-	public static String activeUrl = "http://localhost:9003/bos_fore/customer_activeMail";
-
-	public static void sendMail(String subject, String content, String to) {
-		Properties props = new Properties();
-		props.setProperty("mail.smtp.host", smtp_host);
-		props.setProperty("mail.transport.protocol", "smtp");
-		props.setProperty("mail.smtp.auth", "true");
-		Session session = Session.getInstance(props);
-		Message message = new MimeMessage(session);
-		try {
-			message.setFrom(new InternetAddress(from));
-			message.setRecipient(RecipientType.TO, new InternetAddress(to));
-			message.setSubject(subject);
-			message.setContent(content, "text/html;charset=utf-8");
-			Transport transport = session.getTransport();
-			transport.connect(smtp_host, username, password);
-			transport.sendMessage(message, message.getAllRecipients());
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException("邮件发送失败...");
-		}
-	}
-
-	public static void main(String[] args) {
-		sendMail("测试邮件", "你好，传智播客", "itcast_search@163.com");
-	}"""
+    data = """ """
     GitScan("").leak_email_test(data)

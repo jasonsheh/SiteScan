@@ -7,11 +7,22 @@
 
 """
 import sqlite3
+# from sqlalchemy import create_engine
+# from sqlalchemy import Column, Integer, String
+# from sqlalchemy.ext.declarative import declarative_base
 from setting import user_path, item_size
+#
+#
+# Base = declarative_base()
+#
+# class
 
 
 class Database:
     def __init__(self):
+        # 增加setting文件中，数据库类型的选择
+        # self.conn = create_engine(
+        #     "sqlite:///{user_path}/db/SiteScan.db?check_same_thread=False".format(user_path=user_path))
         self.conn = sqlite3.connect(user_path + '/db/SiteScan.db', check_same_thread=False)
         self.cursor = self.conn.cursor()
 
