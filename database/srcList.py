@@ -3,27 +3,43 @@
 # __email__ = 'qq3039344@gmail.com'
 # -*- coding:utf-8 -*-
 
-import sqlite3
 import datetime
+from sqlalchemy import create_engine, func
+from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 from setting import user_path, item_size
+
+Base = declarative_base()
+
+
+class SRC(Base):
+    __tablename__ = "src"
+    id = Column(Integer, primary_key=True)
+    name = Column(String(64))
+    src_id = Column(Integer)
+    domain = Column(String(128))
+    scan_time = Column(Text)
+
+    def format(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "src_id": self.src_id,
+            "domain": self.domain,
+            "scan_time": self.scan_time
+        }
 
 
 class SrcList:
     def __init__(self):
-        self.conn = sqlite3.connect(user_path + '/db/SiteScan.db')
-        self.cursor = self.conn.cursor()
+        self.engine = create_engine(
+            "sqlite:///{user_path}/db/SiteScan.db?check_same_thread=False".format(user_path=user_path))
+        self.session = sessionmaker(bind=self.engine)()
 
     # 创建src列表数据库
     def create_src_list(self):
-        self.cursor.execute('create table src('
-                            'id integer primary key,'
-                            'name varchar(64),'
-                            'src_id integer,'
-                            'url varchar(128),'
-                            'scan_time TEXT'
-                            ')')
-        self.conn.commit()
-        self.clean()
+        Base.metadata.create_all(self.engine)
 
     def init_data(self):
         src_list = [("阿里asrc", 1, "*.taobao.com"),
@@ -237,118 +253,62 @@ class SrcList:
                     ("微众wsrc", 44, "*.webank.com"),
                     ("万能钥匙wifisrc", 45, "*.wifi.com"),
                     ("中通src", 46, "*.zto.com")]
-        sql = "insert into src (name, src_id, url, scan_time) values (?, ?, ?, ?)"
         for src_info in src_list:
-            self.cursor.execute(sql,
-                                (src_info[0], src_info[1], src_info[2], datetime.datetime.now().strftime("%Y-%m-%d")))
-        self.conn.commit()
-        self.clean()
+            src = SRC(name=src_info[0], src_id=src_info[1], url=src_info[2],
+                      scan_time=datetime.datetime.now().strftime("%Y-%m-%d"))
+            self.session.add(src)
+        self.session.commit()
         print("create src successfully")
 
     def update_scan_time(self, url):
-        sql = "update src set scan_time = ? where url = ?"
-        self.cursor.execute(sql, (datetime.datetime.now().strftime("%Y-%m-%d"), url))
-        self.conn.commit()
+        src = self.session.query(SRC).filter_by(url=url)
+        src.scan_time = datetime.datetime.now().strftime("%Y-%m-%d")
+        self.session.commit()
 
     def insert_src_list(self, name, src_id, url):
-        sql = "insert into src (name, src_id, url, scan_time) values (?, ?, ?, ?)"
-        self.cursor.execute(sql, (name, src_id, url, datetime.datetime.now().strftime("%Y-%m-%d")))
-        self.conn.commit()
+        src = SRC(name=name, src_id=src_id, url=url, scan_time=datetime.datetime.now().strftime("%Y-%m-%d"))
+        self.session.add(src)
+        self.session.commit()
 
     def select_src_by_id(self, id):
-        sql = "select * from src where id = ?"
-        self.cursor.execute(sql, (id, ))
-        results = self.cursor.fetchall()
-
-        results_list = []
-        for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'name': result[1],
-                    'src_id': result[2],
-                    'url': result[3],
-                    'scan_time': result[4]
-                }
-            )
-
-        self.clean()
-        return results[0][3]
+        result = self.session.query(SRC).filter_by(id=id)
+        return result.domain
 
     def select_src_list(self, page):
-        sql = "select * from src order by id desc limit ?,?"
-        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
-        results = self.cursor.fetchall()
+        results = self.session.query(SRC).order_by(SRC.id.desc()).limit(item_size).offset((page - 1) * item_size)
 
         results_list = []
         for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'name': result[1],
-                    'src_id': result[2],
-                    'url': result[3],
-                    'scan_time': result[4]
-                }
-            )
-
-        self.clean()
+            results_list.append(result.format())
         return results_list
 
     def select_un_scan_src_list(self, scan_size):
-        sql = "select * from src order by scan_time desc limit ?"
-        self.cursor.execute(sql, (scan_size, ))
-        results = self.cursor.fetchall()
+        results = self.session.query(SRC).order_by(SRC.scan_time.desc()).limit(scan_size)
 
         results_list = []
         for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'name': result[1],
-                    'src_id': result[2],
-                    'url': result[3],
-                    'scan_time': result[4]
-                }
-            )
-
-        self.clean()
+            results_list.append(result.format())
         return results_list
 
     def select_recent_src_list(self, page):
-        sql = "select * from src order by scan_time desc limit ?,?"
-        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
-        results = self.cursor.fetchall()
+        results = self.session.query(SRC).order_by(SRC.scan_time.desc()).limit(item_size).offset((page - 1) * item_size)
 
         results_list = []
         for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'name': result[1],
-                    'src_id': result[2],
-                    'url': result[3],
-                    'scan_time': result[4]
-                }
-            )
-
-        self.clean()
+            results_list.append(result.format())
         return results_list
 
     def count(self):
-        self.cursor.execute('select count(*) from src')
-        total = self.cursor.fetchone()
-        return total[0]
+        return self.session.query(func.count(SRC.id)).scalar()
 
     def delete(self, id):
-        self.cursor.execute('delete from src where id = ?', (id,))
-        self.conn.commit()
-        self.clean()
+        src = self.session.query(SRC).filter_by(id=id)
+        self.session.delete(src)
+        self.session.commit()
 
     def clean(self):
-        self.cursor.close()
-        self.conn.close()
+        self.session.close()
 
 
 if __name__ == '__main__':
-    print(SrcList().select_un_scan_src_list())
+    print(SrcList().count())

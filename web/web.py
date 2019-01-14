@@ -22,7 +22,7 @@ max_sendir = d.count('sendir')
 max_vul = d.count('vul')
 
 r = Rules()
-max_fingerprint = r.count('fingerprint')
+max_fingerprint = r.count()
 max_src = SrcList().count()
 
 
@@ -62,10 +62,10 @@ def finger_scan():
 def detail(domain_id):
     # 域名ID
     src_name = SrcList().select_src_by_id(domain_id)
-    domain_number = d.count_detail('subdomain', domain_id)
-    port_number = d.count_detail('port', domain_id)
-    sendir_number = d.count_detail('sendir', domain_id)
-    vul_number = d.count_detail('vul', domain_id)
+    domain_number = d.count('subdomain', domain_id)
+    port_number = d.count('port', domain_id)
+    sendir_number = d.count('sendir', domain_id)
+    vul_number = d.count('vul', domain_id)
     return render_template('detail.html', domain_id=domain_id, src_name=src_name[2:], domain_number=domain_number,
                            port_number=port_number, sendir_number=sendir_number, vul_number=vul_number)
 
@@ -73,32 +73,26 @@ def detail(domain_id):
 @app.route('/detail/<string:mode>/<int:id>')
 @app.route('/detail/<string:mode>/<int:id>/<int:page>')
 def detail_domain(mode, id, page=1):
-    if mode == 'domain':
-        domain_number = d.count_detail('subdomain', id)
-        domains = d.select_subdomain_by_domain_id(id, page)
+    total_number = d.count(mode, id)
+    results = d.select_mode_by_domain_id(mode, page, id)
+    if mode == 'subdomain':
         return render_template('detail.html', id=id, _mode=mode, mode="detail/{}/{}".format(mode, id), page=page,
-                               max_page=domain_number // item_size + 1, domains=domains)
+                               max_page=total_number // item_size + 1, domains=results)
     if mode == 'port':
-        port_number = d.count_detail('port', id)
-        ports = d.select_port_by_page(page, id)
         return render_template('detail.html', id=id, _mode=mode, mode="detail/{}/{}".format(mode, id), page=page,
-                               max_page=port_number // item_size + 1, ports=ports)
+                               max_page=total_number // item_size + 1, ports=results)
     if mode == 'sendir':
-        sendir_number = d.count_detail('sendir', id)
-        sendir = d.select_sendir_by_page(page, id)
         return render_template('detail.html', id=id, _mode=mode, mode="detail/{}/{}".format(mode, id), page=page,
-                               max_page=sendir_number // item_size + 1, sendirs=sendir)
+                               max_page=total_number // item_size + 1, sendirs=results)
     if mode == 'vul':
-        vul_number = d.count_detail('vul', id)
-        vuls = d.select_vul_by_page(page, id)
         return render_template('detail.html', id=id, _mode=mode, mode="detail/{}/{}".format(mode, id), page=page,
-                               max_page=vul_number // item_size + 1, sendirs=vuls)
+                               max_page=total_number // item_size + 1, sendirs=results)
 
 
 @app.route('/domain')
 @app.route('/domain/<int:page>')
 def subdomain(page=1):
-    domains = d.select_subdomain(page)
+    domains = d.select_mode("subdomain", page)
     return render_template('domain.html', mode="domain", page=page, max_page=max_domain // item_size + 1,
                            domains=domains)
 
@@ -113,14 +107,14 @@ def subdomain_detail(domain_id):
 @app.route('/port')
 @app.route('/port/<int:page>')
 def port(page=1):
-    ports = d.select_port(page)
+    ports = d.select_mode("port", page)
     return render_template('port.html', mode="port", page=page, max_page=max_port // item_size + 1, ports=ports)
 
 
 @app.route('/sendir')
 @app.route('/sendir/<int:page>')
 def sendir(page=1):
-    sendir = d.select_sendir(page)
+    sendir = d.select_mode("sendir", page)
     return render_template('sendir.html', mode="sendir", page=page, max_page=max_sendir // item_size + 1,
                            sendirs=sendir)
 
@@ -128,7 +122,7 @@ def sendir(page=1):
 @app.route('/vul')
 @app.route('/vul/<int:page>')
 def vul(page=1):
-    vuls = d.select_vul(page)
+    vuls = d.select_mode("vul", page)
     return render_template('vul.html', mode="vul", page=page, max_page=max_vul // item_size + 1, sendirs=vuls)
 
 
@@ -163,6 +157,4 @@ def delete(id, mode):
         SrcList().delete(id)
     if mode == 'fingerprint':
         r.delete(id)
-    else:
-        d.delete(id, mode)
     return redirect(request.referrer)

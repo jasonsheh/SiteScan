@@ -5,8 +5,8 @@
 
 
 import datetime
-from sqlalchemy import create_engine
-from sqlalchemy import Column, Integer, String, Time, Text
+from sqlalchemy import create_engine, func
+from sqlalchemy import Column, Integer, String, Text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from setting import user_path, item_size
@@ -21,7 +21,16 @@ class Range(Base):
     domain_id = Column(Integer)
     domain = Column(String(255))
     sign = Column(String(255))
-    scan_time = Column(Time)
+    scan_time = Column(Text)
+
+    def format(self):
+        return {
+            "id": self.id,
+            "domain_id": self.domain_id,
+            "domain": self.domain,
+            "sign": self.sign,
+            "scan_time": self.scan_time
+        }
 
 
 class Leak(Base):
@@ -37,29 +46,42 @@ class Leak(Base):
     id = Column(Integer, primary_key=True)
     domain_id = Column(Integer)
     domain = Column(String(255))
-    sign = Column(String(255))
     repository_name = Column(String(255))
     repository_url = Column(String(255))
     code = Column(Text)
-    scan_time = Column(Time)
-    update_time = Column(Time)
+    scan_time = Column(Text)
+    update_time = Column(Text)
     type = Column(Integer)
     confidence = Column(Integer)
 
+    def format(self):
+        return {
+            "id": self.id,
+            "domain_id": self.domain_id,
+            "domain": self.domain,
+            "repository_name": self.repository_name,
+            "repository_url": self.repository_url,
+            "code": self.code,
+            "scan_time": self.scan_time,
+            "update_time": self.update_time,
+            "type": self.type,
+            "confidence": self.confidence,
+        }
+
 
 class Rule(Base):
-    """
-    type default -1 未知/unknown
-    type 0 忽略/无危害
-    type 1 确认/相关
-    type 2 确认/不相关
-    type 3 确认/程序判断
-    """
     __tablename__ = "rule"
 
     id = Column(Integer, primary_key=True)
     keyword = Column(String(255))
     pattern = Column(String(255))
+
+    def format(self):
+        return {
+            "id": self.id,
+            "keyword": self.keyword,
+            "pattern": self.pattern,
+        }
 
 
 class GitLeak:
@@ -294,98 +316,67 @@ class GitLeak:
         Base.metadata.create_all(self.engine)
 
     def select_range(self, page=0, count=0):
+        results = []
         if count != 0:
-            sql = "select * from range order by scan_time asc limit ?"
-            self.cursor.execute(sql, (count,))
+            results = self.session.query(Range).order_by(Range.scan_time).limit(count).all()
         if page != 0:
-            sql = "select * from range order by scan_time desc limit ?,?"
-            self.cursor.execute(sql, ((page - 1) * item_size, item_size))
+            results = self.session.query(Range).order_by(Range.scan_time.desc()).limit(item_size).offset(
+                (page - 1) * item_size).all()
         if page == 0 and count == 0:
-            sql = "select * from range order by scan_time desc"
-            self.cursor.execute(sql)
-        results = self.cursor.fetchall()
+            results = self.session.query(Range).order_by(Range.scan_time.desc()).all()
 
         results_list = []
         for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'domain_id': result[1],
-                    'domain': result[2],
-                    'sign': result[3],
-                    'scan_time': result[4]
-                }
-            )
+            results_list.append(result.format())
         return results_list
 
     def select_rules(self, page=0):
         if page != 0:
-            sql = "select * from rule limit ?,?"
-            self.cursor.execute(sql, ((page - 1) * item_size, item_size))
+            results = self.session.query(Rule).limit(item_size).offset((page - 1) * item_size).all()
         else:
-            sql = "select * from rule"
-            self.cursor.execute(sql)
-        results = self.cursor.fetchall()
+            results = self.session.query(Rule).all()
 
         results_list = []
+        # result Rule
         for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'keyword': result[1],
-                    'pattern': result[2],
-                }
-            )
+            results_list.append(result.format())
         return results_list
 
     def select_leak(self, page=0, repository_name="", domain=""):
         if page != 0:
-            sql = "select * from leak where type != 0 order by scan_time desc, id desc limit ?,?"
-            self.cursor.execute(sql, ((page - 1) * item_size, item_size))
+            results = self.session.query(Leak).filter(Leak.type != 0).order_by(Leak.scan_time.desc()).order_by(Leak.id.desc()).limit(
+                item_size).offset((page - 1) * item_size).all()
         elif repository_name != "":
-            sql = "select * from leak where repository_name = ?"
-            self.cursor.execute(sql, (repository_name,))
+            results = self.session.query(Leak).filter_by(repository_name=repository_name).all()
         elif domain != "":
-            sql = "select * from leak where domain = ?"
-            self.cursor.execute(sql, (domain,))
+            results = self.session.query(Leak).filter_by(domain=domain).all()
         else:
-            sql = "select * from leak order by scan_time desc"
-            self.cursor.execute(sql)
-        results = self.cursor.fetchall()
+            results = self.session.query(Leak).order_by(Leak.scan_time.desc()).all()
 
         results_list = []
         for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'domain_id': result[1],
-                    'domain': result[2],
-                    'repository_name': result[3],
-                    'repository_url': result[4],
-                    'code': result[5].split("\n"),
-                    'scan_time': result[6],
-                    'type': result[7],
-                    'update_time': result[8],
-                    'confidence': result[9],
-                    'file_name': result[4].rsplit("/")[-1],
-                }
-            )
+            r = result.format()
+            r["code"] = r["code"].split("\n")
+            r["file_name"] = r["repository_name"].rsplit("/")[-1]
+
+            results_list.append(r)
         return results_list
 
     def update_scan_time(self, domain_id):
-        sql = "update range set scan_time = ? where id = ?"
-        self.cursor.execute(sql, (datetime.datetime.now().strftime("%Y-%m-%d"), domain_id))
-        self.conn.commit()
+        _range = self.session.query(Range).filter_by(id=domain_id)
+        _range.scan_time = datetime.datetime.now().strftime("%Y-%m-%d")
+        self.session.commit()
 
     def update_range(self, id, domain):
-        sql = "update range set domain = ? where id = ?"
-        self.cursor.execute(sql, (domain, id))
-        self.conn.commit()
+        _range = self.session.query(Range).filter_by(id=id)
+        _range.domain = domain
+        self.session.commit()
 
-    def update_rule(self, id, keyword, rule):
-        sql = "update rule set keyword = ? , pattern = ? where id = ?"
-        self.cursor.execute(sql, (keyword, rule, id))
-        self.conn.commit()
+    def update_rule(self, id, keyword, pattern):
+        rule = self.session.query(Rule).filter_by(id=id)
+        rule.keyword = keyword
+        rule.pattern = pattern
+        self.session.commit()
 
     def insert_leak(self, leak, domain_id):
         leak = Leak(domain_id=domain_id, domain=leak["domain"], repository_name=leak["repository_name"],
@@ -418,21 +409,22 @@ class GitLeak:
         self.session.query(del_mode[mode]).filter_by(id=id).delete()
 
     def count(self, mode, not_type=None):
+        count_mode = {
+            "leak": Leak,
+            "range": Range,
+            "rule": Rule
+        }
         if not_type:
-            self.cursor.execute('select count(*) from {} where type != ?'.format(mode), (not_type,))
+            total = self.session.query(func.count(Leak.id)).filter(Leak.type != not_type).scalar()
         else:
-            self.cursor.execute('select count(*) from {}'.format(mode))
-        total = self.cursor.fetchone()
-        return total[0]
+            total = self.session.query(func.count(count_mode[mode].id)).scalar()
+        return total
 
     def update_type(self, leak_id, leak_type):
-        sql = "update leak set type = ? where id = ?"
-        self.cursor.execute(sql, (leak_type, leak_id))
-        self.conn.commit()
+        self.session.query(Leak).filter_by(id=leak_id).update({"type": leak_type})
 
     def clean(self):
-        self.cursor.close()
-        self.conn.close()
+        self.session.close()
 
 
 if __name__ == '__main__':

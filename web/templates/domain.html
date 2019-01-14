@@ -18,7 +18,7 @@
             <table class="table table-hover">
                 <thead>
                 <tr>
-                    <th>Url</th>
+                    <th>Domain</th>
                     <th>IP</th>
                     <th>Title</th>
                     <th>Appname</th>
@@ -29,7 +29,7 @@
                 <tbody>
                 {% for domain in domains %}
                 <tr>
-                    <td><a href="http://{{ domain.url }}" target="_blank">{{ domain.url }}</a></td>
+                    <td><a href="http://{{ domain.domain }}" target="_blank">{{ domain.domain }}</a></td>
                     <td>{{ domain.ip }}</td>
                     <td>{{ domain.title }}</td>
                     <td>{{ domain.appname }}</td>

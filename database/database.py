@@ -6,175 +6,157 @@
 
 
 """
-import sqlite3
-# from sqlalchemy import create_engine
-# from sqlalchemy import Column, Integer, String
-# from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine, func
+from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 from setting import user_path, item_size
-#
-#
-# Base = declarative_base()
-#
-# class
+
+Base = declarative_base()
+
+
+class SubDomain(Base):
+    __tablename__ = "subdomain"
+
+    id = Column(Integer, primary_key=True)
+    ip = Column(String(255))
+    domain = Column(String(255))
+    title = Column(String(255))
+    appname = Column(String(255))
+    text = Column(Text)
+    domain_id = Column(Integer)
+    src_id = Column(Integer)
+    is_new = Column(String(1))
+
+    def format(self):
+        return {
+            "id": self.id,
+            "ip": self.ip,
+            "domain": self.domain,
+            "title": self.title,
+            "appname": self.appname,
+            "text": self.text,
+            "domain_id": self.domain_id,
+            "src_id": self.src_id,
+            "is_new": self.is_new
+        }
+
+
+class Port(Base):
+    __tablename__ = "port"
+
+    id = Column(Integer, primary_key=True)
+    ip = Column(String(255))
+    url = Column(String(255))
+    port = Column(String(7))
+    state = Column(String(15))
+    name = Column(String(15))
+    service = Column(String(64))
+    version = Column(String(64))
+    domain_id = Column(Integer)
+
+    def format(self):
+        return {
+            "id": self.id,
+            "ip": self.ip,
+            "url": self.url,
+            "port": self.port,
+            "state": self.state,
+            "name": self.name,
+            "service": self.service,
+            "version": self.version,
+            "domain_id": self.domain_id
+        }
+
+
+class SenDir(Base):
+    __tablename__ = "sendir"
+
+    id = Column(Integer, primary_key=True)
+    url = Column(String(255))
+    status_code = Column(String(4))
+    domain_id = Column(Integer)
+
+    def format(self):
+        return {
+            "id": self.id,
+            "url": self.url,
+            "status_code": self.status_code,
+            "domain_id": self.domain_id
+        }
+
+
+class Vul(Base):
+    __tablename__ = "vul"
+
+    id = Column(Integer, primary_key=True)
+    url = Column(String(255))
+    name = Column(String(64))
+    domain_id = Column(Integer)
+
+    def format(self):
+        return {
+            "id": self.id,
+            "url": self.url,
+            "name": self.name,
+            "domain_id": self.domain_id
+        }
 
 
 class Database:
     def __init__(self):
-        # 增加setting文件中，数据库类型的选择
-        # self.conn = create_engine(
-        #     "sqlite:///{user_path}/db/SiteScan.db?check_same_thread=False".format(user_path=user_path))
-        self.conn = sqlite3.connect(user_path + '/db/SiteScan.db', check_same_thread=False)
-        self.cursor = self.conn.cursor()
+        # TODO 增加setting文件中，数据库类型的选择
+        self.engine = create_engine(
+            "sqlite:///{user_path}/db/SiteScan.db?check_same_thread=False".format(user_path=user_path))
+        self.session = sessionmaker(bind=self.engine)()
 
     def create_database(self):
-        self.create_subdomain()
-        self.create_port()
-        self.create_sendir()
-        self.create_vul()
+        Base.metadata.create_all(self.engine)
 
-    def organize_subdomain_data(self, results):
-        results_list = []
-        for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'ip': result[1],
-                    'url': result[2],
-                    'title': result[3],
-                    'appname': result[4],
-                    'text': result[5],
-                    'domain_id': result[6],
-                    'src_id': result[7],
-                    'is_new': result[8],
-                }
-            )
-        return results_list
+    def select_mode_by_domain_id(self, mode, page, domain_id):
 
-    def select_subdomain_by_domain_id(self, domain_id, page=-1):
-        if page == -1:
-            sql = "select * from subdomain order by id_new desc where domain_id = ?"
-            self.cursor.execute(sql, (domain_id,))
-        else:
-            sql = "select * from subdomain where domain_id = ? order by id desc limit ?,?"
-            self.cursor.execute(sql, (domain_id, (page - 1) * item_size, item_size))
+        mode_dict = {
+            "subdomain": SubDomain,
+            "port": Port,
+            "sendir": SenDir,
+            "vul": Vul,
+        }
 
-        return self.organize_subdomain_data(self.cursor.fetchall())
-
-    def select_port_by_page(self, page, domain_id):
-        sql = "select * from port where domain_id = ? order by id desc limit ?,?"
-        self.cursor.execute(sql, (domain_id, (page - 1) * item_size, item_size))
-        results = self.cursor.fetchall()
+        results = self.session.query(mode_dict[mode]).filter_by(domain_id=domain_id).order_by(
+            mode_dict[mode].id.desc()).limit(item_size).offset((page - 1) * item_size).all()
 
         results_list = []
         for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'ip': result[1],
-                    'url': result[2],
-                    'port': result[3],
-                    'state': result[4],
-                    'name': result[5],
-                    'service': result[6],
-                    'version': result[7],
-                    'domain_id': result[8],
-                }
-            )
+            results_list.append(result.format())
         return results_list
-
-    def select_sendir_by_page(self, page, domain_id):
-        sql = "select * from sendir where domain_id = ? order by id desc limit ?,?"
-        self.cursor.execute(sql, (domain_id, (page - 1) * item_size, item_size))
-        results = self.cursor.fetchall()
-
-        results_list = []
-        for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'url': result[1],
-                    'status_code': result[2],
-                    'domain_id': result[3],
-                }
-            )
-        return results_list
-
-    def select_vul_by_page(self, page, domain_id):
-        sql = "select * from vul where domain_id = ? order by id desc limit ?,?"
-        self.cursor.execute(sql, (domain_id, (page - 1) * item_size, item_size))
-        results = self.cursor.fetchall()
-
-        results_list = []
-        for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'url': result[1],
-                    'name': result[2],
-                    'domain_id': result[3],
-                }
-            )
-        return results_list
-
-    def create_subdomain(self):
-        self.cursor.execute('create table subdomain ('
-                            'id integer primary key,'
-                            'ip varchar(255), '
-                            'url varchar(255), '
-                            'title varchar(255), '
-                            'appname varchar(255), '
-                            'text TEXT, '
-                            'domain_id integer, '
-                            'src_id integer, '
-                            'is_new char(1)'
-                            ')')
-        print("create subdomain successfully")
 
     def insert_subdomain(self, domains, infos, domain_id, src_id):
-        subdomains = self.select_subdomain_by_domain_id(domain_id)
-        subdomain_list = [x['url'] for x in subdomains]
-
-        self.conn = sqlite3.connect(user_path + '/db/SiteScan.db')
-        self.cursor = self.conn.cursor()
+        subdomains = self.session.query(SubDomain).filter_by(domain_id=domain_id).all()
+        subdomain_list = [x.domain for x in subdomains]
 
         for info in infos:
             ips = ' '.join(domains[info['domain']])
             app = ' '.join(info['app'])
             if info['domain'] in subdomain_list:
-                sql = "update subdomain set ip = ?, title = ?, appname = ?, text = ?, is_new = 0"
-                self.cursor.execute(sql,
-                                    (ips, info['title'], app, info['text']))
-
+                subdomain = self.session.query(SubDomain).filter_by(domain=info['domain'])
+                subdomain.ip = ips
+                subdomain.title = info['title']
+                subdomain.appname = app
+                subdomain.text = info['text']
+                subdomain.is_new = 0
+                self.session.commit()
             else:
-                sql = "insert into subdomain (url, ip, title, appname, text, domain_id, src_id, is_new) values (?, ?, ?, ?, ?, ?, ?, 1)"
-                self.cursor.execute(sql,
-                                    (info['domain'], ips, info['title'], app, info['text'], domain_id, src_id))
-        self.conn.commit()
-
-    def select_subdomain(self, page):
-        sql = "select * from subdomain order by is_new desc, id desc limit ?,?"
-        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
-        return self.organize_subdomain_data(self.cursor.fetchall())
+                subdomain = SubDomain(url=info['domain'], ip=ips, title=info['title'], appname=app, text=info['text'],
+                                      domain_id=domain_id, src_id=src_id, is_new=1)
+                self.session.add(subdomain)
+                self.session.commit()
 
     def select_subdomain_detail(self, domain_id):
-        sql = "select * from subdomain where id = ?"
-        self.cursor.execute(sql, (domain_id, ))
-        return self.organize_subdomain_data(self.cursor.fetchall())
-
-    def create_port(self):
-        self.cursor.execute('create table port('
-                            'id integer primary key, '
-                            'ip varchar(255), '
-                            'url varchar(255), '
-                            'port varchar(6), '
-                            'state varchar(10), '
-                            'name varchar(10), '
-                            'service varchar(40), '
-                            'version varchar(40), '
-                            'domain_id integer '
-                            ')')
-
-        print("create port successfully")
+        results = self.session.query(SubDomain).filter_by(id=domain_id).all()
+        results_list = []
+        for result in results:
+            results_list.append(result.format())
+        return results_list
 
     def insert_port(self, host, url, porto, domain_id=''):
         ports = list(porto.keys())
@@ -185,127 +167,69 @@ class Database:
             service = porto[port]['product']
             version = porto[port]['version']
 
-            sql = "insert into port (ip, url, port, state, name, service, version, domain_id )" \
-                  " values (?, ?, ?, ?, ?, ?, ?, ? )"
-            self.cursor.execute(sql, (host, url, port, state, name, service, version, domain_id))
-        self.conn.commit()
+            port = Port(ip=host, url=url, port=port, state=state, name=name, service=service, version=version,
+                        domain_id=domain_id)
+            self.session.add(port)
+        self.session.commit()
 
-    def select_port(self, page):
-        sql = "select * from port order by id desc limit ?,?"
-        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
-        results = self.cursor.fetchall()
+    def select_mode(self, mode, page):
+        mode_dict = {
+            "subdomain": SubDomain,
+            "port": Port,
+            "sendir": SenDir,
+            "vul": Vul,
+        }
+        if mode == "subdomain":
+            results = self.session.query(mode_dict[mode]).order_by(SubDomain.is_new.desc()).order_by(
+                mode_dict[mode].id.desc()).limit(item_size).offset((page - 1) * item_size).all()
+        else:
+            results = self.session.query(mode_dict[mode]).order_by(mode_dict[mode].id.desc()).limit(item_size).offset(
+                (page - 1) * item_size).all()
 
         results_list = []
         for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'ip': result[1],
-                    'url': result[2],
-                    'port': result[3],
-                    'state': result[4],
-                    'name': result[5],
-                    'service': result[6],
-                    'version': result[7],
-                    'domain_id': result[8],
-                }
-            )
+            results_list.append(result.format())
         return results_list
-
-    def create_sendir(self):
-        self.cursor.execute('create table sendir('
-                            'id integer primary key, '
-                            'url varchar(255), '
-                            'status_code varchar(4), '
-                            'domain_id integer '
-                            ')')
-
-        print("create sendir successfully")
 
     def insert_sendir(self, sensitive, domain_id=''):
         for url in sensitive:
-            sql = "insert into sendir (url, status_code, domain_id ) values (?, ?, ?)"
-            self.cursor.execute(sql, (url, sensitive[url], domain_id))
-        self.conn.commit()
-
-    def select_sendir(self, page):
-        sql = "select * from sendir order by id desc limit ?,?"
-        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
-        results = self.cursor.fetchall()
-
-        results_list = []
-        for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'url': result[1],
-                    'status_code': result[2],
-                    'domain_id': result[3],
-                }
-            )
-        return results_list
-
-    def create_vul(self):
-        self.cursor.execute('create table vul('
-                            'id integer primary key, '
-                            'url varchar(255), '
-                            'name varchar(64), '
-                            'domain_id integer '
-                            ')')
-
-        print("create vul successfully")
+            sendir = SenDir(url=url, status_code=sensitive[url], domain_id=domain_id)
+            self.session.add(sendir)
+        self.session.commit()
 
     def insert_vul(self, urls, name, domain_id=''):
         for url in urls:
-            sql = "insert into vul (url, name, domain_id ) values (?, ?, ?)"
-            self.cursor.execute(sql, (url, name, domain_id))
-        self.conn.commit()
+            vul = Vul(url=url, name=name, domain_id=domain_id)
+            self.session.add(vul)
+        self.session.commit()
 
-    def select_vul(self, page):
-        sql = "select * from vul order by id desc limit ?,?"
-        self.cursor.execute(sql, ((page - 1) * item_size, item_size))
-        results = self.cursor.fetchall()
+    # def delete(self, domain_id, mode):
+    #     self.cursor.execute('delete from {} where id = ?'.format(mode), (domain_id,))
+    #     self.conn.commit()
+    #
+    #     if mode == 'task':
+    #         self.cursor.execute('delete from sendir where domain_id = ?', (domain_id,))
+    #         self.cursor.execute('delete from subdomain where domain_id = ?', (domain_id,))
+    #         self.cursor.execute('delete from port where domain_id = ?', (domain_id,))
+    #         self.cursor.execute('delete from vul where domain_id = ?', (domain_id,))
+    #         self.conn.commit()
 
-        results_list = []
-        for result in results:
-            results_list.append(
-                {
-                    'id': result[0],
-                    'url': result[1],
-                    'name': result[2],
-                    'domain_id': result[3],
-                }
-            )
-        return results_list
-
-    def delete(self, domain_id, mode):
-        self.cursor.execute('delete from {} where id = ?'.format(mode), (domain_id,))
-        self.conn.commit()
-
-        if mode == 'task':
-            self.cursor.execute('delete from sendir where domain_id = ?', (domain_id,))
-            self.cursor.execute('delete from subdomain where domain_id = ?', (domain_id,))
-            self.cursor.execute('delete from port where domain_id = ?', (domain_id,))
-            self.cursor.execute('delete from vul where domain_id = ?', (domain_id,))
-            self.conn.commit()
-
-    def delete_all(self, mode):
-        self.cursor.execute('delete from {}'.format(mode))
-        self.conn.commit()
-
-    def count(self, mode):
-        self.cursor.execute('select count(*) from {}'.format(mode))
-        total = self.cursor.fetchone()
-        return total[0]
-
-    def count_detail(self, mode, domain_id):
-        self.cursor.execute('select count(*) from {} where domain_id = ?'.format(mode), (domain_id,))
-        total = self.cursor.fetchone()
-        return total[0]
+    def count(self, mode, domain_id=None):
+        mode_dict = {
+            "subdomain": SubDomain,
+            "port": Port,
+            "sendir": SenDir,
+            "vul": Vul,
+        }
+        if domain_id:
+            total = self.session.query(func.count(mode_dict[mode].id)).filter(
+                mode_dict[mode].domain_id == domain_id).scalar()
+        else:
+            total = self.session.query(func.count(mode_dict[mode].id)).scalar()
+        return total
 
     def clean(self):
-        self.cursor.close()
-        self.conn.close()
+        self.session.close()
 
 
 if __name__ == '__main__':

@@ -25,7 +25,7 @@
                     <th>ID</th>
                     <th>Name</th>
                     <th>SRC ID</th>
-                    <th>Url</th>
+                    <th>Domain</th>
                     <th>ScanTime</th>
                     <th>Delete</th>
                 </tr>
@@ -36,7 +36,7 @@
                     <td>{{ src.id }}</td>
                     <td>{{ src.name }}</td>
                     <td>{{ src.src_id }}</td>
-                    <td>{{ src.url }}</td>
+                    <td>{{ src.domain }}</td>
                     <td>{{ src.scan_time }}</td>
                     <td><a class="btn btn-outline-danger btn-sm" href="/del/{{ src.id }}/src" role="button">删除</a></td>
                 </tr>
